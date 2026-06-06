@@ -242,8 +242,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
                 final item = upcomingClasses[index];
                 return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ClassDetailScreen(
@@ -253,6 +253,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         ),
                       ),
                     );
+                    if (result != null) {
+                      if (result is Map) {
+                        setState(() {
+                          item['title'] = result['className'];
+                          item['code'] = result['classCode'];
+                        });
+                      } else if (result is int) {
+                        _onItemTapped(result);
+                      }
+                    }
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -462,8 +472,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 final String shorthand = displayTitle.split(' ').first;
 
                 return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ClassDetailScreen(
@@ -473,6 +483,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         ),
                       ),
                     );
+                    if (result != null) {
+                      if (result is Map) {
+                        setState(() {
+                          item['title'] = result['className'];
+                          item['code'] = result['classCode'];
+                        });
+                      } else if (result is int) {
+                        _onItemTapped(result);
+                      }
+                    }
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 14),

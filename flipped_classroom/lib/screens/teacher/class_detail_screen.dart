@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'components/student_list_screen.dart';
 import 'components/activity_detail_screen.dart';
+import 'edit_class_screen.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   final String className;
@@ -21,6 +22,10 @@ class ClassDetailScreen extends StatefulWidget {
 
 class _ClassDetailScreenState extends State<ClassDetailScreen> {
   String _currentTab = 'Hoạt động';
+  
+  late String _className;
+  late String _classCode;
+  late List<String> _schedules;
 
   late List<Map<String, dynamic>> _activities;
   late List<Map<String, dynamic>> _documents;
@@ -29,6 +34,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _className = widget.className;
+    _classCode = widget.classCode;
+    _schedules = [
+      'Thứ 2: Slot 1 (7:30 - 9:50)',
+      'Thứ 5: Slot 2 (10:00 - 12:20)',
+    ];
+
     _activities = [
       {
         'title': 'Chuẩn bị bài 4: Flutter Widget cơ bản',
@@ -148,7 +160,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: () => Navigator.of(context).pop({
+                      'className': _className,
+                      'classCode': _classCode,
+                    }),
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
@@ -178,18 +193,33 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          widget.className,
+                          _className,
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Tính năng "Chỉnh sửa thông tin lớp" đang được phát triển!'),
-                              behavior: SnackBarBehavior.floating,
+                        onPressed: () async {
+                          final result = await Navigator.push<Map<String, dynamic>>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditClassScreen(
+                                className: _className,
+                                classCode: _classCode,
+                                semester: 'SU26',
+                                description: 'Lớp học Flipped Classroom dành cho sinh viên chuyên ngành',
+                                schedules: _schedules,
+                              ),
                             ),
                           );
+                          if (result != null) {
+                            setState(() {
+                              _className = result['title'] as String;
+                              _classCode = result['code'] as String;
+                              if (result['schedules'] != null) {
+                                _schedules = List<String>.from(result['schedules'] as Iterable);
+                              }
+                            });
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5A57FF),
@@ -226,7 +256,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.classCode,
+                              _classCode,
                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                           ],
@@ -234,7 +264,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         IconButton(
                           icon: const Icon(Icons.copy, color: Color(0xFF5A57FF), size: 20),
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: widget.classCode));
+                            Clipboard.setData(ClipboardData(text: _classCode));
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Đã sao chép mã lớp học!'),
@@ -257,7 +287,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => StudentListScreen(
-                                  className: widget.className,
+                                  className: _className,
                                   studentsCount: widget.studentsCount,
                                 ),
                               ),
@@ -324,8 +354,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  _buildScheduleBox('Thứ 2: Slot 1 (7:30 - 9:50)'),
-                  _buildScheduleBox('Thứ 5: Slot 2 (10:00 - 12:20)'),
+                  ..._schedules.map((s) => _buildScheduleBox(s)),
                   const SizedBox(height: 22),
 
                   _buildInnerTabs(),
