@@ -4,6 +4,8 @@ import '../common/profile_screen.dart';
 import '../common/notification_screen.dart';
 import 'class_detail_screen.dart';
 import 'create_class_screen.dart';
+import 'create_activity_screen.dart';
+import 'components/activity_detail_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -59,10 +61,60 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     },
   ];
 
+  final List<Map<String, dynamic>> _activitiesList = [
+    {
+      'title': 'Đánh giá Milestone 1 - Dự án cuối kỳ',
+      'className': 'PRM393 - SE1904',
+      'status': 'Đã hoàn thành',
+      'statusColor': Colors.greenAccent,
+      'submissions': '8/8 nhóm đã nộp',
+      'date': '15/03/2026',
+    },
+    {
+      'title': 'Bài tập Chuẩn bị bài 4: Flutter Widget',
+      'className': 'PRM393 - SE1904',
+      'status': 'Đang mở (Trễ hạn: 23:59 hôm nay)',
+      'statusColor': Colors.amberAccent,
+      'submissions': '28/32 học viên đã nộp',
+      'date': '19/03/2026',
+    },
+    {
+      'title': 'Đánh giá Báo cáo nghiên cứu công nghệ',
+      'className': 'PRW301 - SE1902',
+      'status': 'Đang mở (Hạn chót: 3 ngày nữa)',
+      'statusColor': const Color(0xFF2E8EFF),
+      'submissions': '15/28 học viên đã nộp',
+      'date': '22/03/2026',
+    },
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  Future<void> _navigateToCreateActivity() async {
+    final classNames = _classes.map((c) => c['code'] as String).toList();
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateActivityScreen(classNames: classNames),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _activitiesList.insert(0, {
+          'title': result['title'] as String,
+          'className': result['className'] as String,
+          'status': result['status'] as String,
+          'statusColor': result['statusColor'] as Color,
+          'submissions': result['submissions'] as String,
+          'date': result['date'] as String,
+          'description': result['description'] as String,
+        });
+      });
+    }
   }
 
   Future<void> _navigateToCreateClass() async {
@@ -603,34 +655,48 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(20),
       children: [
-        const Text(
-          'Đánh giá & Hoạt động',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Đánh giá & Hoạt động',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            ElevatedButton.icon(
+              onPressed: _navigateToCreateActivity,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5A57FF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              icon: const Icon(Icons.add, size: 14, color: Colors.white),
+              label: const Text(
+                'Tạo hoạt động',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
-        _buildActivityItem(
-          title: 'Đánh giá Milestone 1 - Dự án cuối kỳ',
-          className: 'PRM393 - Lập trình Mobile',
-          status: 'Đã hoàn thành',
-          statusColor: Colors.greenAccent,
-          submissions: '8/8 nhóm đã nộp',
-        ),
-        const SizedBox(height: 12),
-        _buildActivityItem(
-          title: 'Bài tập Chuẩn bị bài 4: Flutter Widget',
-          className: 'PRM393 - Lập trình Mobile',
-          status: 'Đang mở (Trễ hạn: 23:59 hôm nay)',
-          statusColor: Colors.amberAccent,
-          submissions: '28/32 học viên đã nộp',
-        ),
-        const SizedBox(height: 12),
-        _buildActivityItem(
-          title: 'Đánh giá Báo cáo nghiên cứu công nghệ',
-          className: 'PRW301 - Phát triển Web',
-          status: 'Đang mở (Hạn chót: 3 ngày nữa)',
-          statusColor: const Color(0xFF2E8EFF),
-          submissions: '15/28 học viên đã nộp',
-        ),
+        if (_activitiesList.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(top: 40.0),
+              child: Text(
+                'Chưa có hoạt động nào được tạo',
+                style: TextStyle(color: Colors.white38),
+              ),
+            ),
+          )
+        else
+          ..._activitiesList.map((act) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: _buildActivityItem(act),
+            );
+          }),
       ],
     );
   }
@@ -729,67 +795,89 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
-  Widget _buildActivityItem({
-    required String title,
-    required String className,
-    required String status,
-    required Color statusColor,
-    required String submissions,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  className,
-                  style: TextStyle(color: const Color(0xFF8F8DFF), fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+  Widget _buildActivityItem(Map<String, dynamic> activity) {
+    final String title = activity['title'] ?? '';
+    final String className = activity['className'] ?? '';
+    final String status = activity['status'] ?? '';
+    final Color statusColor = activity['statusColor'] ?? const Color(0xFF2E8EFF);
+    final String submissions = activity['submissions'] ?? '';
+    final String deadline = activity['date'] ?? '25/06/2026';
+    final String description = activity['description'] ?? 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành';
+
+    return GestureDetector(
+      onTap: () async {
+        final result = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ActivityDetailScreen(
+              activityTitle: title,
+              deadline: deadline,
+              submissions: submissions,
+              description: description,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.assignment_outlined, size: 14, color: Colors.white.withValues(alpha: 0.4)),
-              const SizedBox(width: 6),
-              Text(
-                submissions,
-                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => _showSimulatedFeature(context, 'Chi tiết bài nộp'),
-                child: const Text('Xem bài nộp', style: TextStyle(fontSize: 12, color: Color(0xFF5A57FF))),
-              ),
-            ],
-          ),
-        ],
+        );
+        if (result != null) {
+          setState(() {
+            activity['title'] = result['title'];
+            activity['date'] = result['deadline'];
+            activity['description'] = result['description'];
+            activity['status'] = 'Đang mở (Hạn chót: ${result['deadline']})';
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    className,
+                    style: const TextStyle(color: Color(0xFF8F8DFF), fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.assignment_outlined, size: 14, color: Colors.white.withValues(alpha: 0.4)),
+                const SizedBox(width: 6),
+                Text(
+                  submissions,
+                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                ),
+                const Spacer(),
+                const Text('Xem bài nộp', style: TextStyle(fontSize: 12, color: Color(0xFF5A57FF), fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -841,15 +929,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showSimulatedFeature(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Tính năng "$feature" đang được phát triển!'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
