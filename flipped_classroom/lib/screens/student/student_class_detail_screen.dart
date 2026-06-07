@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'student_activity_detail_screen.dart';
 import 'student_project_detail_screen.dart';
+import 'student_milestone_detail_screen.dart';
+import 'student_peer_review_screen.dart';
 
 class StudentClassDetailScreen extends StatefulWidget {
   final String classCodeWithName;
@@ -621,7 +623,31 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
             ),
           ),
         ),
-
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudentPeerReviewScreen(
+                  classCode: widget.classCodeWithName.split(' - ').first,
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.rate_review, color: Colors.white, size: 18),
+          label: const Text(
+            'Đánh giá chéo nhóm khác',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF7EC07E),
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
         const SizedBox(height: 24),
         const Text(
           'Mốc đánh giá dự án (Milestones)',
@@ -634,64 +660,104 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
           final statusColor = milestone['color'] as Color;
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        milestone['title'] ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
-                      ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentMilestoneDetailScreen(
+                      milestone: milestone,
+                      project: {
+                        'title': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
+                        'projectName': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
+                        'membersList': (_projectInfo['members'] as List)
+                            .map((m) => m['name'] as String)
+                            .toList(),
+                      },
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      milestone['status'] ?? '',
-                      style: TextStyle(
-                        color: statusColor == Colors.white24 ? Colors.grey : statusColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  milestone['dueDate'] ?? '',
-                  style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.4)),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                  ),
+                );
+                
+                if (result != null && result is Map<String, dynamic>) {
+                  setState(() {
+                    milestone['status'] = result['status'];
+                    milestone['progress'] = result['progress'];
+                    milestone['tasks'] = result['tasks'];
+                    milestone['evidenceList'] = result['evidenceList'];
+                    milestone['comments'] = result['comments'];
+                    
+                    if (result['status'] == 'Hoàn thành') {
+                      milestone['color'] = Colors.greenAccent;
+                    } else if (result['status'] == 'Chưa bắt đầu') {
+                      milestone['color'] = Colors.white24;
+                    } else {
+                      milestone['color'] = Colors.amberAccent;
+                    }
+                  });
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 5,
-                          backgroundColor: const Color(0xFF0F172A).withOpacity(0.05),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            statusColor == Colors.white24 ? Colors.grey.shade300 : statusColor,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            milestone['title'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Text(
+                          milestone['status'] ?? '',
+                          style: TextStyle(
+                            color: statusColor == Colors.white24 ? Colors.grey : statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(height: 6),
                     Text(
-                      '${(progress * 100).toInt()}%',
-                      style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.5)),
+                      milestone['dueDate'] ?? '',
+                      style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 5,
+                              backgroundColor: const Color(0xFF0F172A).withOpacity(0.05),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                statusColor == Colors.white24 ? Colors.grey.shade300 : statusColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${(progress * 100).toInt()}%',
+                          style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.5)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           );
         }),

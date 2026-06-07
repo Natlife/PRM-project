@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'student_class_detail_screen.dart';
 
 class StudentClassesScreen extends StatefulWidget {
   final List<Map<String, dynamic>> myClasses;
   final VoidCallback onJoinClassPressed;
+  final ValueChanged<int>? onTabTapped;
 
   const StudentClassesScreen({
     super.key,
     required this.myClasses,
     required this.onJoinClassPressed,
+    this.onTabTapped,
   });
 
   @override
@@ -129,13 +132,21 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
                           ),
                           color: Colors.white,
                           child: InkWell(
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Đang mở chi tiết lớp học ${item['classCodeWithName']}'),
-                                  behavior: SnackBarBehavior.floating,
+                            onTap: () async {
+                              final targetIndex = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StudentClassDetailScreen(
+                                    classCodeWithName: item['classCodeWithName'] ?? '${item['classCode']} - SE1904',
+                                    className: item['className'] ?? '',
+                                    instructor: item['instructor'] ?? '',
+                                    semester: item['semester'] ?? 'SU26',
+                                  ),
                                 ),
                               );
+                              if (targetIndex != null && targetIndex is int) {
+                                widget.onTabTapped?.call(targetIndex);
+                              }
                             },
                             borderRadius: BorderRadius.circular(20),
                             child: Padding(
