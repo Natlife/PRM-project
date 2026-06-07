@@ -376,10 +376,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        icon: const Icon(Icons.add, size: 14, color: Colors.white),
-                        label: const Text(
-                          'Tạo mới',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        icon: Icon(_currentTab == 'Tài liệu' ? Icons.upload : Icons.add, size: 14, color: Colors.white),
+                        label: Text(
+                          _currentTab == 'Tài liệu' ? 'Tải lên' : 'Tạo mới',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
                     ],
@@ -502,6 +502,73 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     );
   }
 
+  void _handleDeleteDocument(Map<String, dynamic> doc) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Bạn có chắc chắn muốn xóa?',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Tài liệu này sẽ bị xóa vĩnh viễn khỏi lớp học.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEC4899),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text(
+                'Hủy',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _documents.remove(doc);
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã xóa tài liệu "${doc['title']}"!'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text(
+                'Xác nhận',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   List<Widget> _buildTabContent() {
     if (_currentTab == 'Hoạt động') {
       return _activities.map((act) {
@@ -592,6 +659,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     ),
                   );
                 },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Color(0xFFEC4899), size: 22),
+                onPressed: () => _handleDeleteDocument(doc),
               ),
             ],
           ),
