@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'components/student_list_screen.dart';
 import 'components/activity_detail_screen.dart';
 import 'edit_class_screen.dart';
+import 'create_project_screen.dart';
+import 'project_detail_screen.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   final String className;
@@ -81,7 +83,40 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     ];
   }
 
-  void _handleCreateNew() {
+  Future<void> _handleCreateNew() async {
+    if (_currentTab == 'Dự án') {
+      final result = await Navigator.push<Map<String, dynamic>>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateProjectScreen(
+            fixedClass: _className,
+            availableClasses: [_classCode],
+          ),
+        ),
+      );
+      if (result != null) {
+        if (!mounted) return;
+        setState(() {
+          _projects.insert(0, {
+            'title': result['title'] as String,
+            'members': result['members'] as String,
+            'membersList': result['membersList'],
+            'leader': result['leader'],
+            'date': result['date'],
+            'progress': '0%',
+            'milestones': result['milestones'],
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã tạo thành công dự án mới!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
     final titleController = TextEditingController();
     showDialog(
       context: context,
@@ -123,12 +158,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                       'title': title,
                       'size': '1.2 MB',
                       'date': 'Hôm nay',
-                    });
-                  } else if (_currentTab == 'Dự án') {
-                    _projects.insert(0, {
-                      'title': title,
-                      'members': '5 thành viên',
-                      'progress': '0%',
                     });
                   }
                 });
@@ -378,7 +407,11 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         ),
                         icon: Icon(_currentTab == 'Tài liệu' ? Icons.upload : Icons.add, size: 14, color: Colors.white),
                         label: Text(
-                          _currentTab == 'Tài liệu' ? 'Tải lên' : 'Tạo mới',
+                          _currentTab == 'Tài liệu'
+                              ? 'Tải lên'
+                              : _currentTab == 'Dự án'
+                                  ? 'Thêm dự án'
+                                  : 'Tạo mới',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
@@ -670,45 +703,64 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       }).toList();
     } else {
       return _projects.map((proj) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      proj['title'],
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF5A57FF).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      proj['progress'],
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF8F8DFF), fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
+        final String group = proj['group'] ?? proj['groupName'] ?? 'Nhóm 1';
+        final String date = proj['date'] ?? '10/8/2026';
+        return GestureDetector(
+          onTap: () async {
+            final updatedProj = await Navigator.push<Map<String, dynamic>>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProjectDetailScreen(
+                  project: proj,
+                  availableClasses: [_classCode],
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                proj['members'],
-                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
-              ),
-            ],
+            );
+            if (updatedProj != null) {
+              setState(() {
+                proj['title'] = updatedProj['title'];
+                proj['group'] = updatedProj['group'];
+                proj['groupName'] = updatedProj['groupName'];
+                proj['date'] = updatedProj['date'];
+                proj['members'] = updatedProj['members'];
+                proj['membersList'] = updatedProj['membersList'];
+                proj['leader'] = updatedProj['leader'];
+                proj['milestones'] = updatedProj['milestones'];
+                proj['progress'] = '${(updatedProj['progress'] * 100).toInt()}%';
+              });
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  proj['title'],
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      group,
+                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                    ),
+                    Text(
+                      date,
+                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       }).toList();

@@ -6,6 +6,8 @@ import 'class_detail_screen.dart';
 import 'create_class_screen.dart';
 import 'create_activity_screen.dart';
 import 'components/activity_detail_screen.dart';
+import 'create_project_screen.dart';
+import 'project_detail_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -17,6 +19,7 @@ class TeacherHomeScreen extends StatefulWidget {
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
   String _classSearchQuery = '';
+  String _activitySearchQuery = '';
 
   final List<Map<String, dynamic>> _classes = [
     {
@@ -87,6 +90,97 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       'date': '22/03/2026',
     },
   ];
+
+  String _projectSearchQuery = '';
+
+  final List<Map<String, dynamic>> _projectsList = [
+    {
+      'title': 'Hệ thống quản lý Flipped Classroom',
+      'class': 'PRM393 - SE1904',
+      'className': 'PRM - Lập trình mobile',
+      'group': 'Nhóm 1',
+      'groupName': 'Nhóm 1',
+      'members': '5 sinh viên',
+      'membersList': ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C', 'Phạm Văn D', 'Vũ Thị E'],
+      'leader': 'Nguyễn Văn A',
+      'date': '20/08/2026',
+      'progress': 0.8,
+      'milestones': [
+        {
+          'title': 'Phân tích yêu cầu',
+          'date': '15/03/2026',
+          'status': 'Hoàn thành',
+        },
+      ],
+    },
+    {
+      'title': 'Ứng dụng theo dõi sức khỏe Gymtelligent',
+      'class': 'PRM393 - SE1904',
+      'className': 'PRM - Lập trình mobile',
+      'group': 'Nhóm 2',
+      'groupName': 'Nhóm 2',
+      'members': '3 sinh viên',
+      'membersList': ['Hoàng Văn F', 'Đỗ Thị G', 'Lê Văn C'],
+      'leader': 'Hoàng Văn F',
+      'date': '25/08/2026',
+      'progress': 0.6,
+      'milestones': [
+        {
+          'title': 'Phân tích yêu cầu',
+          'date': '15/03/2026',
+          'status': 'Hoàn thành',
+        },
+      ],
+    },
+    {
+      'title': 'Hệ thống Đặt đồ ăn trực tuyến',
+      'class': 'PRW301 - SE1902',
+      'className': 'PRW - Phát triển web',
+      'group': 'Nhóm 3',
+      'groupName': 'Nhóm 3',
+      'members': '4 sinh viên',
+      'membersList': ['Lê Văn C', 'Phạm Văn D', 'Vũ Thị E', 'Nguyễn Văn A'],
+      'leader': 'Lê Văn C',
+      'date': '30/08/2026',
+      'progress': 0.45,
+      'milestones': [
+        {
+          'title': 'Phân tích yêu cầu',
+          'date': '15/03/2026',
+          'status': 'Đang thực hiện',
+        },
+      ],
+    },
+  ];
+
+  Future<void> _navigateToCreateProject() async {
+    final availableClasses = _classes.map((c) => c['code'] as String).toList();
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateProjectScreen(
+          availableClasses: availableClasses,
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _projectsList.insert(0, {
+          'title': result['title'] as String,
+          'class': result['className'] as String,
+          'className': result['className'] as String,
+          'group': result['group'] as String,
+          'groupName': result['groupName'] as String,
+          'members': result['members'] as String,
+          'membersList': result['membersList'],
+          'leader': result['leader'],
+          'date': result['date'] as String,
+          'progress': result['progress'] as double,
+          'milestones': result['milestones'],
+        });
+      });
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -651,6 +745,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Widget _buildActivitiesTab() {
+    final filteredActivities = _activitiesList.where((act) {
+      final query = _activitySearchQuery.trim().toLowerCase();
+      if (query.isEmpty) return true;
+      final title = (act['title'] as String).toLowerCase();
+      final className = (act['className'] as String).toLowerCase();
+      return title.contains(query) || className.contains(query);
+    }).toList();
+
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(20),
@@ -659,39 +761,54 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Đánh giá & Hoạt động',
+              'Quản lý hoạt động',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             ),
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: _navigateToCreateActivity,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5A57FF),
+                backgroundColor: const Color(0xFF2E8EFF),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
-              icon: const Icon(Icons.add, size: 14, color: Colors.white),
-              label: const Text(
-                'Tạo hoạt động',
+              child: const Text(
+                'Tạo mới',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        if (_activitiesList.isEmpty)
+        const SizedBox(height: 18),
+        TextField(
+          onChanged: (val) => setState(() => _activitySearchQuery = val),
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Tìm kiếm hoạt động',
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+            suffixIcon: const Icon(Icons.search, color: Color(0xFF2E8EFF), size: 20),
+            fillColor: const Color(0xFF1E293B),
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        if (filteredActivities.isEmpty)
           const Center(
             child: Padding(
               padding: EdgeInsets.only(top: 40.0),
               child: Text(
-                'Chưa có hoạt động nào được tạo',
+                'Không tìm thấy hoạt động nào',
                 style: TextStyle(color: Colors.white38),
               ),
             ),
           )
         else
-          ..._activitiesList.map((act) {
+          ...filteredActivities.map((act) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12.0),
               child: _buildActivityItem(act),
@@ -702,95 +819,164 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Widget _buildProjectsTab() {
-    final List<Map<String, dynamic>> mockProjects = [
-      {
-        'title': 'Ứng dụng Flipped Classroom',
-        'class': 'PRM393 - SE1904',
-        'group': 'Nhóm 1',
-        'progress': 0.8,
-      },
-      {
-        'title': 'Hệ thống Đặt đồ ăn trực tuyến',
-        'class': 'PRW301 - SE1902',
-        'group': 'Nhóm 2',
-        'progress': 0.6,
-      },
-      {
-        'title': 'Mạng xã hội học tập sinh viên',
-        'class': 'PRM393 - SE1904',
-        'group': 'Nhóm 3',
-        'progress': 0.45,
-      },
-    ];
+    final filteredProjects = _projectsList.where((proj) {
+      final query = _projectSearchQuery.trim().toLowerCase();
+      if (query.isEmpty) return true;
+      final title = (proj['title'] as String).toLowerCase();
+      final classCode = (proj['class'] as String).toLowerCase();
+      final group = (proj['group'] as String).toLowerCase();
+      return title.contains(query) || classCode.contains(query) || group.contains(query);
+    }).toList();
 
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(20),
       children: [
-        const Text(
-          'Quản lý Dự án',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Quản lý Dự án',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            ElevatedButton(
+              onPressed: _navigateToCreateProject,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E8EFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              child: const Text(
+                'Thêm dự án',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
-        ...mockProjects.map((proj) => _buildProjectItem(proj)),
+        const SizedBox(height: 18),
+        TextField(
+          onChanged: (val) => setState(() => _projectSearchQuery = val),
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Tìm kiếm dự án',
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+            suffixIcon: const Icon(Icons.search, color: Color(0xFF2E8EFF), size: 20),
+            fillColor: const Color(0xFF1E293B),
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        if (filteredProjects.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(top: 40.0),
+              child: Text(
+                'Không tìm thấy dự án nào',
+                style: TextStyle(color: Colors.white38),
+              ),
+            ),
+          )
+        else
+          ...filteredProjects.map((proj) => _buildProjectItem(proj)),
       ],
     );
   }
 
   Widget _buildProjectItem(Map<String, dynamic> proj) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                proj['class'],
-                style: const TextStyle(color: Color(0xFF8F8DFF), fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                proj['group'],
-                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-            ],
+    final String title = proj['title'] ?? '';
+    final String group = proj['group'] ?? proj['groupName'] ?? '';
+    final String date = proj['date'] ?? '';
+    final String classCode = proj['class'] ?? '';
+    final String members = proj['members'] ?? '0 sinh viên';
+
+    return GestureDetector(
+      onTap: () async {
+        final availableClasses = _classes.map((c) => c['code'] as String).toList();
+        final result = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProjectDetailScreen(
+              project: proj,
+              availableClasses: availableClasses,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            proj['title'],
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const Text('Tiến độ:', style: TextStyle(fontSize: 12, color: Colors.white54)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: proj['progress'],
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5A57FF)),
-                    minHeight: 6,
+        );
+        if (result != null) {
+          setState(() {
+            proj['title'] = result['title'];
+            proj['group'] = result['group'];
+            proj['groupName'] = result['groupName'];
+            proj['class'] = result['class'];
+            proj['className'] = result['class'];
+            proj['date'] = result['date'];
+            proj['members'] = result['members'];
+            proj['membersList'] = result['membersList'];
+            proj['leader'] = result['leader'];
+            proj['progress'] = result['progress'];
+            proj['milestones'] = result['milestones'];
+          });
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${(proj['progress'] * 100).toInt()}%',
-                style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2E8EFF).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    classCode,
+                    style: const TextStyle(color: Color(0xFF2E8EFF), fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  group,
+                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                ),
+                Text(
+                  members,
+                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                ),
+                Text(
+                  date,
+                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -798,11 +984,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Widget _buildActivityItem(Map<String, dynamic> activity) {
     final String title = activity['title'] ?? '';
     final String className = activity['className'] ?? '';
-    final String status = activity['status'] ?? '';
-    final Color statusColor = activity['statusColor'] ?? const Color(0xFF2E8EFF);
     final String submissions = activity['submissions'] ?? '';
     final String deadline = activity['date'] ?? '25/06/2026';
     final String description = activity['description'] ?? 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành';
+
+    final classShorthand = className.split(' ').first.split('-').first.replaceAll(RegExp(r'\d'), '');
 
     return GestureDetector(
       onTap: () async {
@@ -837,43 +1023,44 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2E8EFF).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.assignment, color: Color(0xFF2E8EFF), size: 20),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    className,
-                    style: const TextStyle(color: Color(0xFF8F8DFF), fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    status,
-                    style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.assignment_outlined, size: 14, color: Colors.white.withValues(alpha: 0.4)),
-                const SizedBox(width: 6),
                 Text(
                   submissions,
-                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
                 ),
-                const Spacer(),
-                const Text('Xem bài nộp', style: TextStyle(fontSize: 12, color: Color(0xFF5A57FF), fontWeight: FontWeight.bold)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                  ),
+                  child: Text(
+                    classShorthand.isNotEmpty ? classShorthand : className,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
               ],
             ),
           ],
