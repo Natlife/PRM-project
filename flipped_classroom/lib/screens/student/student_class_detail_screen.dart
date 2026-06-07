@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'student_activity_detail_screen.dart';
+import 'student_project_detail_screen.dart';
 
 class StudentClassDetailScreen extends StatefulWidget {
   final String classCodeWithName;
@@ -530,70 +531,94 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
       children: [
         // Group Header
         Container(
-          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.05)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _projectInfo['groupName'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF7EC07E),
-                    ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () async {
+              final targetIndex = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentProjectDetailScreen(
+                    project: {
+                      'title': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
+                      'projectName': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
+                      'membersList': (_projectInfo['members'] as List)
+                          .map((m) => m['name'] as String)
+                          .toList(),
+                    },
                   ),
-                  const Icon(Icons.group, color: Color(0xFF7EC07E), size: 20),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _projectInfo['projectName'] ?? '',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                  height: 1.4,
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Thành viên:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 8),
-              ...(_projectInfo['members'] as List).map((member) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 6.0),
-                  child: Row(
+              );
+              if (targetIndex != null && targetIndex is int) {
+                _onBottomNavTapped(targetIndex);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(color: Color(0xFF7EC07E), shape: BoxShape.circle),
-                      ),
-                      const SizedBox(width: 8),
                       Text(
-                        member['name'] ?? '',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+                        _projectInfo['groupName'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7EC07E),
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '(${member['role']})',
-                        style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.4)),
-                      ),
+                      const Icon(Icons.group, color: Color(0xFF7EC07E), size: 20),
                     ],
                   ),
-                );
-              }),
-            ],
+                  const SizedBox(height: 8),
+                  Text(
+                    _projectInfo['projectName'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Thành viên:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 8),
+                  ...(_projectInfo['members'] as List).map((member) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(color: Color(0xFF7EC07E), shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            member['name'] ?? '',
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(${member['role']})',
+                            style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
           ),
         ),
 

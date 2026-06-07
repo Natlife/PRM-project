@@ -3,6 +3,7 @@ import '../../services/auth_service.dart';
 import '../common/profile_screen.dart';
 import '../common/notification_screen.dart';
 import 'student_class_detail_screen.dart';
+import 'student_project_detail_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -622,36 +623,55 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         
         // Project card summary
         Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Dự án hiện tại',
-                style: TextStyle(fontSize: 12, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Ứng dụng Flipped Classroom',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () async {
+              final targetIndex = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StudentProjectDetailScreen(
+                    project: {
+                      'title': 'Ứng dụng Flipped Classroom',
+                      'projectName': 'Ứng dụng Flipped Classroom',
+                      'membersList': ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C', 'Phạm Văn D'],
+                    },
+                  ),
+                ),
+              );
+              if (targetIndex != null && targetIndex is int) {
+                _onItemTapped(targetIndex);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nhóm: Nhóm 1 (4 thành viên)', style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5))),
-                  TextButton(
-                    onPressed: () => _showSimulatedFeature('Xem danh sách thành viên'),
-                    child: const Text('Xem nhóm', style: TextStyle(fontSize: 12, color: Color(0xFF7EC07E))),
+                  const Text(
+                    'Dự án hiện tại',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Ứng dụng Flipped Classroom',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Nhóm: Nhóm 1 (4 thành viên)', style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5))),
+                      const Text('Xem nhóm', style: TextStyle(fontSize: 12, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold)),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
