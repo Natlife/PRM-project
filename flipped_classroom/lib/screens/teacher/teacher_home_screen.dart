@@ -28,7 +28,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       'studentsCount': 30,
       'semester': 'SU26',
       'type': 'Chuyên ngành hẹp',
-      'color': const Color(0xFF5A57FF),
+      'color': const Color(0xFF7EC07E),
       'time': 'Slot 1 (7:30-9:50)',
       'date': 'Hôm nay',
     },
@@ -38,7 +38,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       'studentsCount': 28,
       'semester': 'FA26',
       'type': 'Chuyên ngành hẹp',
-      'color': const Color(0xFFD946EF),
+      'color': const Color(0xFF7EC07E),
       'time': 'Slot 2 (10:00-12:20)',
       'date': 'Hôm nay',
     },
@@ -48,7 +48,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       'studentsCount': 35,
       'semester': 'SU26',
       'type': 'Nhập môn',
-      'color': const Color(0xFF10B981),
+      'color': const Color(0xFF7EC07E),
       'time': 'Slot 4 (15:00-17:20)',
       'date': 'Ngày mai',
     },
@@ -85,7 +85,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       'title': 'Đánh giá Báo cáo nghiên cứu công nghệ',
       'className': 'PRW301 - SE1902',
       'status': 'Đang mở (Hạn chót: 3 ngày nữa)',
-      'statusColor': const Color(0xFF2E8EFF),
+      'statusColor': const Color(0xFF7EC07E),
       'submissions': '15/28 học viên đã nộp',
       'date': '22/03/2026',
     },
@@ -246,7 +246,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
@@ -257,7 +257,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.06),
               width: 1.2,
             ),
           ),
@@ -266,9 +266,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF1E293B),
-          selectedItemColor: const Color(0xFF5A57FF),
-          unselectedItemColor: Colors.white.withValues(alpha: 0.4),
+          backgroundColor: const Color(0xFFFFFFFF),
+          selectedItemColor: const Color(0xFF7EC07E),
+          unselectedItemColor: const Color(0xFF0F172A).withValues(alpha: 0.4),
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
@@ -320,12 +320,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 const Text(
                   'Dashboard',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Chào mừng giảng viên!',
-                  style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 14, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
                 ),
               ],
             ),
@@ -338,11 +338,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: _buildStatCard('${_classes.length}', 'Lớp học', const Color(0xFF5A57FF)),
+                  child: _buildStatCard('${_classes.length}', 'Lớp học', const Color(0xFF7EC07E)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: _buildStatCard('300', 'Sinh viên', const Color(0xFF2E8EFF)),
+                  child: _buildStatCard('300', 'Sinh viên', const Color(0xFF7EC07E)),
                 ),
               ],
             ),
@@ -357,13 +357,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 const Text(
                   'Lớp học sắp diễn ra',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 GestureDetector(
                   onTap: () => _onItemTapped(1),
                   child: const Text(
                     'Xem tất cả',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF5A57FF), fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -381,7 +381,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   return const Center(
                     child: Text(
                       'Không có lớp học nào sắp diễn ra',
-                      style: TextStyle(color: Colors.white38),
+                      style: TextStyle(color: Color(0xFF94A3B8)),
                     ),
                   );
                 }
@@ -414,9 +414,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,12 +427,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                             Expanded(
                               child: Text(
                                 item['title'],
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                             ),
                             Text(
                               item['date'] ?? 'Hôm nay',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF5A57FF), fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -442,11 +442,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                           children: [
                             Text(
                               '${item['studentsCount']} sinh viên',
-                              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                             ),
                             Text(
                               item['time'] ?? 'Slot 1',
-                              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                             ),
                           ],
                         ),
@@ -468,7 +468,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF0F172A),
               ),
             ),
           ),
@@ -482,7 +482,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 icon: Icons.add_circle_outline,
                 title: 'Tạo lớp học mới',
                 subtitle: 'Khởi tạo lớp học mới và phân nhóm sinh viên',
-                color: const Color(0xFF5A57FF),
+                color: const Color(0xFF7EC07E),
                 onTap: _navigateToCreateClass,
               ),
               const SizedBox(height: 10),
@@ -490,7 +490,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 icon: Icons.assignment_turned_in_outlined,
                 title: 'Chấm điểm hoạt động',
                 subtitle: 'Đánh giá các milestone và bài tập của sinh viên',
-                color: const Color(0xFFD946EF),
+                color: const Color(0xFF7EC07E),
                 onTap: () => _onItemTapped(2),
               ),
               const SizedBox(height: 30),
@@ -505,20 +505,20 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
       ),
       child: Column(
         children: [
           Text(
             value,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.5)),
+            style: TextStyle(fontSize: 13, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
           ),
         ],
       ),
@@ -544,12 +544,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 const Text(
                   'Quản lý lớp học',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 ElevatedButton(
                   onPressed: _navigateToCreateClass,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E8EFF),
+                    backgroundColor: const Color(0xFF7EC07E),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -558,7 +558,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   ),
                   child: const Text(
                     'Tạo lớp',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ),
               ],
@@ -577,9 +577,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm lớp học',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.4), size: 20),
-                fillColor: const Color(0xFF1E293B),
+                hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: const Color(0xFF0F172A).withValues(alpha: 0.4), size: 20),
+                fillColor: const Color(0xFFFFFFFF),
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -601,7 +601,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       padding: EdgeInsets.all(40.0),
                       child: Text(
                         'Không tìm thấy lớp học nào',
-                        style: TextStyle(color: Colors.white54),
+                        style: TextStyle(color: Color(0xFF64748B)),
                       ),
                     ),
                   );
@@ -613,7 +613,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 final String displaySemester = item['semester'];
                 final String displayType = item['type'];
                 final int displayCount = item['studentsCount'];
-                final Color displayColor = item['color'] ?? const Color(0xFF5A57FF);
+                final Color displayColor = item['color'] ?? const Color(0xFF7EC07E);
                 
                 final String shorthand = displayTitle.split(' ').first;
 
@@ -644,9 +644,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     margin: const EdgeInsets.only(bottom: 14),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -681,7 +681,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: Color(0xFF0F172A),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -691,7 +691,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                     displayType,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white.withValues(alpha: 0.4),
+                                      color: const Color(0xFF0F172A).withValues(alpha: 0.4),
                                     ),
                                   ),
                                 ],
@@ -707,22 +707,22 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                               '$displayCount sinh viên',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.5),
                               ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.06),
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                                border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                               ),
                               child: Text(
                                 displaySemester,
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Color(0xFF0F172A),
                                 ),
                               ),
                             ),
@@ -762,12 +762,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           children: [
             const Text(
               'Quản lý hoạt động',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
             ElevatedButton(
               onPressed: _navigateToCreateActivity,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E8EFF),
+                backgroundColor: const Color(0xFF7EC07E),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -775,7 +775,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               ),
               child: const Text(
                 'Tạo mới',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
             ),
           ],
@@ -783,12 +783,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         const SizedBox(height: 18),
         TextField(
           onChanged: (val) => setState(() => _activitySearchQuery = val),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             hintText: 'Tìm kiếm hoạt động',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-            suffixIcon: const Icon(Icons.search, color: Color(0xFF2E8EFF), size: 20),
-            fillColor: const Color(0xFF1E293B),
+            hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
+            suffixIcon: const Icon(Icons.search, color: Color(0xFF7EC07E), size: 20),
+            fillColor: const Color(0xFFFFFFFF),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -803,7 +803,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               padding: EdgeInsets.only(top: 40.0),
               child: Text(
                 'Không tìm thấy hoạt động nào',
-                style: TextStyle(color: Colors.white38),
+                style: TextStyle(color: Color(0xFF94A3B8)),
               ),
             ),
           )
@@ -837,12 +837,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           children: [
             const Text(
               'Quản lý Dự án',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
             ElevatedButton(
               onPressed: _navigateToCreateProject,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E8EFF),
+                backgroundColor: const Color(0xFF7EC07E),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -850,7 +850,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               ),
               child: const Text(
                 'Thêm dự án',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
             ),
           ],
@@ -858,12 +858,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         const SizedBox(height: 18),
         TextField(
           onChanged: (val) => setState(() => _projectSearchQuery = val),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             hintText: 'Tìm kiếm dự án',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-            suffixIcon: const Icon(Icons.search, color: Color(0xFF2E8EFF), size: 20),
-            fillColor: const Color(0xFF1E293B),
+            hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
+            suffixIcon: const Icon(Icons.search, color: Color(0xFF7EC07E), size: 20),
+            fillColor: const Color(0xFFFFFFFF),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -878,7 +878,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               padding: EdgeInsets.only(top: 40.0),
               child: Text(
                 'Không tìm thấy dự án nào',
-                style: TextStyle(color: Colors.white38),
+                style: TextStyle(color: Color(0xFF94A3B8)),
               ),
             ),
           )
@@ -927,9 +927,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -940,19 +940,19 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E8EFF).withValues(alpha: 0.12),
+                    color: const Color(0xFF7EC07E).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     classCode,
-                    style: const TextStyle(color: Color(0xFF2E8EFF), fontSize: 11, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Color(0xFF7EC07E), fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -963,15 +963,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 Text(
                   group,
-                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
                 ),
                 Text(
                   members,
-                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
                 ),
                 Text(
                   date,
-                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
                 ),
               ],
             ),
@@ -1014,9 +1014,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1026,16 +1026,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E8EFF).withValues(alpha: 0.12),
+                    color: const Color(0xFF7EC07E).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.assignment, color: Color(0xFF2E8EFF), size: 20),
+                  child: const Icon(Icons.assignment, color: Color(0xFF7EC07E), size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
                   ),
                 ),
               ],
@@ -1046,18 +1046,18 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 Text(
                   submissions,
-                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E8EFF).withValues(alpha: 0.15),
+                    color: const Color(0xFF7EC07E).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF2E8EFF).withValues(alpha: 0.3)),
+                    border: Border.all(color: const Color(0xFF7EC07E).withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     className,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF8F8DFF)),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
                   ),
                 ),
               ],
@@ -1081,9 +1081,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
         ),
         child: Row(
           children: [
@@ -1102,17 +1102,17 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+                    style: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.4), fontSize: 11),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+            Icon(Icons.chevron_right, color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
           ],
         ),
       ),

@@ -54,26 +54,26 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: const Color(0xFFFFFFFF),
           title: Text(
             'Chấm điểm: ${submission['name']}',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
           ),
           content: TextField(
             controller: scoreController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Color(0xFF0F172A)),
             decoration: InputDecoration(
               hintText: 'Nhập điểm (0 - 10)',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-              fillColor: const Color(0xFF0F172A),
+              hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+              fillColor: const Color(0xFFF8FAFC),
               filled: true,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+              child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
             ),
             ElevatedButton(
               onPressed: () {
@@ -113,7 +113,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final percentage = totalStudents > 0 ? (submittedStudents / totalStudents * 100).toInt() : 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -130,16 +130,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E8EFF),
+                        color: const Color(0xFF7EC07E),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
                     ),
                   ),
                   const SizedBox(width: 14),
                   const Text(
                     'Chi tiết hoạt động',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -160,17 +160,17 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           children: [
                             Text(
                               _activityTitle,
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             if (widget.className != null && widget.className!.isNotEmpty) ...[
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  const Icon(Icons.school, color: Color(0xFF2E8EFF), size: 16),
+                                  const Icon(Icons.school, color: Color(0xFF7EC07E), size: 16),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Lớp nhận hoạt động: ${widget.className}',
-                                    style: const TextStyle(fontSize: 14, color: Color(0xFF8F8DFF), fontWeight: FontWeight.w600),
+                                    style: const TextStyle(fontSize: 14, color: Color(0xFF7EC07E), fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
@@ -199,12 +199,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2E8EFF),
+                                  color: const Color(0xFF7EC07E),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: const Text(
                                   'Chỉnh sửa',
-                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -219,13 +219,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Text(
                       'Hạn nộp: $_deadline',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -233,9 +233,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,11 +245,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           children: [
                             const Text(
                               'Tiến độ',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             Text(
                               '$submittedStudents/$totalStudents',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                           ],
                         ),
@@ -258,15 +258,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: totalStudents > 0 ? submittedStudents / totalStudents : 0,
-                            backgroundColor: Colors.white.withValues(alpha: 0.08),
-                            color: const Color(0xFF2E8EFF),
+                            backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                            color: const Color(0xFF7EC07E),
                             minHeight: 8,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '$percentage% sinh viên đã hoàn thành',
-                          style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                          style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                         ),
                       ],
                     ),
@@ -275,7 +275,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
                   const Text(
                     'Danh sách bài nộp',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
 
@@ -309,18 +309,18 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: isSubmitted ? const Color(0xFF2E8EFF).withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.06),
+                              backgroundColor: isSubmitted ? const Color(0xFF7EC07E).withValues(alpha: 0.12) : const Color(0xFF0F172A).withValues(alpha: 0.06),
                               radius: 18,
                               child: Icon(
                                 isSubmitted ? Icons.check_circle_outline : Icons.pending_outlined,
-                                color: isSubmitted ? const Color(0xFF2E8EFF) : Colors.white24,
+                                color: isSubmitted ? const Color(0xFF7EC07E) : Colors.white24,
                                 size: 20,
                               ),
                             ),
@@ -331,7 +331,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 children: [
                                   Text(
                                     submission['name'],
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
@@ -349,14 +349,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF5A57FF).withValues(alpha: 0.12),
+                                    color: const Color(0xFF7EC07E).withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     '${submission['score']} đ',
                                     style: const TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFF8F8DFF),
+                                      color: Color(0xFF7EC07E),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -366,7 +366,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               ElevatedButton(
                                 onPressed: () => _showGradeDialog(index),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF5A57FF),
+                                  backgroundColor: const Color(0xFF7EC07E),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   minimumSize: Size.zero,
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -376,13 +376,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 ),
                                 child: Text(
                                   hasScore ? 'Sửa' : 'Chấm',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                 ),
                               ),
                             ] else ...[
                               const Text(
                                 '-',
-                                style: TextStyle(color: Colors.white24, fontSize: 16),
+                                style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 16),
                               ),
                             ],
                           ],

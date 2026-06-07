@@ -109,9 +109,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       case NotificationType.grade:
         return Colors.greenAccent;
       case NotificationType.announcement:
-        return const Color(0xFFD946EF); // Magenta
+        return const Color(0xFF7EC07E); // Magenta
       case NotificationType.assignment:
-        return const Color(0xFF5A57FF); // Violet
+        return const Color(0xFF7EC07E); // Violet
     }
   }
 
@@ -120,20 +120,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final hasUnread = _notifications.any((item) => !item.isRead);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: widget.showBackButton
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A)),
                 onPressed: () => Navigator.of(context).pop(),
               )
             : null,
         automaticallyImplyLeading: widget.showBackButton,
         title: const Text(
           'Thông báo',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
         ),
         actions: [
           if (_notifications.isNotEmpty && hasUnread)
@@ -142,7 +142,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               child: const Text(
                 'Đọc tất cả',
                 style: TextStyle(
-                  color: Color(0xFF8F8DFF),
+                  color: Color(0xFF7EC07E),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -163,7 +163,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),
                     color: Colors.redAccent.withOpacity(0.8),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(Icons.delete, color: Color(0xFF0F172A)),
                   ),
                   direction: DismissDirection.endToStart,
                   onDismissed: (_) => _deleteNotification(index),
@@ -174,20 +174,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: item.isRead 
-                            ? const Color(0xFF1E293B).withOpacity(0.6) 
-                            : const Color(0xFF1E293B),
+                            ? const Color(0xFFFFFFFF).withOpacity(0.6) 
+                            : const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: item.isRead 
-                              ? Colors.white.withOpacity(0.02)
-                              : const Color(0xFF5A57FF).withOpacity(0.2),
+                              ? const Color(0xFF0F172A).withOpacity(0.02)
+                              : const Color(0xFF7EC07E).withOpacity(0.2),
                           width: 1.2,
                         ),
                         boxShadow: item.isRead 
                             ? [] 
                             : [
                                 BoxShadow(
-                                  color: const Color(0xFF5A57FF).withOpacity(0.05),
+                                  color: const Color(0xFF7EC07E).withOpacity(0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 )
@@ -229,7 +229,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                               ? FontWeight.w500 
                                               : FontWeight.bold,
                                           color: item.isRead 
-                                              ? Colors.white.withOpacity(0.7) 
+                                              ? const Color(0xFF0F172A).withOpacity(0.7) 
                                               : Colors.white,
                                         ),
                                       ),
@@ -242,7 +242,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                         height: 8,
                                         decoration: const BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: Color(0xFF5A57FF),
+                                          color: Color(0xFF7EC07E),
                                         ),
                                       ),
                                   ],
@@ -253,8 +253,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: item.isRead 
-                                        ? Colors.white.withOpacity(0.4) 
-                                        : Colors.white.withOpacity(0.7),
+                                        ? const Color(0xFF0F172A).withOpacity(0.4) 
+                                        : const Color(0xFF0F172A).withOpacity(0.7),
                                     height: 1.3,
                                   ),
                                 ),
@@ -263,7 +263,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   item.timeAgo,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white.withOpacity(0.3),
+                                    color: const Color(0xFF0F172A).withOpacity(0.3),
                                   ),
                                 ),
                               ],
@@ -288,12 +288,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.03),
+              color: const Color(0xFF0F172A).withOpacity(0.03),
             ),
             child: Icon(
               Icons.notifications_off_outlined,
               size: 70,
-              color: Colors.white.withOpacity(0.2),
+              color: const Color(0xFF0F172A).withOpacity(0.2),
             ),
           ),
           const SizedBox(height: 20),
@@ -302,7 +302,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF0F172A),
             ),
           ),
           const SizedBox(height: 8),
@@ -310,7 +310,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             'Tất cả thông báo mới sẽ xuất hiện tại đây.',
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.4),
+              color: const Color(0xFF0F172A).withOpacity(0.4),
             ),
           ),
         ],

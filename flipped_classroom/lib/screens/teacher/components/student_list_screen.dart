@@ -121,7 +121,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -135,16 +135,16 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E8EFF),
+                        color: const Color(0xFF7EC07E),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
                     ),
                   ),
                   const SizedBox(width: 14),
                   const Text(
                     'Danh sách sinh viên',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -155,12 +155,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               child: TextField(
                 onChanged: (val) => setState(() => _searchQuery = val),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Tìm kiếm sinh viên',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-                  suffixIcon: Icon(Icons.search, color: const Color(0xFF2E8EFF), size: 20),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
+                  suffixIcon: Icon(Icons.search, color: const Color(0xFF7EC07E), size: 20),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -176,7 +176,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   ? Center(
                       child: Text(
                         'Không tìm thấy sinh viên nào',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+                        style: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.4), fontSize: 14),
                       ),
                     )
                   : ListView.builder(
@@ -214,9 +214,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                             ),
                             child: Row(
                               children: [
@@ -226,13 +226,13 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   height: 44,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white30, width: 1.5),
+                                    border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
                                     initials,
                                     style: const TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFF0F172A),
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
@@ -245,24 +245,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                     children: [
                                       Text(
                                         name,
-                                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         email,
-                                        style: const TextStyle(fontSize: 12, color: Colors.white38),
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                                       ),
                                       const SizedBox(height: 8),
                                       Row(
                                         children: [
                                           Text(
                                             'Tiến độ: $progress%',
-                                            style: const TextStyle(fontSize: 11, color: Colors.white70),
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF334155)),
                                           ),
                                           const SizedBox(width: 16),
                                           Text(
                                             'Submissions: $submissions',
-                                            style: const TextStyle(fontSize: 11, color: Colors.white70),
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF334155)),
                                           ),
                                         ],
                                       ),

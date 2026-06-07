@@ -171,13 +171,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   context: context,
                   builder: (ctx) {
                     return AlertDialog(
-                      backgroundColor: const Color(0xFF1E293B),
+                      backgroundColor: const Color(0xFFFFFFFF),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       title: const Text(
                         'Chọn file từ thiết bị',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       content: SizedBox(
                         width: double.maxFinite,
@@ -187,9 +187,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           itemBuilder: (c, idx) {
                             final f = mockFiles[idx];
                             return ListTile(
-                              leading: const Icon(Icons.insert_drive_file, color: Color(0xFF2E8EFF)),
-                              title: Text(f['name']!, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                              subtitle: Text(f['size']!, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                              leading: const Icon(Icons.insert_drive_file, color: Color(0xFF7EC07E)),
+                              title: Text(f['name']!, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14)),
+                              subtitle: Text(f['size']!, style: const TextStyle(color: Color(0xFF475569), fontSize: 12)),
                               onTap: () => Navigator.of(ctx).pop(f),
                             );
                           },
@@ -211,29 +211,29 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               }
 
               return AlertDialog(
-                backgroundColor: const Color(0xFF1E293B),
+                backgroundColor: const Color(0xFFFFFFFF),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 title: const Text(
                   'Tải lên tài liệu',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Tên tài liệu *', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text('Tên tài liệu *', style: TextStyle(color: Color(0xFF334155), fontSize: 12)),
                       const SizedBox(height: 6),
                       TextField(
                         controller: titleController,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                         decoration: InputDecoration(
-                          fillColor: const Color(0xFF0F172A),
+                          fillColor: const Color(0xFFF8FAFC),
                           filled: true,
                           hintText: 'Nhập tên hiển thị của tài liệu...',
-                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                          hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -241,7 +241,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Tập tin đính kèm *', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text('Tập tin đính kèm *', style: TextStyle(color: Color(0xFF334155), fontSize: 12)),
                       const SizedBox(height: 6),
                       GestureDetector(
                         onTap: simulateFilePicker,
@@ -249,10 +249,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A),
+                            color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: selectedFileName != null ? const Color(0xFF2E8EFF) : Colors.white.withValues(alpha: 0.1),
+                              color: selectedFileName != null ? const Color(0xFF7EC07E) : const Color(0xFF0F172A).withValues(alpha: 0.1),
                               style: BorderStyle.solid,
                             ),
                           ),
@@ -260,7 +260,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                             children: [
                               Icon(
                                 selectedFileName != null ? Icons.check_circle : Icons.cloud_upload_outlined,
-                                color: selectedFileName != null ? const Color(0xFF22C55E) : const Color(0xFF2E8EFF),
+                                color: selectedFileName != null ? const Color(0xFF22C55E) : const Color(0xFF7EC07E),
                                 size: 32,
                               ),
                               const SizedBox(height: 8),
@@ -277,7 +277,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   'Dung lượng: $selectedFileSize',
-                                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                                 ),
                               ],
                             ],
@@ -290,7 +290,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+                    child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -324,7 +324,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF22C55E),
                     ),
-                    child: const Text('Tải lên', style: TextStyle(color: Colors.white)),
+                    child: const Text('Tải lên', style: TextStyle(color: Color(0xFF0F172A))),
                   ),
                 ],
               );
@@ -339,7 +339,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -355,17 +355,17 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.08)),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
                     ),
                   ),
                   const SizedBox(width: 14),
                   const Text(
                     'Chi tiết lớp học',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -382,7 +382,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                       Expanded(
                         child: Text(
                           _className,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ),
                       ElevatedButton(
@@ -410,7 +410,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5A57FF),
+                          backgroundColor: const Color(0xFF7EC07E),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -418,7 +418,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         ),
                         child: const Text(
                           'Chỉnh sửa lớp',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ),
                     ],
@@ -428,9 +428,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -440,17 +440,17 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           children: [
                             Text(
                               'Mã lớp học',
-                              style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                              style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _classCode,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                           ],
                         ),
                         IconButton(
-                          icon: const Icon(Icons.copy, color: Color(0xFF5A57FF), size: 20),
+                          icon: const Icon(Icons.copy, color: Color(0xFF7EC07E), size: 20),
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: _classCode));
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -484,25 +484,25 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                             ),
                             child: Column(
                               children: [
                                 Text(
                                   'Tổng sinh viên',
-                                  style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                                  style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   '${widget.studentsCount}',
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
                                   'Xem danh sách',
-                                  style: TextStyle(fontSize: 10, color: Color(0xFF8F8DFF), fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontSize: 10, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -514,25 +514,25 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
+                            color: const Color(0xFFFFFFFF),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                            border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                           ),
                           child: Column(
                             children: [
                               Text(
                                 'Học kỳ',
-                                style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                                style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                               ),
                               const SizedBox(height: 6),
                               const Text(
                                 'HK1 2026',
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Kỳ hiện tại',
-                                style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.3)),
+                                style: TextStyle(fontSize: 10, color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
                               ),
                             ],
                           ),
@@ -553,25 +553,25 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     children: [
                       Text(
                         'Danh sách ${_currentTab.toLowerCase()}',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.5)),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
                       ),
                       ElevatedButton.icon(
                         onPressed: _handleCreateNew,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5A57FF),
+                          backgroundColor: const Color(0xFF7EC07E),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        icon: Icon(_currentTab == 'Tài liệu' ? Icons.upload : Icons.add, size: 14, color: Colors.white),
+                        icon: Icon(_currentTab == 'Tài liệu' ? Icons.upload : Icons.add, size: 14, color: const Color(0xFF0F172A)),
                         label: Text(
                           _currentTab == 'Tài liệu'
                               ? 'Tải lên'
                               : _currentTab == 'Dự án'
                                   ? 'Thêm dự án'
                                   : 'Tạo mới',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ),
                     ],
@@ -591,7 +591,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: const Color(0xFF0F172A).withValues(alpha: 0.06),
               width: 1.2,
             ),
           ),
@@ -602,9 +602,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             Navigator.of(context).pop(index);
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF1E293B),
-          selectedItemColor: const Color(0xFF5A57FF),
-          unselectedItemColor: Colors.white.withValues(alpha: 0.4),
+          backgroundColor: const Color(0xFFFFFFFF),
+          selectedItemColor: const Color(0xFF7EC07E),
+          unselectedItemColor: const Color(0xFF0F172A).withValues(alpha: 0.4),
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
@@ -650,13 +650,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
       ),
       child: Text(
         scheduleText,
-        style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -676,16 +676,16 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             margin: const EdgeInsets.only(right: 12),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF5A57FF) : const Color(0xFF1E293B),
+              color: isActive ? const Color(0xFF7EC07E) : const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isActive ? Colors.transparent : Colors.white.withValues(alpha: 0.04)),
+              border: Border.all(color: isActive ? Colors.transparent : const Color(0xFF0F172A).withValues(alpha: 0.04)),
             ),
             child: Text(
               tab,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                color: isActive ? Colors.white : const Color(0xFF0F172A).withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -699,19 +699,19 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: const Color(0xFFFFFFFF),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           title: const Text(
             'Bạn có chắc chắn muốn xóa?',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
           ),
           content: const Text(
             'Tài liệu này sẽ bị xóa vĩnh viễn khỏi lớp học.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+            style: TextStyle(color: Color(0xFF334155), fontSize: 13),
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
@@ -726,7 +726,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               ),
               child: const Text(
                 'Hủy',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(width: 8),
@@ -752,7 +752,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               ),
               child: const Text(
                 'Xác nhận',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -782,16 +782,16 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   act['title'],
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -799,23 +799,23 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   children: [
                     Text(
                       act['submissions'],
-                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                      style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E8EFF).withValues(alpha: 0.15),
+                        color: const Color(0xFF7EC07E).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF2E8EFF).withValues(alpha: 0.3)),
+                        border: Border.all(color: const Color(0xFF7EC07E).withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         _className,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF8F8DFF)),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
                       ),
                     ),
                     Text(
                       act['date'],
-                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                      style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                     ),
                   ],
                 ),
@@ -830,13 +830,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E293B),
+            color: const Color(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+            border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.insert_drive_file, color: Color(0xFFD946EF), size: 24),
+              const Icon(Icons.insert_drive_file, color: Color(0xFF7EC07E), size: 24),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -844,18 +844,18 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   children: [
                     Text(
                       doc['title'],
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${doc['size']} • ${doc['date']}',
-                      style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                      style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.download_for_offline, color: Color(0xFF5A57FF), size: 22),
+                icon: const Icon(Icons.download_for_offline, color: Color(0xFF7EC07E), size: 22),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -906,16 +906,16 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   proj['title'],
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -923,11 +923,11 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   children: [
                     Text(
                       group,
-                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                      style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                     ),
                     Text(
                       date,
-                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                      style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                     ),
                   ],
                 ),

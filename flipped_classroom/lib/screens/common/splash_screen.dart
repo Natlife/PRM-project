@@ -67,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF0F172A), // Slate 900
+              Color(0xFFF8FAFC), // Slate 900
               Color(0xFF1E1B4B), // Indigo 950
               Color(0xFF311042), // Dark violet
             ],
@@ -87,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   height: 300,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF5A57FF).withOpacity(0.15),
+                    color: const Color(0xFF7EC07E).withOpacity(0.15),
                   ),
                 ),
               ),
@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   height: 250,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFD946EF).withOpacity(0.1),
+                    color: const Color(0xFF7EC07E).withOpacity(0.1),
                   ),
                 ),
               ),
@@ -127,13 +127,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF5A57FF), Color(0xFFD946EF)],
+                            colors: [Color(0xFF7EC07E), Color(0xFF7EC07E)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF5A57FF).withOpacity(0.4),
+                              color: const Color(0xFF7EC07E).withOpacity(0.4),
                               blurRadius: 25,
                               offset: const Offset(0, 10),
                             ),
@@ -142,7 +142,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         child: const Icon(
                           Icons.auto_stories, // Modern open book icon
                           size: 55,
-                          color: Colors.white,
+                          color: Color(0xFFF8FAFC),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -152,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Color(0xFFF8FAFC),
                           letterSpacing: 3,
                           shadows: [
                             Shadow(
@@ -170,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
-                          color: Colors.white.withOpacity(0.6),
+                          color: const Color(0xFF475569),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -192,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          const Color(0xFF5A57FF).withOpacity(0.8),
+                          const Color(0xFF7EC07E),
                         ),
                       ),
                     ),
@@ -201,7 +201,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       'Đang khởi tạo ứng dụng...',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.4),
+                        color: const Color(0xFF64748B),
                         letterSpacing: 1.0,
                       ),
                     ),

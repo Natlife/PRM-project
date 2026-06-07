@@ -33,7 +33,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       'title': 'Thực hành Lab 2',
       'date': '22/03/2026',
       'status': 'Chưa chấm',
-      'statusColor': Color(0xFF5A57FF),
+      'statusColor': const Color(0xFF7EC07E),
       'score': null,
       'submitted': true,
     },
@@ -54,7 +54,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     final totalCount = _activitiesList.length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -68,16 +68,16 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E8EFF),
+                        color: const Color(0xFF7EC07E),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
                     ),
                   ),
                   const SizedBox(width: 14),
                   const Text(
                     'Chi tiết sinh viên',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -91,12 +91,12 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   // Student name & email identity text
                   Text(
                     widget.studentName,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     widget.studentEmail,
-                    style: const TextStyle(fontSize: 14, color: Colors.white54),
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 20),
 
@@ -104,9 +104,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,11 +116,11 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                           children: [
                             const Text(
                               'Tiến độ',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                             Text(
                               '$completedCount/$totalCount',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
                           ],
                         ),
@@ -129,15 +129,15 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
                             value: totalCount > 0 ? completedCount / totalCount : 0,
-                            backgroundColor: Colors.white.withValues(alpha: 0.08),
-                            color: const Color(0xFF2E8EFF),
+                            backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                            color: const Color(0xFF7EC07E),
                             minHeight: 8,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '${widget.progressPercentage}% hoạt động đã được hoàn thành',
-                          style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                          style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                         ),
                       ],
                     ),
@@ -146,7 +146,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
 
                   const Text(
                     'Danh sách bài nộp',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
 
@@ -180,9 +180,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -192,12 +192,12 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                               children: [
                                 Text(
                                   activity['title'],
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   isSubmitted ? 'Nộp ngày: ${activity['date']}' : 'Chưa nộp bài',
-                                  style: const TextStyle(fontSize: 11, color: Colors.white38),
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                 ),
                               ],
                             ),

@@ -74,7 +74,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       case 'Hoàn thành':
         return const Color(0xFF22C55E);
       case 'Đang thực hiện':
-        return const Color(0xFF2E8EFF);
+        return const Color(0xFF7EC07E);
       default:
         return const Color(0xFF94A3B8);
     }
@@ -97,9 +97,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: const Color(0xFFFFFFFF),
           elevation: 0,
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -107,16 +107,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               onTap: () => Navigator.of(context).pop(_projectData),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E8EFF),
+                  color: const Color(0xFF7EC07E),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
               ),
             ),
           ),
           title: const Text(
             'Chi tiết dự án',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
           ),
         ),
         body: SingleChildScrollView(
@@ -127,13 +127,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
               if (group.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
                   group,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF8F8DFF), fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
                 ),
               ],
               const SizedBox(height: 18),
@@ -141,7 +141,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 child: ElevatedButton(
                   onPressed: _navigateToEditProject,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E8EFF),
+                    backgroundColor: const Color(0xFF7EC07E),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -149,7 +149,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   ),
                   child: const Text(
                     'Chỉnh sửa',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ),
               ),
@@ -161,25 +161,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                       ),
                       child: Column(
                         children: [
                           Text(
                             'Số lượng sinh viên',
-                            style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                            style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             members.isNotEmpty ? members.replaceAll(' sinh viên', '') : '3',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 4),
                           const Text(
                             'Thành viên',
-                            style: TextStyle(fontSize: 10, color: Color(0xFF8F8DFF), fontWeight: FontWeight.bold),
+                            style: TextStyle(fontSize: 10, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -190,27 +190,27 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                       ),
                       child: Column(
                         children: [
                           Text(
                             'Hạn nộp',
-                            style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                            style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             date,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Ngày hoàn thành',
-                            style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.3)),
+                            style: TextStyle(fontSize: 10, color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
                           ),
                         ],
                       ),
@@ -225,21 +225,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 children: [
                   const Text(
                     'Milestone',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   ElevatedButton.icon(
                     onPressed: _navigateToCreateMilestone,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E8EFF),
+                      backgroundColor: const Color(0xFF7EC07E),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    icon: const Icon(Icons.add, size: 14, color: Colors.white),
+                    icon: const Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
                     label: const Text(
                       'thêm',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ),
                 ],
@@ -252,7 +252,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     padding: EdgeInsets.all(40.0),
                     child: Text(
                       'Chưa có milestone nào',
-                      style: TextStyle(color: Colors.white38),
+                      style: TextStyle(color: Color(0xFF94A3B8)),
                     ),
                   ),
                 )
@@ -290,16 +290,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               mTitle,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -307,7 +307,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                               children: [
                                 Text(
                                   mDate,
-                                  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

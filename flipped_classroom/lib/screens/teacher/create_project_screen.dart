@@ -60,9 +60,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF5A57FF),
+              primary: Color(0xFF7EC07E),
               onPrimary: Colors.white,
-              surface: Color(0xFF1E293B),
+              surface: Color(0xFFFFFFFF),
               onSurface: Colors.white,
             ),
           ),
@@ -134,17 +134,17 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Tạo dự án mới',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
       ),
       body: SingleChildScrollView(
@@ -157,7 +157,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             children: [
               const Text(
                 'Lớp học *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               if (widget.fixedClass != null)
@@ -165,22 +165,22 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                    color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.05)),
                   ),
                   child: Text(
                     widget.fixedClass!,
-                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 )
               else
                 DropdownButtonFormField<String>(
-                  value: _selectedClass,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white),
+                  initialValue: _selectedClass,
+                  dropdownColor: const Color(0xFFFFFFFF),
+                  style: const TextStyle(color: Color(0xFF0F172A)),
                   decoration: InputDecoration(
-                    fillColor: const Color(0xFF1E293B),
+                    fillColor: const Color(0xFFFFFFFF),
                     filled: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -205,16 +205,16 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
               const Text(
                 'Tên dự án *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _projectNameController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Nhập tên dự án',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -232,16 +232,16 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
               const Text(
                 'Tên nhóm',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _groupNameController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Nhập tên nhóm (ví dụ: Nhóm 1)',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -253,19 +253,19 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
               const Text(
                 'Hạn nộp *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _deadlineController,
                 readOnly: true,
                 onTap: () => _selectDate(context),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Chọn ngày hạn nộp',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70, size: 18),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF334155), size: 18),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -283,15 +283,15 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
               const Text(
                 'Nhóm trưởng',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedLeader,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(color: Colors.white),
+                initialValue: _selectedLeader,
+                dropdownColor: const Color(0xFFFFFFFF),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  fillColor: const Color(0xFF1E293B),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -313,32 +313,32 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 children: [
                   const Text(
                     'Thành viên',
-                    style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   ElevatedButton.icon(
                     onPressed: _addMember,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E8EFF),
+                      backgroundColor: const Color(0xFF7EC07E),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    icon: const Icon(Icons.add, size: 14, color: Colors.white),
+                    icon: const Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
                     label: const Text(
                       'Thêm',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedMemberDropdown,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(color: Colors.white),
+                initialValue: _selectedMemberDropdown,
+                dropdownColor: const Color(0xFFFFFFFF),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  fillColor: const Color(0xFF1E293B),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -361,9 +361,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                    border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                   ),
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -378,7 +378,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                           children: [
                             Text(
                               member,
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                             ),
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFEC4899), size: 20),
@@ -408,7 +408,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                       ),
                       child: const Text(
                         'Hủy',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
                   ),
@@ -425,7 +425,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                       ),
                       child: const Text(
                         'Tạo mới',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
                   ),

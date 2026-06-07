@@ -63,9 +63,9 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF5A57FF),
+              primary: Color(0xFF7EC07E),
               onPrimary: Colors.white,
-              surface: Color(0xFF1E293B),
+              surface: Color(0xFFFFFFFF),
               onSurface: Colors.white,
             ),
           ),
@@ -116,17 +116,17 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Chỉnh sửa mốc thời gian',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
       ),
       body: SingleChildScrollView(
@@ -139,16 +139,16 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
             children: [
               const Text(
                 'Tên mốc',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _titleController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Nhập tên mốc thời gian',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -166,19 +166,19 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
 
               const Text(
                 'Hạn hoàn thành',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _deadlineController,
                 readOnly: true,
                 onTap: () => _selectDate(context),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Chọn ngày hạn hoàn thành',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  prefixIcon: const Icon(Icons.calendar_today, color: Colors.white70, size: 18),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF334155), size: 18),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -196,15 +196,15 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
 
               const Text(
                 'Trạng thái',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedStatus,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(color: Colors.white),
+                initialValue: _selectedStatus,
+                dropdownColor: const Color(0xFFFFFFFF),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  fillColor: const Color(0xFF1E293B),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -229,21 +229,21 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
                 children: [
                   const Text(
                     'Hoạt động',
-                    style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   ElevatedButton.icon(
                     onPressed: _addActivity,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E8EFF),
+                      backgroundColor: const Color(0xFF7EC07E),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    icon: const Icon(Icons.add, size: 14, color: Colors.white),
+                    icon: const Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
                     label: const Text(
                       'Thêm',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ),
                 ],
@@ -251,11 +251,11 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _activityInputController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Nhập hoạt động để thêm',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -271,9 +271,9 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                    border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                   ),
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -289,7 +289,7 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
                             Expanded(
                               child: Text(
                                 act['title'] ?? '',
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                               ),
                             ),
                             IconButton(
@@ -320,7 +320,7 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
                       ),
                       child: const Text(
                         'Hủy',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
                   ),
@@ -337,7 +337,7 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
                       ),
                       child: const Text(
                         'Lưu',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
                   ),

@@ -69,7 +69,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
       case 'Hoàn thành':
         return const Color(0xFF22C55E);
       case 'Đang thực hiện':
-        return const Color(0xFF2E8EFF);
+        return const Color(0xFF7EC07E);
       default:
         return const Color(0xFF94A3B8);
     }
@@ -114,9 +114,9 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
     final String date = _milestoneData['date'] ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -124,16 +124,16 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
             onTap: () => Navigator.of(context).pop(_milestoneData),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF2E8EFF),
+                color: const Color(0xFF7EC07E),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+              child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
             ),
           ),
         ),
         title: const Text(
           'Chi tiết mốc thời gian',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
       ),
       body: Column(
@@ -148,7 +148,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                   // Milestone Title Header
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 8),
                   
@@ -170,14 +170,14 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Hạn: $date',
-                            style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                            style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                           ),
                         ],
                       ),
                       ElevatedButton(
                         onPressed: _navigateToEditMilestone,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E8EFF),
+                          backgroundColor: const Color(0xFF7EC07E),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -185,7 +185,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                         ),
                         child: const Text(
                           'Chỉnh sửa',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ),
                     ],
@@ -195,14 +195,14 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                   // Activities
                   Text(
                     'Hoạt động (${activities.length})',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
                   if (activities.isEmpty)
                     const Center(
                       child: Text(
                         'Chưa có hoạt động nào',
-                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       ),
                     )
                   else
@@ -213,9 +213,9 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -223,7 +223,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                             Expanded(
                               child: Text(
                                 actTitle,
-                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                             ),
                             Text(
@@ -239,14 +239,14 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                   // Evidence
                   const Text(
                     'Evidence',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
                   if (evidences.isEmpty)
                     const Center(
                       child: Text(
                         'Chưa tải lên minh chứng nào',
-                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       ),
                     )
                   else
@@ -255,9 +255,9 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -265,7 +265,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                             Expanded(
                               child: Text(
                                 fName,
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -281,12 +281,12 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                  border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
                                   'Xem',
-                                  style: TextStyle(color: Colors.white, fontSize: 12),
+                                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 12),
                                 ),
                               ),
                             ),
@@ -299,14 +299,14 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                   // Comments
                   const Text(
                     'Trao đổi',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
                   if (comments.isEmpty)
                     const Center(
                       child: Text(
                         'Chưa có thảo luận nào',
-                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       ),
                     )
                   else
@@ -321,7 +321,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isTeacher ? const Color(0xFF2E8EFF) : const Color(0xFF1E293B),
+                            color: isTeacher ? const Color(0xFF7EC07E) : const Color(0xFFFFFFFF),
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(14),
                               topRight: const Radius.circular(14),
@@ -331,7 +331,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                           ),
                           child: Text(
                             text,
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                           ),
                         ),
                       );
@@ -345,9 +345,9 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: const Color(0xFFFFFFFF),
               border: Border(
-                top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+                top: BorderSide(color: const Color(0xFF0F172A).withValues(alpha: 0.05)),
               ),
             ),
             child: Row(
@@ -355,11 +355,11 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                 Expanded(
                   child: TextField(
                     controller: _commentController,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Nhập nhận xét của bạn...',
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                      fillColor: const Color(0xFF0F172A),
+                      hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                      fillColor: const Color(0xFFF8FAFC),
                       filled: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -372,7 +372,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                 ),
                 const SizedBox(width: 10),
                 IconButton(
-                  icon: const Icon(Icons.send, color: Color(0xFF2E8EFF)),
+                  icon: const Icon(Icons.send, color: Color(0xFF7EC07E)),
                   onPressed: _sendComment,
                 ),
               ],

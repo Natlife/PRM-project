@@ -75,7 +75,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -88,16 +88,16 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E8EFF),
+                        color: const Color(0xFF7EC07E),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 16),
                     ),
                   ),
                   const SizedBox(width: 14),
                   const Text(
                     'Chi tiết bài nộp',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -113,21 +113,21 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.studentName,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Nộp bài lúc: ${widget.submittedTime}',
-                          style: const TextStyle(fontSize: 12, color: Colors.white38),
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         ),
                       ],
                     ),
@@ -139,7 +139,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     children: [
                       Text(
                         'Evidence (${_evidenceFiles.length})',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ],
                   ),
@@ -150,9 +150,9 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
                       ),
                       child: Row(
                         children: [
@@ -164,11 +164,11 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                               children: [
                                 Text(
                                   file['name']!,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                                 ),
                                 Text(
                                   file['size']!,
-                                  style: const TextStyle(fontSize: 11, color: Colors.white38),
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                 ),
                               ],
                             ),
@@ -176,7 +176,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                           OutlinedButton(
                             onPressed: () => _simulateViewFile(file['name']!),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white24),
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -186,7 +186,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                             ),
                             child: const Text(
                               'Xem',
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                              style: TextStyle(color: Color(0xFF334155), fontSize: 12),
                             ),
                           ),
                         ],
@@ -197,7 +197,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
                   const Text(
                     'Nhận xét',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
 
@@ -212,13 +212,13 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.1)),
                             ),
                             child: Text(
                               comment['content'] as String,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -226,7 +226,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 4.0),
                             child: Text(
                               '${comment['author']} • ${comment['time']}',
-                              style: const TextStyle(fontSize: 10, color: Colors.white38),
+                              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                             ),
                           ),
                         ],
@@ -241,7 +241,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: const BoxDecoration(
-                color: Color(0xFF1E293B),
+                color: Color(0xFFFFFFFF),
                 border: Border(
                   top: BorderSide(color: Colors.white12, width: 0.5),
                 ),
@@ -251,11 +251,11 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _commentController,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Nhập nhận xét của bạn...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                        fillColor: const Color(0xFF0F172A),
+                        hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                        fillColor: const Color(0xFFF8FAFC),
                         filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         border: OutlineInputBorder(
@@ -272,10 +272,10 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF2E8EFF),
+                        color: Color(0xFF7EC07E),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.send, color: Colors.white, size: 18),
+                      child: const Icon(Icons.send, color: Color(0xFF0F172A), size: 18),
                     ),
                   ),
                 ],

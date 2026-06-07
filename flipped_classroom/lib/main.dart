@@ -22,14 +22,13 @@ class MyApp extends StatelessWidget {
       // Premium Sleek Dark Theme configuration
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Slate 900
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC), // Slate 900
         
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF5A57FF),       // Electric Violet
-          secondary: Color(0xFFD946EF),     // Magenta
-          surface: Color(0xFF1E293B),       // Slate 800
-          background: Color(0xFF0F172A),    // Slate 900
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF7EC07E),
+          secondary: Color(0xFF7EC07E),
+          surface: Color(0xFFFFFFFF),
           error: Colors.redAccent,
         ),
         
@@ -37,12 +36,12 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto', // Default fallback, customizable
         
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B),
+          backgroundColor: Color(0xFF7EC07E),
           elevation: 0,
           centerTitle: true,
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: Color(0xFFF8FAFC)),
           titleTextStyle: TextStyle(
-            color: Colors.white,
+            color: Color(0xFFF8FAFC),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -50,7 +49,7 @@ class MyApp extends StatelessWidget {
         
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFF1E293B),
+          fillColor: const Color(0xFFFFFFFF),
           contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -58,7 +57,7 @@ class MyApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF5A57FF), width: 1.5),
+            borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -72,8 +71,8 @@ class MyApp extends StatelessWidget {
         
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF5A57FF),
-            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFF7EC07E),
+            foregroundColor: const Color(0xFFF8FAFC),
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -83,13 +82,13 @@ class MyApp extends StatelessWidget {
         ),
         
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) {
-              return const Color(0xFF5A57FF);
+          fillColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFF7EC07E);
             }
             return Colors.transparent;
           }),
-          side: const BorderSide(color: Colors.white30, width: 1.5),
+          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
           ),

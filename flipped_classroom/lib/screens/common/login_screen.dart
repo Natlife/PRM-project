@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Text('Đã tự động điền tài khoản: $username'),
         duration: const Duration(seconds: 1),
-        backgroundColor: const Color(0xFF5A57FF),
+        backgroundColor: const Color(0xFF7EC07E),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Slate 900
+      backgroundColor: const Color(0xFFF8FAFC), // Slate 900
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -100,13 +100,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF5A57FF), Color(0xFFD946EF)],
+                          colors: [Color(0xFF7EC07E), Color(0xFF7EC07E)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF5A57FF).withOpacity(0.3),
+                            color: const Color(0xFF7EC07E).withOpacity(0.3),
                             blurRadius: 15,
                             offset: const Offset(0, 8),
                           ),
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Icon(
                         Icons.auto_stories,
                         size: 40,
-                        color: Colors.white,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Color(0xFF0F172A),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Đăng nhập để tiếp tục học tập & giảng dạy',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.5),
+                        color: const Color(0xFF0F172A).withOpacity(0.5),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -179,19 +179,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.7),
+                        color: const Color(0xFF0F172A).withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _usernameController,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         hintText: 'Nhập tài khoản của bạn',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                        prefixIcon: Icon(Icons.person_outline, color: Colors.white.withOpacity(0.5)),
+                        hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3)),
+                        prefixIcon: Icon(Icons.person_outline, color: const Color(0xFF0F172A).withOpacity(0.5)),
                         filled: true,
-                        fillColor: const Color(0xFF1E293B), // Slate 800
+                        fillColor: const Color(0xFFFFFFFF), // Slate 800
                         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFF5A57FF), width: 1.5),
+                          borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
                         ),
                       ),
                       validator: (value) {
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.7),
+                            color: const Color(0xFF0F172A).withOpacity(0.7),
                           ),
                         ),
                         GestureDetector(
@@ -238,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF5A57FF),
+                              color: Color(0xFF7EC07E),
                             ),
                           ),
                         ),
@@ -248,15 +248,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         hintText: '••••••••',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.white.withOpacity(0.5)),
+                        hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3)),
+                        prefixIcon: Icon(Icons.lock_outline, color: const Color(0xFF0F172A).withOpacity(0.5)),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.white.withOpacity(0.5),
+                            color: const Color(0xFF0F172A).withOpacity(0.5),
                           ),
                           onPressed: () {
                             setState(() {
@@ -265,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         filled: true,
-                        fillColor: const Color(0xFF1E293B), // Slate 800
+                        fillColor: const Color(0xFFFFFFFF), // Slate 800
                         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -273,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFF5A57FF), width: 1.5),
+                          borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
                         ),
                       ),
                       validator: (value) {
@@ -293,9 +293,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 24,
                           child: Checkbox(
                             value: _rememberMe,
-                            activeColor: const Color(0xFF5A57FF),
+                            activeColor: const Color(0xFF7EC07E),
                             checkColor: Colors.white,
-                            side: BorderSide(color: Colors.white.withOpacity(0.4)),
+                            side: BorderSide(color: const Color(0xFF0F172A).withOpacity(0.4)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
                             ),
@@ -311,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Nhớ mật khẩu',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.6),
+                            color: const Color(0xFF0F172A).withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -332,14 +332,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Ink(
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF5A57FF), Color(0xFFD946EF)],
+                            colors: [Color(0xFF7EC07E), Color(0xFF7EC07E)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF5A57FF).withOpacity(0.3),
+                              color: const Color(0xFF7EC07E).withOpacity(0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -362,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Color(0xFF0F172A),
                                     letterSpacing: 1.0,
                                   ),
                                 ),
@@ -379,9 +379,9 @@ class _LoginScreenState extends State<LoginScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.05)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -395,7 +395,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.8),
+                            color: const Color(0xFF0F172A).withOpacity(0.8),
                             letterSpacing: 1.0,
                           ),
                         ),
@@ -408,17 +408,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: OutlinedButton(
                             onPressed: () => _fillMockCredentials('teacher', 'teacher123'),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF5A57FF), width: 1),
+                              side: const BorderSide(color: Color(0xFF7EC07E), width: 1),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             child: const Column(
                               children: [
-                                Icon(Icons.school_outlined, size: 20, color: Color(0xFF5A57FF)),
+                                Icon(Icons.school_outlined, size: 20, color: Color(0xFF7EC07E)),
                                 SizedBox(height: 4),
                                 Text(
                                   'Giảng viên',
-                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -429,17 +429,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: OutlinedButton(
                             onPressed: () => _fillMockCredentials('student', 'student123'),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFD946EF), width: 1),
+                              side: const BorderSide(color: Color(0xFF7EC07E), width: 1),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             child: const Column(
                               children: [
-                                Icon(Icons.face_outlined, size: 20, color: Color(0xFFD946EF)),
+                                Icon(Icons.face_outlined, size: 20, color: Color(0xFF7EC07E)),
                                 SizedBox(height: 4),
                                 Text(
                                   'Sinh viên',
-                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 12, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -452,7 +452,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Gợi ý: Hãy nhấp vào một trong các vai trò ở trên để tự điền thông tin và đăng nhập dễ dàng hơn.',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.4),
+                        color: const Color(0xFF0F172A).withOpacity(0.4),
                         fontStyle: FontStyle.italic,
                       ),
                       textAlign: TextAlign.center,

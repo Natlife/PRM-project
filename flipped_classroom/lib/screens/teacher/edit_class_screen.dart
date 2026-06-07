@@ -144,17 +144,17 @@ class _EditClassScreenState extends State<EditClassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Chỉnh sửa lớp học',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
       ),
       body: SingleChildScrollView(
@@ -167,16 +167,16 @@ class _EditClassScreenState extends State<EditClassScreen> {
             children: [
               const Text(
                 'Tên lớp học *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nameController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Nhập tên lớp học (Ví dụ: SE1904)',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -194,17 +194,17 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
               const Text(
                 'Mô tả',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descController,
                 maxLines: 2,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Mô tả lớp học',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -216,22 +216,22 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
               const Text(
                 'Kỳ học *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedSemester,
-                    dropdownColor: const Color(0xFF1E293B),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                    dropdownColor: const Color(0xFFFFFFFF),
+                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF334155)),
                     isExpanded: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
                     items: _semesters.map((sem) {
                       return DropdownMenuItem(
                         value: sem,
@@ -253,19 +253,19 @@ class _EditClassScreenState extends State<EditClassScreen> {
                 children: [
                   const Text(
                     'Ngày học *',
-                    style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   ElevatedButton(
                     onPressed: _addSchedule,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5A57FF),
+                      backgroundColor: const Color(0xFF7EC07E),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       minimumSize: Size.zero,
                     ),
-                    child: const Text('Thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                    child: const Text('Thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                   ),
                 ],
               ),
@@ -273,16 +273,16 @@ class _EditClassScreenState extends State<EditClassScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedDay,
-                    dropdownColor: const Color(0xFF1E293B),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                    dropdownColor: const Color(0xFFFFFFFF),
+                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF334155)),
                     isExpanded: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
                     items: _days.map((day) {
                       return DropdownMenuItem(
                         value: day,
@@ -301,22 +301,22 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
               const Text(
                 'Slot học *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedSlot,
-                    dropdownColor: const Color(0xFF1E293B),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                    dropdownColor: const Color(0xFFFFFFFF),
+                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF334155)),
                     isExpanded: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
                     items: _slots.map((slot) {
                       return DropdownMenuItem(
                         value: slot,
@@ -336,7 +336,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
               if (_schedulesList.isNotEmpty) ...[
                 const Text(
                   'Lịch đã chọn:',
-                  style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 ...List.generate(_schedulesList.length, (index) {
@@ -345,7 +345,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.04),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -353,7 +353,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       children: [
                         Text(
                           '${s['day']} - ${s['slot']}',
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
                         ),
                         GestureDetector(
                           onTap: () => _removeSchedule(index),
@@ -368,16 +368,16 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
               const Text(
                 'Môn học *',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _subjectController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
                   hintText: 'Nhập tên môn học (Ví dụ: Lập trình Mobile)',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFF1E293B),
+                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -395,16 +395,16 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
               const Text(
                 'Mã lớp học',
-                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.08)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -414,12 +414,12 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Color(0xFF0F172A),
                         letterSpacing: 2,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.refresh, color: Color(0xFF5A57FF), size: 20),
+                      icon: const Icon(Icons.refresh, color: Color(0xFF7EC07E), size: 20),
                       onPressed: () {
                         setState(() {
                           _classCode = _generateRandomCode();
@@ -445,7 +445,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       ),
                       child: const Text(
                         'Hủy',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
                   ),
@@ -454,7 +454,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     child: ElevatedButton(
                       onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5A57FF),
+                        backgroundColor: const Color(0xFF7EC07E),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -462,7 +462,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                       ),
                       child: const Text(
                         'Lưu',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                       ),
                     ),
                   ),
