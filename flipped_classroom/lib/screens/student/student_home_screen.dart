@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../common/profile_screen.dart';
 import '../common/notification_screen.dart';
-import 'student_classes_screen.dart';
+import 'student_class_detail_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -157,10 +157,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     // List of screens to display in tabs
     final List<Widget> pages = [
       _buildDashboardTab(),
-      StudentClassesScreen(
-        myClasses: _myClasses,
-        onJoinClassPressed: _showJoinClassDialog,
-      ),
+      _buildClassesTab(),
       _buildProjectsTab(),
       const NotificationScreen(showBackButton: false),
       const ProfileScreen(showBackButton: false),
@@ -449,63 +446,81 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF7EC07E).withOpacity(0.1),
-                            shape: BoxShape.circle,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () async {
+                        final targetIndex = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StudentClassDetailScreen(
+                              classCodeWithName: '${item['classCode']} - SE1904',
+                              className: item['className'] ?? '',
+                              instructor: item['instructor'] ?? '',
+                              semester: item['semester'] ?? 'SU26',
+                            ),
                           ),
-                          child: const Center(
-                            child: Icon(Icons.school, color: Color(0xFF7EC07E), size: 22),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item['classCode'] ?? '',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFF0F172A),
-                                ),
+                        );
+                        if (targetIndex != null && targetIndex is int) {
+                          _onItemTapped(targetIndex);
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF7EC07E).withOpacity(0.1),
+                                shape: BoxShape.circle,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item['instructor'] ?? '',
-                                style: TextStyle(
-                                  color: const Color(0xFF0F172A).withOpacity(0.5),
-                                  fontSize: 12,
-                                ),
+                              child: const Center(
+                                child: Icon(Icons.school, color: Color(0xFF7EC07E), size: 22),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item['nextSession'] ?? '',
-                                style: TextStyle(
-                                  color: const Color(0xFF0F172A).withOpacity(0.4),
-                                  fontSize: 11,
-                                  fontStyle: FontStyle.italic,
-                                ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['classCode'] ?? '',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item['instructor'] ?? '',
+                                    style: TextStyle(
+                                      color: const Color(0xFF0F172A).withOpacity(0.5),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item['nextSession'] ?? '',
+                                    style: TextStyle(
+                                      color: const Color(0xFF0F172A).withOpacity(0.4),
+                                      fontSize: 11,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-                          onPressed: () => _onItemTapped(1), // Link to Classes tab
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 );
@@ -521,7 +536,77 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
-
+  // TAB 1: CLASSES
+  Widget _buildClassesTab() {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
+              'Lớp học tham gia',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final item = _myClasses[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () async {
+                      final targetIndex = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StudentClassDetailScreen(
+                            classCodeWithName: '${item['classCode']} - SE1904',
+                            className: item['className'] ?? '',
+                            instructor: item['instructor'] ?? '',
+                            semester: item['semester'] ?? 'SU26',
+                          ),
+                        ),
+                      );
+                      if (targetIndex != null && targetIndex is int) {
+                        _onItemTapped(targetIndex);
+                      }
+                    },
+                    child: _buildAttendedClassRow(
+                      className: item['className'] ?? '',
+                      classCode: item['classCode'] ?? '',
+                      instructor: item['instructor'] ?? '',
+                      progress: item['progress'] ?? 0.0,
+                      color: const Color(0xFF7EC07E),
+                    ),
+                  ),
+                );
+              },
+              childCount: _myClasses.length,
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: OutlinedButton.icon(
+              onPressed: _showJoinClassDialog,
+              icon: const Icon(Icons.qr_code),
+              label: const Text('Quét mã tham gia lớp học mới'),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF7EC07E)),
+                minimumSize: const Size.fromHeight(50),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   // TAB 2: PROJECTS & MILESTONES
   Widget _buildProjectsTab() {
@@ -654,6 +739,66 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               const SizedBox(width: 12),
               Text('${(progress * 100).toInt()}%', style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.6))),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendedClassRow({
+    required String className,
+    required String classCode,
+    required String instructor,
+    required double progress,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      classCode,
+                      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Tự học: ${(progress * 100).toInt()}%',
+                      style: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.4), fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  className,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  instructor,
+                  style: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.4), fontSize: 11),
+                ),
+              ],
+            ),
           ),
         ],
       ),
