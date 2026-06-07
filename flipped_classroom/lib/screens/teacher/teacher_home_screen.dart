@@ -988,8 +988,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     final String deadline = activity['date'] ?? '25/06/2026';
     final String description = activity['description'] ?? 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành';
 
-    final classShorthand = className.split(' ').first.split('-').first.replaceAll(RegExp(r'\d'), '');
-
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push<Map<String, dynamic>>(
@@ -1000,6 +998,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               deadline: deadline,
               submissions: submissions,
               description: description,
+              className: className,
             ),
           ),
         );
@@ -1052,13 +1051,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: const Color(0xFF2E8EFF).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+                    border: Border.all(color: const Color(0xFF2E8EFF).withValues(alpha: 0.3)),
                   ),
                   child: Text(
-                    classShorthand.isNotEmpty ? classShorthand : className,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                    className,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF8F8DFF)),
                   ),
                 ),
               ],

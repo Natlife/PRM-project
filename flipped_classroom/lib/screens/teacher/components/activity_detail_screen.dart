@@ -7,6 +7,7 @@ class ActivityDetailScreen extends StatefulWidget {
   final String deadline;
   final String submissions;
   final String description;
+  final String? className;
 
   const ActivityDetailScreen({
     super.key,
@@ -14,6 +15,7 @@ class ActivityDetailScreen extends StatefulWidget {
     required this.deadline,
     required this.submissions,
     this.description = 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành',
+    this.className,
   });
 
   @override
@@ -160,7 +162,20 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               _activityTitle,
                               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
-                            const SizedBox(height: 8),
+                            if (widget.className != null && widget.className!.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.school, color: Color(0xFF2E8EFF), size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Lớp nhận hoạt động: ${widget.className}',
+                                    style: const TextStyle(fontSize: 14, color: Color(0xFF8F8DFF), fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 12),
                             InkWell(
                               onTap: () async {
                                 final result = await Navigator.push<Map<String, dynamic>>(

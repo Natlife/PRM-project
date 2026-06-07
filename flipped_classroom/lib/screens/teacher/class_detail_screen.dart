@@ -5,6 +5,7 @@ import 'components/activity_detail_screen.dart';
 import 'edit_class_screen.dart';
 import 'create_project_screen.dart';
 import 'project_detail_screen.dart';
+import 'create_activity_screen.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   final String className;
@@ -117,64 +118,222 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       return;
     }
 
-    final titleController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
-          title: Text(
-            'Tạo mới ${_currentTab.toLowerCase()}',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+    if (_currentTab == 'Hoạt động') {
+      final result = await Navigator.push<Map<String, dynamic>>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateActivityScreen(
+            classNames: [_className],
           ),
-          content: TextField(
-            controller: titleController,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'Nhập tiêu đề...',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-              fillColor: const Color(0xFF0F172A),
-              filled: true,
-            ),
+        ),
+      );
+      if (result != null) {
+        if (!mounted) return;
+        setState(() {
+          _activities.insert(0, {
+            'title': result['title'] as String,
+            'submissions': result['submissions'] ?? '0/45 người nộp',
+            'date': result['date'] ?? 'Hôm nay',
+            'description': result['description'] ?? 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành',
+            'className': result['className'] ?? _className,
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã tạo thành công hoạt động mới!'),
+            behavior: SnackBarBehavior.floating,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (titleController.text.trim().isEmpty) return;
-                setState(() {
-                  final title = titleController.text.trim();
-                  if (_currentTab == 'Hoạt động') {
-                    _activities.insert(0, {
-                      'title': title,
-                      'submissions': '0/45 người nộp',
-                      'date': 'Hôm nay',
-                    });
-                  } else if (_currentTab == 'Tài liệu') {
-                    _documents.insert(0, {
-                      'title': title,
-                      'size': '1.2 MB',
-                      'date': 'Hôm nay',
-                    });
-                  }
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Đã tạo thành công ${_currentTab.toLowerCase()} mới!'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: const Text('Tạo'),
-            ),
-          ],
         );
-      },
-    );
+      }
+      return;
+    }
+
+    if (_currentTab == 'Tài liệu') {
+      final titleController = TextEditingController();
+      String? selectedFileName;
+      String? selectedFileSize;
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              Future<void> simulateFilePicker() async {
+                final mockFiles = [
+                  {'name': 'Slide_Flutter_Co_Ban.pdf', 'size': '2.4 MB'},
+                  {'name': 'Huong_Dan_Lab_1.docx', 'size': '1.8 MB'},
+                  {'name': 'Tai_Lieu_Tham_Khao_API.pdf', 'size': '3.2 MB'},
+                  {'name': 'Flipped_Classroom_Overview.pptx', 'size': '4.5 MB'},
+                  {'name': 'SourceCode_Starter.zip', 'size': '12.0 MB'},
+                ];
+
+                final chosen = await showDialog<Map<String, String>>(
+                  context: context,
+                  builder: (ctx) {
+                    return AlertDialog(
+                      backgroundColor: const Color(0xFF1E293B),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: const Text(
+                        'Chọn file từ thiết bị',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: mockFiles.length,
+                          itemBuilder: (c, idx) {
+                            final f = mockFiles[idx];
+                            return ListTile(
+                              leading: const Icon(Icons.insert_drive_file, color: Color(0xFF2E8EFF)),
+                              title: Text(f['name']!, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                              subtitle: Text(f['size']!, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                              onTap: () => Navigator.of(ctx).pop(f),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                );
+
+                if (chosen != null) {
+                  setDialogState(() {
+                    selectedFileName = chosen['name'];
+                    selectedFileSize = chosen['size'];
+                    if (titleController.text.trim().isEmpty) {
+                      titleController.text = chosen['name']!.split('.').first.replaceAll('_', ' ');
+                    }
+                  });
+                }
+              }
+
+              return AlertDialog(
+                backgroundColor: const Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text(
+                  'Tải lên tài liệu',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Tên tài liệu *', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: titleController,
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        decoration: InputDecoration(
+                          fillColor: const Color(0xFF0F172A),
+                          filled: true,
+                          hintText: 'Nhập tên hiển thị của tài liệu...',
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Tập tin đính kèm *', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(height: 6),
+                      GestureDetector(
+                        onTap: simulateFilePicker,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: selectedFileName != null ? const Color(0xFF2E8EFF) : Colors.white.withValues(alpha: 0.1),
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                selectedFileName != null ? Icons.check_circle : Icons.cloud_upload_outlined,
+                                color: selectedFileName != null ? const Color(0xFF22C55E) : const Color(0xFF2E8EFF),
+                                size: 32,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                selectedFileName ?? 'Nhấp để chọn file từ thiết bị...',
+                                style: TextStyle(
+                                  color: selectedFileName != null ? Colors.white : Colors.white60,
+                                  fontSize: 13,
+                                  fontWeight: selectedFileName != null ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              if (selectedFileSize != null) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Dung lượng: $selectedFileSize',
+                                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final titleVal = titleController.text.trim();
+                      if (titleVal.isEmpty || selectedFileName == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Vui lòng nhập tên tài liệu và chọn file tải lên!'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        _documents.insert(0, {
+                          'title': titleVal,
+                          'size': selectedFileSize ?? '1.0 MB',
+                          'date': 'Hôm nay',
+                          'fileName': selectedFileName,
+                        });
+                      });
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tải lên tài liệu thành công!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E),
+                    ),
+                    child: const Text('Tải lên', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+      return;
+    }
   }
 
   @override
@@ -614,6 +773,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   activityTitle: act['title'],
                   deadline: act['date'],
                   submissions: act['submissions'],
+                  className: _className,
                 ),
               ),
             );
@@ -640,6 +800,18 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     Text(
                       act['submissions'],
                       style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E8EFF).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF2E8EFF).withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        _className,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF8F8DFF)),
+                      ),
                     ),
                     Text(
                       act['date'],
