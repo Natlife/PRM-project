@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'student_milestone_detail_screen.dart';
 
 class StudentProjectDetailScreen extends StatefulWidget {
   final Map<String, dynamic> project;
@@ -43,144 +44,6 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
 
   void _onBottomNavTapped(int index) {
     Navigator.pop(context, index);
-  }
-
-  // Opens a beautiful bottom sheet detailing the selected milestone
-  void _showMilestoneDetailBottomSheet(Map<String, dynamic> milestone) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      builder: (context) {
-        final progress = milestone['progress'] ?? 0.0;
-        final status = milestone['status'] ?? 'Chưa bắt đầu';
-        final isCompleted = status == 'Hoàn thành';
-
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Pull indicator
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Chi tiết Milestone',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? const Color(0xFF7EC07E).withOpacity(0.15)
-                          : Colors.amberAccent.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        color: isCompleted ? const Color(0xFF7EC07E) : Colors.amber.shade700,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                milestone['title'] ?? '',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                milestone['dueDate'] ?? '',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: const Color(0xFF0F172A).withOpacity(0.4),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Divider(color: const Color(0xFF0F172A).withOpacity(0.06)),
-              const SizedBox(height: 12),
-              const Text(
-                'Mô tả nhiệm vụ',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                milestone['description'] ?? 'Không có mô tả chi tiết.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: const Color(0xFF0F172A).withOpacity(0.6),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Tiến độ',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFF0F172A).withOpacity(0.05),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isCompleted ? const Color(0xFF7EC07E) : const Color(0xFFF59E0B),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${(progress * 100).toInt()}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A).withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -321,7 +184,31 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                      onTap: () => _showMilestoneDetailBottomSheet(milestone),
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StudentMilestoneDetailScreen(
+                              milestone: milestone,
+                              project: widget.project,
+                            ),
+                          ),
+                        );
+                        if (!context.mounted) return;
+                        if (result != null) {
+                          if (result is int) {
+                            Navigator.pop(context, result);
+                          } else if (result is Map<String, dynamic>) {
+                            setState(() {
+                              milestone['status'] = result['status'];
+                              milestone['progress'] = result['progress'];
+                              milestone['tasks'] = result['tasks'];
+                              milestone['evidenceList'] = result['evidenceList'];
+                              milestone['comments'] = result['comments'];
+                            });
+                          }
+                        }
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
