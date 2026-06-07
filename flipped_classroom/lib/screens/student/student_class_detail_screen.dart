@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'student_activity_detail_screen.dart';
 
 class StudentClassDetailScreen extends StatefulWidget {
   final String classCodeWithName;
@@ -146,255 +147,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
     Navigator.pop(context, index);
   }
 
-  // Opens a beautiful bottom sheet directly within this screen for activity details & evidence submission
-  void _showActivityDetailBottomSheet(Map<String, dynamic> activity) {
-    bool isDone = activity['status'] == 'Đã làm';
-    final evidenceController = TextEditingController(text: activity['evidence'] ?? '');
-    String submissionTime = activity['submissionTime'] ?? '';
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Pull Indicator & Header Row
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          activity['type'] ?? 'Trước buổi học',
-                          style: const TextStyle(
-                            color: Color(0xFF7EC07E),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDone
-                                ? const Color(0xFF7EC07E).withOpacity(0.15)
-                                : Colors.redAccent.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            isDone ? 'Đã làm' : 'Chưa làm',
-                            style: TextStyle(
-                              color: isDone ? const Color(0xFF7EC07E) : Colors.redAccent,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      activity['title'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      activity['deadline'] ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: const Color(0xFF0F172A).withOpacity(0.5),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Divider(color: const Color(0xFF0F172A).withOpacity(0.06)),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Yêu cầu & Hướng dẫn',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      activity['description'] ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: const Color(0xFF0F172A).withOpacity(0.6),
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Minh chứng hoạt động (Evidence)',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 8),
-                    if (isDone && submissionTime.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          const Icon(Icons.check_circle_outline, color: Color(0xFF7EC07E), size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            submissionTime,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF7EC07E),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    TextField(
-                      controller: evidenceController,
-                      enabled: !isDone,
-                      maxLines: 3,
-                      style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Nhập liên kết Github, Drive hoặc văn bản minh chứng...',
-                        hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 13),
-                        contentPadding: const EdgeInsets.all(12),
-                        filled: true,
-                        fillColor: isDone ? const Color(0xFFF8FAFC) : Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: const Color(0xFF0F172A).withOpacity(0.1)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: const Color(0xFF0F172A).withOpacity(0.1)),
-                        ),
-                        disabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: const Color(0xFF0F172A).withOpacity(0.05)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (!isDone)
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          final evidenceText = evidenceController.text.trim();
-                          if (evidenceText.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vui lòng nhập minh chứng!'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                            return;
-                          }
-
-                          final now = DateTime.now();
-                          final formattedTime = 'Nộp lúc: ${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-                          setState(() {
-                            activity['status'] = 'Đã làm';
-                            activity['evidence'] = evidenceText;
-                            activity['submissionTime'] = formattedTime;
-                          });
-
-                          setSheetState(() {
-                            isDone = true;
-                            submissionTime = formattedTime;
-                          });
-
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Nộp bài tập thành công!'),
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: Color(0xFF7EC07E),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.send, size: 16, color: Colors.white),
-                        label: const Text('Nộp bài tập', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7EC07E),
-                          minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
-                        ),
-                      )
-                    else
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            activity['status'] = 'Chưa làm';
-                            activity['evidence'] = '';
-                            activity['submissionTime'] = '';
-                          });
-
-                          setSheetState(() {
-                            isDone = false;
-                            submissionTime = '';
-                            evidenceController.clear();
-                          });
-
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Đã hủy nộp bài tập.'),
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: const Color(0xFF0F172A).withOpacity(0.8),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.cancel_outlined, size: 16, color: Colors.redAccent),
-                        label: const Text('Hủy nộp bài', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent, width: 1.2),
-                          minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -614,7 +367,22 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () => _showActivityDetailBottomSheet(activity),
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentActivityDetailScreen(activity: activity),
+                  ),
+                );
+                
+                if (result != null && result is Map<String, dynamic>) {
+                  setState(() {
+                    activity['status'] = result['status'];
+                    activity['evidenceList'] = result['evidenceList'];
+                    activity['comments'] = result['comments'];
+                  });
+                }
+              },
               child: Padding(
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
