@@ -47,4 +47,8 @@ public class Classroom extends BaseEntity {
     @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     List<ClassroomSchedule> schedules = List.of();
+
+    @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    List<ClassroomEnrollment> enrollments = List.of();
 }

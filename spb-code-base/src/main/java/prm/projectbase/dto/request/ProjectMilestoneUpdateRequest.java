@@ -1,0 +1,19 @@
+package prm.projectbase.dto.request;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ProjectMilestoneUpdateRequest {
+
+    String title;
+    String description;
+    LocalDateTime dueAt;
+    String status; // NOT_STARTED, IN_PROGRESS, COMPLETED, OVERDUE
+}

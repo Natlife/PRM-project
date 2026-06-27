@@ -88,6 +88,70 @@ public class FileService {
         }
     }
 
+    public StorageResult storeFile(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = extractExtension(originalFilename);
+
+        if (isBannedExtension(extension)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File type is not allowed for security reasons.");
+        }
+
+        String storedName = UUID.randomUUID() + extension;
+        String cleanFolder = folder.replaceAll("\\.\\.", "");
+        Path targetFolder = Paths.get(uploadDir, cleanFolder).toAbsolutePath();
+
+        if (!targetFolder.toFile().exists()) {
+            targetFolder.toFile().mkdirs();
+        }
+
+        try {
+            file.transferTo(targetFolder.resolve(storedName).toFile());
+        } catch (IOException e) {
+            log.error("Failed to store file {}", storedName, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not save file");
+        }
+
+        String storageKey = cleanFolder + "/" + storedName;
+        return StorageResult.builder()
+                .storageKey(storageKey)
+                .originalFileName(originalFilename)
+                .contentType(file.getContentType())
+                .sizeBytes(file.getSize())
+                .build();
+    }
+
+    public void deleteFile(String storageKey) {
+        if (storageKey == null || storageKey.isBlank() || storageKey.contains("..")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file key");
+        }
+
+        Path filePath = Paths.get(uploadDir, storageKey).toAbsolutePath();
+        File file = filePath.toFile();
+
+        if (file.exists()) {
+            try {
+                Files.delete(filePath);
+            } catch (IOException e) {
+                log.error("Could not delete file {} from disk", storageKey, e);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not delete file");
+            }
+        }
+    }
+
+    @lombok.Getter
+    @lombok.Builder
+    @lombok.AllArgsConstructor
+    public static class StorageResult {
+        String storageKey;
+        String originalFileName;
+        String contentType;
+        Long sizeBytes;
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private String extractExtension(String filename) {

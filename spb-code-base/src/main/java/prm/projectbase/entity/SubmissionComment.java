@@ -31,5 +31,5 @@ public class SubmissionComment extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "comment_scope", nullable = false, length = 20)
     @Builder.Default
-    CommentScope commentScope = CommentScope.SHARED;
+    CommentScope commentScope = CommentScope.PUBLIC;
 }

@@ -36,7 +36,7 @@ public class ActivityController {
         
         ActivityDetailResponse response = activityService.createActivity(classroomId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponse.success(response, HttpStatus.CREATED));
+                .body(BaseResponse.success(response, "Activity created successfully", HttpStatus.CREATED));
     }
     
     /**

@@ -8,10 +8,12 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RoleResponse {
+public class ProjectGroupListResponse {
 
     Long id;
-    String name;
-    String description;
+    String groupName;
+    String projectName;
+    UserResponse leader;
+    String status;
+    Integer memberCount;
 }
-

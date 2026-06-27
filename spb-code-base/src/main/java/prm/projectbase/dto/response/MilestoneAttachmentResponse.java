@@ -8,10 +8,13 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RoleResponse {
+public class MilestoneAttachmentResponse {
 
     Long id;
-    String name;
-    String description;
+    String storageKey;
+    String originalFileName;
+    String contentType;
+    Long sizeBytes;
+    Long uploadedById;
+    String uploadedByName;
 }
-

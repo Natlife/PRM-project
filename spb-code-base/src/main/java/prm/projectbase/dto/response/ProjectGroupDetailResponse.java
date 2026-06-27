@@ -3,15 +3,21 @@ package prm.projectbase.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RoleResponse {
+public class ProjectGroupDetailResponse {
 
     Long id;
-    String name;
+    Long classroomId;
+    String groupName;
+    String projectName;
     String description;
+    UserResponse leader;
+    String status;
+    List<UserResponse> members;
 }
-

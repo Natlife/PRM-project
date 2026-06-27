@@ -33,5 +33,5 @@ public class UserCreateRequest {
 
     String institutionalId;
 
-    Integer roleId;
+    Long roleId;
 }

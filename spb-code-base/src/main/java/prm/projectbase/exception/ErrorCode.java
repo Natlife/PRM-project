@@ -39,6 +39,18 @@ public enum ErrorCode {
     SUBMISSION_NOT_FOUND(404, "Submission not found", HttpStatus.NOT_FOUND),
     SUBMISSION_LOCKED(400, "This submission is locked and cannot be edited", HttpStatus.BAD_REQUEST),
     INVALID_SCORE(400, "Score is outside the valid range for this activity", HttpStatus.BAD_REQUEST),
+
+    // Phase 3 errors
+    GROUP_NOT_FOUND(404, "Project group not found", HttpStatus.NOT_FOUND),
+    GROUP_ALREADY_EXISTS(400, "Project group name already exists in this classroom", HttpStatus.BAD_REQUEST),
+    STUDENT_NOT_ENROLLED(400, "Student is not enrolled in this classroom", HttpStatus.BAD_REQUEST),
+    STUDENT_ALREADY_IN_GROUP(400, "Student is already in another active group in this classroom", HttpStatus.BAD_REQUEST),
+    LEADER_MUST_BE_MEMBER(400, "Leader must be a member of the group", HttpStatus.BAD_REQUEST),
+    MILESTONE_NOT_FOUND(404, "Milestone not found", HttpStatus.NOT_FOUND),
+    PEER_REVIEW_NOT_FOUND(404, "Peer review not found", HttpStatus.NOT_FOUND),
+    CANNOT_REVIEW_OWN_GROUP(400, "Reviewer cannot review their own group", HttpStatus.BAD_REQUEST),
+    PEER_REVIEW_ALREADY_SUBMITTED(400, "Peer review is already submitted and cannot be updated", HttpStatus.BAD_REQUEST),
+    REVIEWER_NOT_IN_CLASSROOM(400, "Reviewer is not in this classroom", HttpStatus.BAD_REQUEST),
     ;
 
 

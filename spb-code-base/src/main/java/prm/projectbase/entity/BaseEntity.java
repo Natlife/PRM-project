@@ -25,8 +25,6 @@ public class BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    int status;
-
     @Column(name = "created_at")
     @JsonIgnore
     @CreationTimestamp

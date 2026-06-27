@@ -5,6 +5,7 @@ import prm.projectbase.entity.ProjectGroup;
 
 import java.util.List;
 
-public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Integer> {
-    List<ProjectGroup> findByClassroomId(Integer classroomId);
+public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Long> {
+    List<ProjectGroup> findByClassroomId(Long classroomId);
+    boolean existsByClassroomIdAndGroupName(Long classroomId, String groupName);
 }

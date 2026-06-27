@@ -206,7 +206,7 @@ public class ClassroomService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        List<ClassroomEnrollment> enrollments = enrollmentRepository.findByStudentAndStatusActive(
+        List<ClassroomEnrollment> enrollments = enrollmentRepository.findByStudentAndStatus(
                 student, ClassroomEnrollmentStatus.ACTIVE
         );
 

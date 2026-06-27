@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ClassroomEnrollmentRepository extends JpaRepository<ClassroomEnrollment, Long> {
-    List<ClassroomEnrollment> findByStudentId(Integer studentId);
-    List<ClassroomEnrollment> findByClassroomId(Integer classroomId);
-    Optional<ClassroomEnrollment> findByClassroomIdAndStudentId(Integer classroomId, Integer studentId);
+    List<ClassroomEnrollment> findByStudentId(Long studentId);
+    List<ClassroomEnrollment> findByClassroomId(Long classroomId);
+    Optional<ClassroomEnrollment> findByClassroomIdAndStudentId(Long classroomId, Long studentId);
     Optional<ClassroomEnrollment> findByClassroomAndStudent(Classroom classroom, User student);
-    List<ClassroomEnrollment> findByStudentAndStatusActive(User student, ClassroomEnrollmentStatus status);
+    List<ClassroomEnrollment> findByStudentAndStatus(User student, ClassroomEnrollmentStatus status);
     long countByClassroomAndStatus(Classroom classroom, ClassroomEnrollmentStatus status);
 }

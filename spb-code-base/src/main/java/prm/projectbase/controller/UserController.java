@@ -38,21 +38,21 @@ public class UserController {
 
     @GetMapping("/{id}")
     @AuthFilter(permission = "ADMIN") // Allowed for ADMIN Globally, or standard USER if viewing their own ID
-    public BaseResponse<UserResponse> getUserById(@PathVariable Integer id) {
+    public BaseResponse<UserResponse> getUserById(@PathVariable Long id) {
         UserResponse response = userService.getUserById(id);
         return BaseResponse.success(response, "Get user by ID successfully");
     }
 
     @PutMapping("/{id}")
     @AuthFilter(permission = "ADMIN") // Allowed for ADMIN Globally, or standard USER if updating their own ID
-    public BaseResponse<UserResponse> updateUser(@PathVariable Integer id, @RequestBody @Valid UserUpdateRequest request) {
+    public BaseResponse<UserResponse> updateUser(@PathVariable Long id, @RequestBody @Valid UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return BaseResponse.success(response, "User updated successfully");
     }
 
     @DeleteMapping("/{id}")
     @AuthFilter(permission = "ADMIN")
-    public BaseResponse<Void> deleteUser(@PathVariable Integer id) {
+    public BaseResponse<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return BaseResponse.success(null, "User deleted successfully");
     }

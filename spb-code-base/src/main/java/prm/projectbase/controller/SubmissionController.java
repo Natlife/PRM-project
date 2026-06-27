@@ -124,7 +124,7 @@ public class SubmissionController {
         
         SubmissionCommentResponse response = submissionService.addComment(submissionId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponse.success(response, HttpStatus.CREATED));
+                .body(BaseResponse.success(response, "Comment added successfully", HttpStatus.CREATED));
     }
     
     /**

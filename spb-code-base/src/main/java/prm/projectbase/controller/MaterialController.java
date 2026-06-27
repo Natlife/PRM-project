@@ -51,7 +51,7 @@ public class MaterialController {
         
         MaterialDetailResponse response = materialService.uploadMaterial(classroomId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponse.success(response, HttpStatus.CREATED));
+                .body(BaseResponse.success(response, "Material uploaded successfully", HttpStatus.CREATED));
     }
     
     /**
