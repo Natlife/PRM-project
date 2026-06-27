@@ -1,0 +1,72 @@
+# Workspace-wide ignore rules for the Flutter app and Spring Boot backend
+
+# OS / editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.suo
+*.swp
+*.tmp
+
+# Local temp artifacts
+.tmp-phd-engineer/
+.tmp-phd-engineer.zip
+
+# Flutter / Dart
+flipped_classroom/.dart_tool/
+flipped_classroom/.flutter-plugins
+flipped_classroom/.flutter-plugins-dependencies
+flipped_classroom/.packages
+flipped_classroom/.pub/
+flipped_classroom/.pub-cache/
+flipped_classroom/build/
+flipped_classroom/pubspec.lock
+
+# Flutter platform outputs
+flipped_classroom/android/.gradle/
+flipped_classroom/android/app/build/
+flipped_classroom/android/local.properties
+flipped_classroom/android/key.properties
+flipped_classroom/ios/Pods/
+flipped_classroom/ios/.symlinks/
+flipped_classroom/ios/Flutter/Flutter.framework
+flipped_classroom/ios/Flutter/Flutter.podspec
+flipped_classroom/ios/Flutter/Generated.xcconfig
+flipped_classroom/ios/Flutter/app.flx
+flipped_classroom/macos/Pods/
+flipped_classroom/macos/.symlinks/
+flipped_classroom/macos/Flutter/Generated.xcconfig
+
+# Flutter generated registrants
+flipped_classroom/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+flipped_classroom/android/app/src/main/kotlin/io/flutter/plugins/GeneratedPluginRegistrant.kt
+flipped_classroom/ios/Runner/GeneratedPluginRegistrant.h
+flipped_classroom/ios/Runner/GeneratedPluginRegistrant.m
+flipped_classroom/lib/generated_plugin_registrant.dart
+flipped_classroom/linux/flutter/generated_plugin_registrant.cc
+flipped_classroom/linux/flutter/generated_plugin_registrant.h
+flipped_classroom/linux/flutter/generated_plugins.cmake
+flipped_classroom/macos/Flutter/GeneratedPluginRegistrant.swift
+flipped_classroom/windows/flutter/generated_plugin_registrant.cc
+flipped_classroom/windows/flutter/generated_plugin_registrant.h
+flipped_classroom/windows/flutter/generated_plugins.cmake
+
+# Spring Boot / Maven
+spb-code-base/target/
+spb-code-base/.mvn/wrapper/maven-wrapper.jar
+spb-code-base/build/
+spb-code-base/*.log
+spb-code-base/*.log.*
+spb-code-base/project-base.log*
+spb-code-base/spring-file-manager.log*
+
+# Environment / secrets
+*.env
+*.env.*
+application-local.properties
+
