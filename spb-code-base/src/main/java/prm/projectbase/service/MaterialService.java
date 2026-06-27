@@ -1,0 +1,178 @@
+package prm.projectbase.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import prm.projectbase.dto.request.MaterialUploadRequest;
+import prm.projectbase.dto.response.MaterialDetailResponse;
+import prm.projectbase.dto.response.MaterialListResponse;
+import prm.projectbase.entity.ClassMaterial;
+import prm.projectbase.entity.Classroom;
+import prm.projectbase.entity.User;
+import prm.projectbase.entity.enums.ClassroomMaterialType;
+import prm.projectbase.exception.AppException;
+import prm.projectbase.exception.ErrorCode;
+import prm.projectbase.repository.ClassMaterialRepository;
+import prm.projectbase.repository.ClassroomRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class MaterialService {
+    
+    private final ClassMaterialRepository materialRepository;
+    private final ClassroomRepository classroomRepository;
+    private final UserService userService;
+    private final FileService fileService;
+    
+    /**
+     * Teacher uploads a material to a classroom
+     * @param classroomId the classroom to upload to
+     * @param request upload request containing title, description, file
+     * @return the created material
+     */
+    public MaterialDetailResponse uploadMaterial(Long classroomId, MaterialUploadRequest request) {
+        log.info("Teacher uploading material to classroom {}", classroomId);
+        
+        // Verify classroom exists and teacher owns it
+        Classroom classroom = classroomRepository.findById(classroomId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
+        
+        User currentUser = userService.getCurrentUser();
+        if (!classroom.getTeacher().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+        
+        // Store file and get storage details
+        FileService.StorageResult storageResult = fileService.storeFile(
+                request.getFile(),
+                "materials/" + classroomId
+        );
+        
+        // Create material entity
+        ClassMaterial material = ClassMaterial.builder()
+                .classroom(classroom)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .materialType(request.getMaterialType())
+                .storageKey(storageResult.getStorageKey())
+                .originalFileName(storageResult.getOriginalFileName())
+                .contentType(storageResult.getContentType())
+                .sizeBytes(storageResult.getSizeBytes())
+                .publishedAt(request.getPublishImmediately() ? LocalDateTime.now() : request.getSchedulePublishAt())
+                .build();
+        
+        ClassMaterial saved = materialRepository.save(material);
+        log.info("Material saved with id {}", saved.getId());
+        
+        return toDetailResponse(saved);
+    }
+    
+    /**
+     * Get all materials in a classroom (published only for students, all for teachers)
+     * @param classroomId the classroom
+     * @return list of materials
+     */
+    @Transactional(readOnly = true)
+    public List<MaterialListResponse> getClassroomMaterials(Long classroomId) {
+        log.info("Fetching materials for classroom {}", classroomId);
+        
+        // Verify classroom exists
+        classroomRepository.findById(classroomId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
+        
+        User currentUser = userService.getCurrentUser();
+        
+        // Check if teacher (can see all) or student (can see published only)
+        boolean isTeacher = "ROLE_TEACHER".equals(currentUser.getRole().getName());
+        
+        List<ClassMaterial> materials = isTeacher
+                ? materialRepository.findByClassroomIdOrderByPublishedAtDesc(classroomId)
+                : materialRepository.findPublishedInClassroom(classroomId, LocalDateTime.now());
+        
+        return materials.stream()
+                .map(this::toListResponse)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get material by ID with authorization check
+     * @param materialId the material
+     * @return material detail
+     */
+    @Transactional(readOnly = true)
+    public MaterialDetailResponse getMaterial(Long materialId) {
+        log.info("Fetching material {}", materialId);
+        
+        ClassMaterial material = materialRepository.findById(materialId)
+                .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+        
+        // If not published, only teacher can view
+        if (material.getPublishedAt().isAfter(LocalDateTime.now())) {
+            User currentUser = userService.getCurrentUser();
+            if (!material.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+        }
+        
+        return toDetailResponse(material);
+    }
+    
+    /**
+     * Delete material (teacher only)
+     * @param materialId the material to delete
+     */
+    public void deleteMaterial(Long materialId) {
+        log.info("Deleting material {}", materialId);
+        
+        ClassMaterial material = materialRepository.findById(materialId)
+                .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+        
+        User currentUser = userService.getCurrentUser();
+        if (!material.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+        
+        // Delete from storage
+        fileService.deleteFile(material.getStorageKey());
+        
+        // Delete from database
+        materialRepository.delete(material);
+        log.info("Material {} deleted", materialId);
+    }
+    
+    // DTO Conversion Methods
+    
+    private MaterialDetailResponse toDetailResponse(ClassMaterial material) {
+        return MaterialDetailResponse.builder()
+                .id(material.getId())
+                .classroomId(material.getClassroom().getId())
+                .title(material.getTitle())
+                .description(material.getDescription())
+                .materialType(material.getMaterialType().name())
+                .originalFileName(material.getOriginalFileName())
+                .contentType(material.getContentType())
+                .sizeBytes(material.getSizeBytes())
+                .publishedAt(material.getPublishedAt())
+                .createdAt(material.getCreatedAt())
+                .build();
+    }
+    
+    private MaterialListResponse toListResponse(ClassMaterial material) {
+        return MaterialListResponse.builder()
+                .id(material.getId())
+                .title(material.getTitle())
+                .description(material.getDescription())
+                .materialType(material.getMaterialType().name())
+                .originalFileName(material.getOriginalFileName())
+                .sizeBytes(material.getSizeBytes())
+                .publishedAt(material.getPublishedAt())
+                .build();
+    }
+}
