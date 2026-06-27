@@ -10,7 +10,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
 
-    int id;
+    Long id;
     String userName;
     String email;
     String fullName;
@@ -20,7 +20,7 @@ public class UserResponse {
     boolean active;
     RoleResponse role;
 
-    public UserResponse(int id, String username, String email, String fullName, boolean active) {
+    public UserResponse(Long id, String username, String email, String fullName, boolean active) {
         this.id = id;
         this.userName = username;
         this.email = email;

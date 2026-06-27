@@ -14,10 +14,17 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(404, "Role not found", HttpStatus.NOT_FOUND),
     UNAUTHENTICATED(401, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(403, "You do not have permission", HttpStatus.FORBIDDEN),
+    FORBIDDEN(403, "You do not have permission to perform this action", HttpStatus.FORBIDDEN),
     EMAIL_EXISTED(400, "Email already exists", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS(402, "Invalid parameters", HttpStatus.UNPROCESSABLE_ENTITY),
     FILE_STORAGE_ERROR(500, "Could not store file", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_NOT_FOUND(404, "File not found", HttpStatus.NOT_FOUND),
+    
+    // Classroom errors
+    CLASSROOM_NOT_FOUND(404, "Classroom not found", HttpStatus.NOT_FOUND),
+    CLASSROOM_CODE_ALREADY_EXISTS(400, "Classroom code already exists", HttpStatus.BAD_REQUEST),
+    CLASSROOM_INACTIVE(400, "This classroom is inactive", HttpStatus.BAD_REQUEST),
+    ALREADY_ENROLLED(400, "You are already enrolled in this classroom", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatus statusCode) {

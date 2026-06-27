@@ -6,7 +6,7 @@ import prm.projectbase.entity.Classroom;
 import java.util.List;
 import java.util.Optional;
 
-public interface ClassroomRepository extends JpaRepository<Classroom, Integer> {
+public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     List<Classroom> findByTeacherIdAndActiveTrue(Integer teacherId);
     List<Classroom> findByActiveTrue();
     Optional<Classroom> findByJoinCode(String joinCode);

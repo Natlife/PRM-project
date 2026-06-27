@@ -1,0 +1,148 @@
+# Spring Boot / Maven / Java .gitignore
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-*
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Compiled files
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+mvnw.cmd
+mvnw
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# IntelliJ IDEA
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.metadata
+.classpath
+.project
+.settings/
+*.launch
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+.history/
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+.env.properties
+application-local.properties
+application-dev.properties
+
+# Database files
+*.db
+*.sqlite
+*.h2.db
+database.mv.db
+database.trace.db
+
+# Log files
+*.log
+logs/
+/log/
+
+# Compiled classes
+*.pyc
+__pycache__/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# OS generated files
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE configuration
+.editorconfig
+.prettierrc
+.eslintrc
+
+# Testing
+coverage/
+.nyc_output/
+
+# Node modules (if using any Node tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Miscellaneous
+.gitignore.bak
+*.orig
+*.swp
+.jrebel.xml
+rebel.xml
+
+# Security
+.ssh/
+*.pem
+*.key
+*.crt
+certificate/
+private/
