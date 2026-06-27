@@ -37,6 +37,7 @@ public class SubmissionService {
     private final UserService userService;
     private final FileService fileService;
     private final ActivityService activityService;
+    private final NotificationService notificationService;
     
     /**
      * Student creates or updates their submission for an activity
@@ -253,6 +254,15 @@ public class SubmissionService {
         
         ActivitySubmission saved = submissionRepository.save(submission);
         log.info("Submission {} graded with score {}", submissionId, request.getScore());
+        
+        notificationService.createNotification(
+                saved.getStudent(),
+                "Activity Graded",
+                "Your submission for activity '" + saved.getActivity().getTitle() + "' has been graded. Score: " + request.getScore(),
+                prm.projectbase.entity.enums.NotificationType.ACTIVITY_GRADED,
+                "Submission",
+                saved.getId()
+        );
         
         return toDetailResponse(saved);
     }

@@ -37,7 +37,7 @@ public class AppNotification extends BaseEntity {
     String referenceType;
 
     @Column(name = "reference_id")
-    Integer referenceId;
+    Long referenceId;
 
     @Column(name = "read_at")
     LocalDateTime readAt;

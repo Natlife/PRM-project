@@ -36,6 +36,7 @@ public class ClassroomService {
     ClassroomEnrollmentRepository enrollmentRepository;
     UserRepository userRepository;
     JwtUtil jwtUtil;
+    NotificationService notificationService;
 
     /**
      * Create a new classroom with schedules
@@ -191,6 +192,15 @@ public class ClassroomService {
                 .build();
 
         ClassroomEnrollment savedEnrollment = enrollmentRepository.save(enrollment);
+
+        notificationService.createNotification(
+                student,
+                "Classroom Joined",
+                "You successfully joined classroom: " + classroom.getName(),
+                prm.projectbase.entity.enums.NotificationType.CLASSROOM_JOINED,
+                "Classroom",
+                classroom.getId()
+        );
 
         return mapToClassroomEnrollmentResponse(savedEnrollment);
     }

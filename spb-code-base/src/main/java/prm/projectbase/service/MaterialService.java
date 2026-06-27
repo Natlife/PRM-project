@@ -30,6 +30,7 @@ public class MaterialService {
     private final ClassroomRepository classroomRepository;
     private final UserService userService;
     private final FileService fileService;
+    private final NotificationService notificationService;
     
     /**
      * Teacher uploads a material to a classroom
@@ -70,6 +71,17 @@ public class MaterialService {
         
         ClassMaterial saved = materialRepository.save(material);
         log.info("Material saved with id {}", saved.getId());
+        
+        if (request.getPublishImmediately()) {
+            notificationService.sendNotificationToAllEnrolled(
+                    classroom,
+                    "New Material Published",
+                    "A new class material '" + saved.getTitle() + "' has been uploaded to class " + classroom.getName(),
+                    prm.projectbase.entity.enums.NotificationType.MATERIAL_PUBLISHED,
+                    "Material",
+                    saved.getId()
+            );
+        }
         
         return toDetailResponse(saved);
     }

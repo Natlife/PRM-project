@@ -34,6 +34,7 @@ public class ProjectMilestoneService {
     private final ClassroomEnrollmentRepository enrollmentRepository;
     private final UserService userService;
     private final FileService fileService;
+    private final NotificationService notificationService;
 
     public ProjectMilestoneResponse createMilestone(Long groupId, ProjectMilestoneCreateRequest request) {
         log.info("Creating milestone for group {}", groupId);
@@ -151,6 +152,32 @@ public class ProjectMilestoneService {
         milestone.setStatus(MilestoneWorkflowStatus.valueOf(request.getStatus()));
 
         ProjectMilestone saved = milestoneRepository.save(milestone);
+
+        // Notify other group members
+        List<ProjectMember> members = memberRepository.findByProjectGroupId(saved.getProjectGroup().getId());
+        for (ProjectMember m : members) {
+            if (m.isActive() && !m.getStudent().getId().equals(currentUser.getId())) {
+                notificationService.createNotification(
+                        m.getStudent(),
+                        "Milestone Progress Updated",
+                        "Milestone '" + saved.getTitle() + "' progress updated to " + saved.getProgressPercent() + "% by " + currentUser.getFullName(),
+                        prm.projectbase.entity.enums.NotificationType.MILESTONE_UPDATED,
+                        "Milestone",
+                        saved.getId()
+                );
+            }
+        }
+
+        // Notify teacher
+        notificationService.createNotification(
+                saved.getProjectGroup().getClassroom().getTeacher(),
+                "Milestone Progress Updated",
+                "Milestone '" + saved.getTitle() + "' in group '" + saved.getProjectGroup().getGroupName() + "' progress updated to " + saved.getProgressPercent() + "%",
+                prm.projectbase.entity.enums.NotificationType.MILESTONE_UPDATED,
+                "Milestone",
+                saved.getId()
+        );
+
         return toResponse(saved);
     }
 

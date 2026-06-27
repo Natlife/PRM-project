@@ -32,6 +32,7 @@ public class PeerReviewService {
     private final ClassroomEnrollmentRepository enrollmentRepository;
     private final ClassroomRepository classroomRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<ProjectGroupListResponse> getPeerReviewTargets(Long classroomId) {
@@ -115,6 +116,29 @@ public class PeerReviewService {
         review.setStatus(ReviewWorkflowStatus.SUBMITTED);
 
         PeerReview saved = peerReviewRepository.save(review);
+
+        // Notify reviewed group leader
+        if (saved.getReviewedGroup().getLeader() != null) {
+            notificationService.createNotification(
+                    saved.getReviewedGroup().getLeader(),
+                    "Peer Review Submitted",
+                    "Your project group '" + saved.getReviewedGroup().getGroupName() + "' received a new peer review from " + currentStudent.getFullName(),
+                    prm.projectbase.entity.enums.NotificationType.PEER_REVIEW_SUBMITTED,
+                    "PeerReview",
+                    saved.getId()
+            );
+        }
+
+        // Notify teacher
+        notificationService.createNotification(
+                saved.getClassroom().getTeacher(),
+                "Peer Review Submitted",
+                "Group '" + saved.getReviewedGroup().getGroupName() + "' was reviewed by student " + currentStudent.getFullName(),
+                prm.projectbase.entity.enums.NotificationType.PEER_REVIEW_SUBMITTED,
+                "PeerReview",
+                saved.getId()
+        );
+
         return toResponse(saved);
     }
 

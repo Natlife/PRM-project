@@ -32,6 +32,7 @@ public class ActivityService {
     private final LearningActivityRepository activityRepository;
     private final ClassroomRepository classroomRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
     
     /**
      * Teacher creates a learning activity in a classroom
@@ -86,6 +87,8 @@ public class ActivityService {
         LearningActivity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
         
+        ActivityWorkflowStatus oldStatus = activity.getStatus();
+        
         User currentUser = userService.getCurrentUser();
         if (!activity.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
@@ -126,6 +129,17 @@ public class ActivityService {
         
         LearningActivity updated = activityRepository.save(activity);
         log.info("Activity {} updated", activityId);
+        
+        if (updated.getStatus() == ActivityWorkflowStatus.PUBLISHED && oldStatus != ActivityWorkflowStatus.PUBLISHED) {
+            notificationService.sendNotificationToAllEnrolled(
+                    updated.getClassroom(),
+                    "New Activity Assigned",
+                    "A new activity '" + updated.getTitle() + "' has been assigned in class " + updated.getClassroom().getName(),
+                    prm.projectbase.entity.enums.NotificationType.ACTIVITY_ASSIGNED,
+                    "Activity",
+                    updated.getId()
+            );
+        }
         
         return toDetailResponse(updated);
     }
