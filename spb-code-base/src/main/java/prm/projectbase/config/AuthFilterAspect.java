@@ -38,7 +38,7 @@ public class AuthFilterAspect {
                 });
 
         if (hasRole) {
-            return; // Authorized!
+            return; 
         }
 
         boolean isOwner = false;

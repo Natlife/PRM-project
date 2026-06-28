@@ -31,17 +31,10 @@ public class MaterialService {
     private final UserService userService;
     private final FileService fileService;
     private final NotificationService notificationService;
-    
-    /**
-     * Teacher uploads a material to a classroom
-     * @param classroomId the classroom to upload to
-     * @param request upload request containing title, description, file
-     * @return the created material
-     */
+
     public MaterialDetailResponse uploadMaterial(Long classroomId, MaterialUploadRequest request) {
         log.info("Teacher uploading material to classroom {}", classroomId);
-        
-        // Verify classroom exists and teacher owns it
+
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
         
@@ -49,14 +42,12 @@ public class MaterialService {
         if (!classroom.getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
-        
-        // Store file and get storage details
+
         FileService.StorageResult storageResult = fileService.storeFile(
                 request.getFile(),
                 "materials/" + classroomId
         );
-        
-        // Create material entity
+
         ClassMaterial material = ClassMaterial.builder()
                 .classroom(classroom)
                 .title(request.getTitle())
@@ -85,23 +76,16 @@ public class MaterialService {
         
         return toDetailResponse(saved);
     }
-    
-    /**
-     * Get all materials in a classroom (published only for students, all for teachers)
-     * @param classroomId the classroom
-     * @return list of materials
-     */
+
     @Transactional(readOnly = true)
     public List<MaterialListResponse> getClassroomMaterials(Long classroomId) {
         log.info("Fetching materials for classroom {}", classroomId);
-        
-        // Verify classroom exists
+
         classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
         
         User currentUser = userService.getCurrentUser();
-        
-        // Check if teacher (can see all) or student (can see published only)
+
         boolean isTeacher = "ROLE_TEACHER".equals(currentUser.getRole().getName());
         
         List<ClassMaterial> materials = isTeacher
@@ -112,20 +96,14 @@ public class MaterialService {
                 .map(this::toListResponse)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * Get material by ID with authorization check
-     * @param materialId the material
-     * @return material detail
-     */
+
     @Transactional(readOnly = true)
     public MaterialDetailResponse getMaterial(Long materialId) {
         log.info("Fetching material {}", materialId);
         
         ClassMaterial material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
-        
-        // If not published, only teacher can view
+
         if (material.getPublishedAt().isAfter(LocalDateTime.now())) {
             User currentUser = userService.getCurrentUser();
             if (!material.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
@@ -135,11 +113,7 @@ public class MaterialService {
         
         return toDetailResponse(material);
     }
-    
-    /**
-     * Delete material (teacher only)
-     * @param materialId the material to delete
-     */
+
     public void deleteMaterial(Long materialId) {
         log.info("Deleting material {}", materialId);
         
@@ -150,17 +124,13 @@ public class MaterialService {
         if (!material.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
-        
-        // Delete from storage
+
         fileService.deleteFile(material.getStorageKey());
-        
-        // Delete from database
+
         materialRepository.delete(material);
         log.info("Material {} deleted", materialId);
     }
-    
-    // DTO Conversion Methods
-    
+
     private MaterialDetailResponse toDetailResponse(ClassMaterial material) {
         return MaterialDetailResponse.builder()
                 .id(material.getId())

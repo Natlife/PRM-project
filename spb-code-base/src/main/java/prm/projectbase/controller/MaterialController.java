@@ -23,11 +23,7 @@ import java.util.List;
 public class MaterialController {
     
     private final MaterialService materialService;
-    
-    /**
-     * Teacher uploads a material to a classroom
-     * POST /api/v1/teacher/classrooms/{classroomId}/materials
-     */
+
     @PostMapping("/teacher/classrooms/{classroomId}/materials")
     public ResponseEntity<BaseResponse<MaterialDetailResponse>> uploadMaterial(
             @PathVariable Long classroomId,
@@ -53,11 +49,7 @@ public class MaterialController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Material uploaded successfully", HttpStatus.CREATED));
     }
-    
-    /**
-     * Get all materials in a classroom (published for students, all for teachers)
-     * GET /api/v1/classrooms/{classroomId}/materials
-     */
+
     @GetMapping("/classrooms/{classroomId}/materials")
     public ResponseEntity<BaseResponse<List<MaterialListResponse>>> getClassroomMaterials(
             @PathVariable Long classroomId) {
@@ -67,11 +59,7 @@ public class MaterialController {
         List<MaterialListResponse> response = materialService.getClassroomMaterials(classroomId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Get material detail
-     * GET /api/v1/materials/{materialId}
-     */
+
     @GetMapping("/materials/{materialId}")
     public ResponseEntity<BaseResponse<MaterialDetailResponse>> getMaterial(
             @PathVariable Long materialId) {
@@ -81,11 +69,7 @@ public class MaterialController {
         MaterialDetailResponse response = materialService.getMaterial(materialId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Delete material (teacher only)
-     * DELETE /api/v1/teacher/materials/{materialId}
-     */
+
     @DeleteMapping("/teacher/materials/{materialId}")
     public ResponseEntity<BaseResponse<Void>> deleteMaterial(
             @PathVariable Long materialId) {

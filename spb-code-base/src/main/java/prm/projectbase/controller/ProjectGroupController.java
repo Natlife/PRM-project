@@ -23,10 +23,6 @@ public class ProjectGroupController {
 
     private final ProjectGroupService groupService;
 
-    /**
-     * Teacher creates a project group in a classroom
-     * POST /api/v1/teacher/classrooms/{classroomId}/project-groups
-     */
     @PostMapping("/teacher/classrooms/{classroomId}/project-groups")
     public ResponseEntity<BaseResponse<ProjectGroupDetailResponse>> createProjectGroup(
             @PathVariable Long classroomId,
@@ -39,10 +35,6 @@ public class ProjectGroupController {
                 .body(BaseResponse.success(response, "Project group created successfully", HttpStatus.CREATED));
     }
 
-    /**
-     * Teacher gets all project groups in a classroom
-     * GET /api/v1/teacher/classrooms/{classroomId}/project-groups
-     */
     @GetMapping("/teacher/classrooms/{classroomId}/project-groups")
     public ResponseEntity<BaseResponse<List<ProjectGroupListResponse>>> getClassroomProjectGroupsForTeacher(
             @PathVariable Long classroomId) {
@@ -53,10 +45,6 @@ public class ProjectGroupController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get classroom project groups successfully"));
     }
 
-    /**
-     * Teacher gets a specific project group detail
-     * GET /api/v1/teacher/project-groups/{groupId}
-     */
     @GetMapping("/teacher/project-groups/{groupId}")
     public ResponseEntity<BaseResponse<ProjectGroupDetailResponse>> getProjectGroupDetailForTeacher(
             @PathVariable Long groupId) {
@@ -67,10 +55,6 @@ public class ProjectGroupController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get project group detail successfully"));
     }
 
-    /**
-     * Teacher updates a project group (details, status, members)
-     * PUT /api/v1/teacher/project-groups/{groupId}
-     */
     @PutMapping("/teacher/project-groups/{groupId}")
     public ResponseEntity<BaseResponse<ProjectGroupDetailResponse>> updateProjectGroup(
             @PathVariable Long groupId,
@@ -82,10 +66,6 @@ public class ProjectGroupController {
         return ResponseEntity.ok(BaseResponse.success(response, "Project group updated successfully"));
     }
 
-    /**
-     * Student gets their active project group in a classroom
-     * GET /api/v1/student/classrooms/{classroomId}/project-group
-     */
     @GetMapping("/student/classrooms/{classroomId}/project-group")
     public ResponseEntity<BaseResponse<ProjectGroupDetailResponse>> getStudentProjectGroup(
             @PathVariable Long classroomId) {

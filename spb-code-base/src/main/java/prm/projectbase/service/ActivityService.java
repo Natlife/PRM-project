@@ -33,17 +33,10 @@ public class ActivityService {
     private final ClassroomRepository classroomRepository;
     private final UserService userService;
     private final NotificationService notificationService;
-    
-    /**
-     * Teacher creates a learning activity in a classroom
-     * @param classroomId the classroom
-     * @param request the activity creation request
-     * @return the created activity
-     */
+
     public ActivityDetailResponse createActivity(Long classroomId, ActivityCreateRequest request) {
         log.info("Teacher creating activity in classroom {}", classroomId);
-        
-        // Verify classroom exists and teacher owns it
+
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
         
@@ -51,13 +44,11 @@ public class ActivityService {
         if (!classroom.getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
-        
-        // Validate request
+
         if (request.getOpenAt() != null && request.getOpenAt().isAfter(request.getDueAt())) {
             throw new AppException(ErrorCode.INVALID_ACTIVITY_DATES);
         }
-        
-        // Create activity entity
+
         LearningActivity activity = LearningActivity.builder()
                 .classroom(classroom)
                 .title(request.getTitle())
@@ -74,13 +65,7 @@ public class ActivityService {
         
         return toDetailResponse(saved);
     }
-    
-    /**
-     * Teacher updates an activity
-     * @param activityId the activity to update
-     * @param request the update request
-     * @return the updated activity
-     */
+
     public ActivityDetailResponse updateActivity(Long activityId, ActivityUpdateRequest request) {
         log.info("Updating activity {}", activityId);
         
@@ -93,21 +78,18 @@ public class ActivityService {
         if (!activity.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
-        
-        // Can only update DRAFT or PUBLISHED activities
+
         if (activity.getStatus() == ActivityWorkflowStatus.CLOSED) {
             throw new AppException(ErrorCode.ACTIVITY_ALREADY_CLOSED);
         }
-        
-        // Validate dates if provided
+
         LocalDateTime newDueAt = request.getDueAt() != null ? request.getDueAt() : activity.getDueAt();
         LocalDateTime newOpenAt = request.getOpenAt() != null ? request.getOpenAt() : activity.getOpenAt();
         
         if (newOpenAt != null && newOpenAt.isAfter(newDueAt)) {
             throw new AppException(ErrorCode.INVALID_ACTIVITY_DATES);
         }
-        
-        // Update fields
+
         if (request.getTitle() != null) {
             activity.setTitle(request.getTitle());
         }
@@ -143,17 +125,11 @@ public class ActivityService {
         
         return toDetailResponse(updated);
     }
-    
-    /**
-     * Get all activities in a classroom for teacher
-     * @param classroomId the classroom
-     * @return list of activities
-     */
+
     @Transactional(readOnly = true)
     public List<ActivityListResponse> getClassroomActivitiesForTeacher(Long classroomId) {
         log.info("Fetching activities for classroom {} (teacher view)", classroomId);
-        
-        // Verify classroom exists and teacher owns it
+
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
         
@@ -168,17 +144,11 @@ public class ActivityService {
                 .map(this::toListResponse)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * Get published activities in a classroom for student
-     * @param classroomId the classroom
-     * @return list of published activities
-     */
+
     @Transactional(readOnly = true)
     public List<ActivityListResponse> getClassroomActivitiesForStudent(Long classroomId) {
         log.info("Fetching published activities for classroom {} (student view)", classroomId);
-        
-        // Verify classroom exists and student is enrolled
+
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
         
@@ -196,20 +166,14 @@ public class ActivityService {
                 .map(this::toListResponse)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * Get activity detail
-     * @param activityId the activity
-     * @return activity detail
-     */
+
     @Transactional(readOnly = true)
     public ActivityDetailResponse getActivityDetail(Long activityId) {
         log.info("Fetching activity detail {}", activityId);
         
         LearningActivity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new AppException(ErrorCode.ACTIVITY_NOT_FOUND));
-        
-        // If draft, only teacher can view
+
         if (activity.getStatus() == ActivityWorkflowStatus.DRAFT) {
             User currentUser = userService.getCurrentUser();
             if (!activity.getClassroom().getTeacher().getId().equals(currentUser.getId())) {
@@ -219,32 +183,20 @@ public class ActivityService {
         
         return toDetailResponse(activity);
     }
-    
-    /**
-     * Check if an activity is editable by student (not closed and not past due)
-     * @param activity the activity
-     * @return true if editable
-     */
+
     public boolean isActivityEditableForSubmission(LearningActivity activity) {
         LocalDateTime now = LocalDateTime.now();
         return activity.getStatus() != ActivityWorkflowStatus.CLOSED
                 && now.isBefore(activity.getDueAt());
     }
-    
-    /**
-     * Check if activity is open for student submission
-     * @param activity the activity
-     * @return true if open
-     */
+
     public boolean isActivityOpenForStudent(LearningActivity activity) {
         LocalDateTime now = LocalDateTime.now();
         boolean isAfterOpen = activity.getOpenAt() == null || now.isAfter(activity.getOpenAt());
         boolean isBeforeDue = now.isBefore(activity.getDueAt());
         return isAfterOpen && isBeforeDue;
     }
-    
-    // DTO Conversion Methods
-    
+
     private ActivityDetailResponse toDetailResponse(LearningActivity activity) {
         return ActivityDetailResponse.builder()
                 .id(activity.getId())

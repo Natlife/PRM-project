@@ -22,10 +22,6 @@ public class PeerReviewController {
 
     private final PeerReviewService peerReviewService;
 
-    /**
-     * Student gets list of project groups they can peer review in a classroom
-     * GET /api/v1/student/classrooms/{classroomId}/peer-review/targets
-     */
     @GetMapping("/student/classrooms/{classroomId}/peer-review/targets")
     public ResponseEntity<BaseResponse<List<ProjectGroupListResponse>>> getPeerReviewTargets(
             @PathVariable Long classroomId) {
@@ -36,10 +32,6 @@ public class PeerReviewController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get peer review targets successfully"));
     }
 
-    /**
-     * Student submits/creates/updates a peer review
-     * POST /api/v1/student/peer-reviews
-     */
     @PostMapping("/student/peer-reviews")
     public ResponseEntity<BaseResponse<PeerReviewResponse>> createOrUpdatePeerReview(
             @Valid @RequestBody PeerReviewRequest request) {
@@ -51,10 +43,6 @@ public class PeerReviewController {
                 .body(BaseResponse.success(response, "Peer review submitted successfully", HttpStatus.CREATED));
     }
 
-    /**
-     * Student gets all peer reviews they have made in a classroom
-     * GET /api/v1/student/classrooms/{classroomId}/peer-reviews/me
-     */
     @GetMapping("/student/classrooms/{classroomId}/peer-reviews/me")
     public ResponseEntity<BaseResponse<List<PeerReviewResponse>>> getStudentPeerReviewsMe(
             @PathVariable Long classroomId) {

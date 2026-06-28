@@ -8,6 +8,10 @@ import 'create_activity_screen.dart';
 import 'components/activity_detail_screen.dart';
 import 'create_project_screen.dart';
 import 'project_detail_screen.dart';
+import '../../services/classroom_service.dart';
+import '../../services/dashboard_service.dart';
+import '../../services/activity_service.dart';
+import '../../services/project_service.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -21,164 +25,195 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   String _classSearchQuery = '';
   String _activitySearchQuery = '';
 
-  final List<Map<String, dynamic>> _classes = [
-    {
-      'title': 'PRM - Lập trình mobile',
-      'code': 'PRM393 - SE1904',
-      'studentsCount': 30,
-      'semester': 'SU26',
-      'type': 'Chuyên ngành hẹp',
-      'color': const Color(0xFF7EC07E),
-      'time': 'Slot 1 (7:30-9:50)',
-      'date': 'Hôm nay',
-    },
-    {
-      'title': 'PRW - Phát triển web',
-      'code': 'PRW301 - SE1902',
-      'studentsCount': 28,
-      'semester': 'FA26',
-      'type': 'Chuyên ngành hẹp',
-      'color': const Color(0xFF7EC07E),
-      'time': 'Slot 2 (10:00-12:20)',
-      'date': 'Hôm nay',
-    },
-    {
-      'title': 'IOT - Nhập môn IoT',
-      'code': 'IOT102 - SE1901',
-      'studentsCount': 35,
-      'semester': 'SU26',
-      'type': 'Nhập môn',
-      'color': const Color(0xFF7EC07E),
-      'time': 'Slot 4 (15:00-17:20)',
-      'date': 'Ngày mai',
-    },
-    {
-      'title': 'PRO - Đồ án Tốt nghiệp',
-      'code': 'PRO391 - SE1801',
-      'studentsCount': 25,
-      'semester': 'SP26',
-      'type': 'Chuyên ngành',
-      'color': const Color(0xFFF59E0B),
-      'time': 'Slot 3 (12:50-15:10)',
-      'date': 'Ngày mai',
-    },
-  ];
+  List<Map<String, dynamic>> _classes = [];
+  bool _isLoadingClasses = true;
+  int _totalStudents = 0;
+  int _pendingGrading = 0;
+  int _activeGroups = 0;
 
-  final List<Map<String, dynamic>> _activitiesList = [
-    {
-      'title': 'Đánh giá Milestone 1 - Dự án cuối kỳ',
-      'className': 'PRM393 - SE1904',
-      'status': 'Đã hoàn thành',
-      'statusColor': Colors.greenAccent,
-      'submissions': '8/8 nhóm đã nộp',
-      'date': '15/03/2026',
-    },
-    {
-      'title': 'Bài tập Chuẩn bị bài 4: Flutter Widget',
-      'className': 'PRM393 - SE1904',
-      'status': 'Đang mở (Trễ hạn: 23:59 hôm nay)',
-      'statusColor': Colors.amberAccent,
-      'submissions': '28/32 học viên đã nộp',
-      'date': '19/03/2026',
-    },
-    {
-      'title': 'Đánh giá Báo cáo nghiên cứu công nghệ',
-      'className': 'PRW301 - SE1902',
-      'status': 'Đang mở (Hạn chót: 3 ngày nữa)',
-      'statusColor': const Color(0xFF7EC07E),
-      'submissions': '15/28 học viên đã nộp',
-      'date': '22/03/2026',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadClasses();
+  }
+
+  Future<void> _loadClasses() async {
+    setState(() => _isLoadingClasses = true);
+    try {
+      final results = await Future.wait([
+        ClassroomService().getTeacherClassrooms(),
+        DashboardService().getTeacherDashboard(),
+      ]);
+
+      final loadedClasses = results[0] as List<Map<String, dynamic>>;
+      final summary = results[1] as Map<String, dynamic>;
+      final loadedActivities = await _loadTeacherActivities(loadedClasses);
+      final loadedProjects = await _loadTeacherProjects(loadedClasses);
+
+      if (!mounted) return;
+      setState(() {
+        _classes = loadedClasses;
+        _activitiesList = loadedActivities;
+        _projectsList = loadedProjects;
+        _totalStudents = summary['totalStudentsCount'] ?? 0;
+        _pendingGrading = summary['pendingGradingCount'] ?? 0;
+        _activeGroups = summary['activeGroupsCount'] ?? 0;
+        _isLoadingClasses = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading dashboard data: $e');
+      try {
+        final loadedClasses = await ClassroomService().getTeacherClassrooms();
+        if (!mounted) return;
+
+        setState(() {
+          _classes = loadedClasses;
+          _totalStudents = loadedClasses.fold<int>(
+            0,
+            (sum, item) => sum + ((item['studentsCount'] as int?) ?? 0),
+          );
+          _pendingGrading = 0;
+          _activeGroups = 0;
+          _isLoadingClasses = false;
+        });
+      } catch (innerError) {
+        debugPrint('Error loading teacher classrooms: $innerError');
+        if (!mounted) return;
+
+        setState(() {
+          _isLoadingClasses = false;
+        });
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadTeacherActivities(
+    List<Map<String, dynamic>> classrooms,
+  ) async {
+    final List<Map<String, dynamic>> activities = [];
+
+    for (final classroom in classrooms) {
+      final classroomId = classroom['id'] as int?;
+      if (classroomId == null) continue;
+
+      try {
+        final items = await ActivityService().getTeacherActivities(classroomId);
+        for (final activity in items) {
+          final dueAt = activity['dueAt']?.toString() ?? '';
+          final date = dueAt.isNotEmpty ? dueAt.split('T').first : '';
+          final status = (activity['status'] ?? '').toString();
+
+          activities.add({
+            'id': activity['id'],
+            'classroomId': classroomId,
+            'title': activity['title'] ?? 'Hoat dong',
+            'className': classroom['code'] ?? '',
+            'status': status,
+            'statusColor': status == 'PUBLISHED'
+                ? const Color(0xFF7EC07E)
+                : Colors.amberAccent,
+            'submissions': activity['activityType'] ?? '',
+            'date': date,
+            'description': activity['description'] ?? '',
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading activities for classroom $classroomId: $e');
+      }
+    }
+
+    activities.sort((a, b) => (b['date'] ?? '').compareTo(a['date'] ?? ''));
+    return activities;
+  }
+
+  Future<List<Map<String, dynamic>>> _loadTeacherProjects(
+    List<Map<String, dynamic>> classrooms,
+  ) async {
+    final List<Map<String, dynamic>> projects = [];
+
+    for (final classroom in classrooms) {
+      final classroomId = classroom['id'] as int?;
+      if (classroomId == null) continue;
+
+      try {
+        final groups = await ProjectService().getClassroomProjectGroups(classroomId);
+        for (final group in groups) {
+          final groupId = (group['id'] as num?)?.toInt();
+          if (groupId == null) continue;
+
+          List<Map<String, dynamic>> milestones = [];
+          List<dynamic> members = [];
+          String? leaderName;
+          double progress = 0.0;
+
+          try {
+            final detail = await ProjectService().getTeacherProjectGroupDetail(groupId);
+            members = detail['members'] as List<dynamic>? ?? [];
+            leaderName = detail['leader']?['fullName']?.toString();
+          } catch (e) {
+            debugPrint('Error loading project group detail $groupId: $e');
+          }
+
+          try {
+            final milestoneItems = await ProjectService().getGroupMilestones(groupId);
+            milestones = milestoneItems;
+            if (milestoneItems.isNotEmpty) {
+              final total = milestoneItems.fold<int>(
+                0,
+                (sum, item) => sum + (((item['progressPercent'] as num?) ?? 0).toInt()),
+              );
+              progress = (total / milestoneItems.length) / 100.0;
+            }
+          } catch (e) {
+            debugPrint('Error loading milestones for group $groupId: $e');
+          }
+
+          projects.add({
+            'id': groupId,
+            'classroomId': classroomId,
+            'title': group['projectName'] ?? group['groupName'] ?? 'Du an',
+            'projectName': group['projectName'] ?? group['groupName'] ?? 'Du an',
+            'class': classroom['code'] ?? '',
+            'className': classroom['title'] ?? classroom['className'] ?? '',
+            'group': group['groupName'] ?? '',
+            'groupName': group['groupName'] ?? '',
+            'members': '${group['memberCount'] ?? 0} sinh vien',
+            'membersList': members
+                .map((member) => member['fullName'] ?? member['userName'] ?? 'Thanh vien')
+                .toList(),
+            'membersData': members,
+            'leader': leaderName,
+            'leaderData': group['leader'],
+            'date': '',
+            'progress': progress,
+            'milestones': milestones,
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading projects for classroom $classroomId: $e');
+      }
+    }
+
+    return projects;
+  }
+
+  List<Map<String, dynamic>> _activitiesList = [];
 
   String _projectSearchQuery = '';
 
-  final List<Map<String, dynamic>> _projectsList = [
-    {
-      'title': 'Hệ thống quản lý Flipped Classroom',
-      'class': 'PRM393 - SE1904',
-      'className': 'PRM - Lập trình mobile',
-      'group': 'Nhóm 1',
-      'groupName': 'Nhóm 1',
-      'members': '5 sinh viên',
-      'membersList': ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C', 'Phạm Văn D', 'Vũ Thị E'],
-      'leader': 'Nguyễn Văn A',
-      'date': '20/08/2026',
-      'progress': 0.8,
-      'milestones': [
-        {
-          'title': 'Phân tích yêu cầu',
-          'date': '15/03/2026',
-          'status': 'Hoàn thành',
-        },
-      ],
-    },
-    {
-      'title': 'Ứng dụng theo dõi sức khỏe Gymtelligent',
-      'class': 'PRM393 - SE1904',
-      'className': 'PRM - Lập trình mobile',
-      'group': 'Nhóm 2',
-      'groupName': 'Nhóm 2',
-      'members': '3 sinh viên',
-      'membersList': ['Hoàng Văn F', 'Đỗ Thị G', 'Lê Văn C'],
-      'leader': 'Hoàng Văn F',
-      'date': '25/08/2026',
-      'progress': 0.6,
-      'milestones': [
-        {
-          'title': 'Phân tích yêu cầu',
-          'date': '15/03/2026',
-          'status': 'Hoàn thành',
-        },
-      ],
-    },
-    {
-      'title': 'Hệ thống Đặt đồ ăn trực tuyến',
-      'class': 'PRW301 - SE1902',
-      'className': 'PRW - Phát triển web',
-      'group': 'Nhóm 3',
-      'groupName': 'Nhóm 3',
-      'members': '4 sinh viên',
-      'membersList': ['Lê Văn C', 'Phạm Văn D', 'Vũ Thị E', 'Nguyễn Văn A'],
-      'leader': 'Lê Văn C',
-      'date': '30/08/2026',
-      'progress': 0.45,
-      'milestones': [
-        {
-          'title': 'Phân tích yêu cầu',
-          'date': '15/03/2026',
-          'status': 'Đang thực hiện',
-        },
-      ],
-    },
-  ];
+  List<Map<String, dynamic>> _projectsList = [];
 
   Future<void> _navigateToCreateProject() async {
-    final availableClasses = _classes.map((c) => c['code'] as String).toList();
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
         builder: (context) => CreateProjectScreen(
-          availableClasses: availableClasses,
+          availableClassrooms: _classes,
         ),
       ),
     );
     if (result != null) {
-      setState(() {
-        _projectsList.insert(0, {
-          'title': result['title'] as String,
-          'class': result['className'] as String,
-          'className': result['className'] as String,
-          'group': result['group'] as String,
-          'groupName': result['groupName'] as String,
-          'members': result['members'] as String,
-          'membersList': result['membersList'],
-          'leader': result['leader'],
-          'date': result['date'] as String,
-          'progress': result['progress'] as double,
-          'milestones': result['milestones'],
-        });
-      });
+      _loadClasses();
     }
   }
 
@@ -217,20 +252,97 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       MaterialPageRoute(builder: (context) => const CreateClassScreen()),
     );
     if (result != null) {
-      setState(() {
-        _classes.insert(0, {
-          'title': result['title'] as String,
-          'code': result['code'] as String,
-          'studentsCount': result['studentsCount'] as int,
-          'semester': result['semester'] as String,
-          'type': result['type'] as String,
-          'color': Colors.primaries[Random().nextInt(Colors.primaries.length)],
-          'time': result['schedules'] != null && (result['schedules'] as List).isNotEmpty
-              ? (result['schedules'] as List).first as String
-              : 'Slot 1 (7:30-9:50)',
-          'date': 'Hôm nay',
-        });
-      });
+      final List<dynamic> schedulesRaw = result['schedules'] as List<dynamic>? ?? [];
+      final List<Map<String, dynamic>> schedulesRequest = [];
+      for (var s in schedulesRaw) {
+        if (s is String) {
+          // Split only at the FIRST ': ' to avoid splitting on times like '7:30'
+          final sepIdx = s.indexOf(': ');
+          if (sepIdx != -1) {
+            final dayStr = s.substring(0, sepIdx).trim();
+            final slotStr = s.substring(sepIdx + 2).trim();
+            
+            int dayOfWeek = 0;
+            if (dayStr == 'Thứ 2') dayOfWeek = 0;
+            else if (dayStr == 'Thứ 3') dayOfWeek = 1;
+            else if (dayStr == 'Thứ 4') dayOfWeek = 2;
+            else if (dayStr == 'Thứ 5') dayOfWeek = 3;
+            else if (dayStr == 'Thứ 6') dayOfWeek = 4;
+            else if (dayStr == 'Thứ 7') dayOfWeek = 5;
+            else if (dayStr == 'Chủ nhật') dayOfWeek = 6;
+            
+            String slotLabel = 'Slot 1';
+            String startTime = '07:30:00';
+            String endTime = '09:50:00';
+            
+            if (slotStr.contains('Slot 1')) {
+              slotLabel = 'Slot 1';
+              startTime = '07:30:00';
+              endTime = '09:50:00';
+            } else if (slotStr.contains('Slot 2')) {
+              slotLabel = 'Slot 2';
+              startTime = '10:00:00';
+              endTime = '12:20:00';
+            } else if (slotStr.contains('Slot 3')) {
+              slotLabel = 'Slot 3';
+              startTime = '12:50:00';
+              endTime = '15:10:00';
+            } else if (slotStr.contains('Slot 4')) {
+              slotLabel = 'Slot 4';
+              startTime = '15:20:00';
+              endTime = '17:40:00';
+            } else if (slotStr.contains('Slot 5')) {
+              slotLabel = 'Slot 5';
+              startTime = '18:00:00';
+              endTime = '20:20:00';
+            }
+            
+            schedulesRequest.add({
+              'dayOfWeek': dayOfWeek,
+              'slotLabel': slotLabel,
+              'startTime': startTime,
+              'endTime': endTime,
+              'roomName': 'Phòng học trực tuyến',
+            });
+          }
+        }
+      }
+
+      final String titleRaw = result['title'] as String? ?? 'Lớp học';
+      final String codeRaw = result['code'] as String? ?? 'SE1904-PRM393';
+      
+      final cleanCode = codeRaw
+          .toUpperCase()
+          .replaceAll(' - ', '-')
+          .replaceAll(' ', '-')
+          .replaceAll(RegExp(r'[^A-Z0-9-]'), '-');
+
+      try {
+        await ClassroomService().createClassroom(
+          code: cleanCode,
+          name: titleRaw,
+          description: result['description'] as String? ?? '',
+          semesterCode: result['semester'] as String? ?? 'SU26',
+          schedules: schedulesRequest,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tạo lớp học thành công!'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Color(0xFF7EC07E),
+          ),
+        );
+        _loadClasses();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tạo lớp học: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -257,7 +369,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+              color: const Color(0xFF0F172A).withOpacity(0.06),
               width: 1.2,
             ),
           ),
@@ -268,7 +380,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           type: BottomNavigationBarType.fixed,
           backgroundColor: const Color(0xFFFFFFFF),
           selectedItemColor: const Color(0xFF7EC07E),
-          unselectedItemColor: const Color(0xFF0F172A).withValues(alpha: 0.4),
+          unselectedItemColor: const Color(0xFF0F172A).withOpacity(0.4),
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
@@ -325,7 +437,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Chào mừng giảng viên!',
-                  style: TextStyle(fontSize: 14, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 14, color: const Color(0xFF0F172A).withOpacity(0.5)),
                 ),
               ],
             ),
@@ -335,14 +447,30 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _buildStatCard('${_classes.length}', 'Lớp học', const Color(0xFF7EC07E)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard('${_classes.length}', 'Lớp học', const Color(0xFF7EC07E)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _buildStatCard('$_totalStudents', 'Sinh viên', const Color(0xFF7EC07E)),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: _buildStatCard('300', 'Sinh viên', const Color(0xFF7EC07E)),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard('$_activeGroups', 'Nhóm dự án', const Color(0xFF7EC07E)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _buildStatCard('$_pendingGrading', 'Cần chấm điểm', const Color(0xFF7EC07E)),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -371,20 +499,29 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ),
         ),
 
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final upcomingClasses = _classes.take(3).toList();
-                if (upcomingClasses.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'Không có lớp học nào sắp diễn ra',
-                      style: TextStyle(color: Color(0xFF94A3B8)),
-                    ),
-                  );
-                }
+        _isLoadingClasses
+            ? const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+                  ),
+                ),
+              )
+            : SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final upcomingClasses = _classes.take(3).toList();
+                      if (upcomingClasses.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Không có lớp học nào sắp diễn ra',
+                            style: TextStyle(color: Color(0xFF94A3B8)),
+                          ),
+                        );
+                      }
 
                 final item = upcomingClasses[index];
                 return GestureDetector(
@@ -393,6 +530,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ClassDetailScreen(
+                          classroomId: item['id'] as int?,
                           className: item['title'],
                           classCode: item['code'],
                           studentsCount: item['studentsCount'],
@@ -416,7 +554,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,11 +580,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                           children: [
                             Text(
                               '${item['studentsCount']} sinh viên',
-                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
+                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.4)),
                             ),
                             Text(
                               item['time'] ?? 'Slot 1',
-                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
+                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.4)),
                             ),
                           ],
                         ),
@@ -507,7 +645,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+        border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
       ),
       child: Column(
         children: [
@@ -518,7 +656,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           const SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(fontSize: 13, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+            style: TextStyle(fontSize: 13, color: const Color(0xFF0F172A).withOpacity(0.5)),
           ),
         ],
       ),
@@ -577,8 +715,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm lớp học',
-                hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: const Color(0xFF0F172A).withValues(alpha: 0.4), size: 20),
+                hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: const Color(0xFF0F172A).withOpacity(0.4), size: 20),
                 fillColor: const Color(0xFFFFFFFF),
                 filled: true,
                 border: OutlineInputBorder(
@@ -590,12 +728,21 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ),
         ),
 
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (filteredClasses.isEmpty) {
+        _isLoadingClasses
+            ? const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+                  ),
+                ),
+              )
+            : SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (filteredClasses.isEmpty) {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(40.0),
@@ -623,6 +770,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ClassDetailScreen(
+                          classroomId: item['id'] as int?,
                           className: displayTitle,
                           classCode: displayCode,
                           studentsCount: displayCount,
@@ -646,7 +794,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+                      border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,9 +805,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                               width: 50,
                               height: 50,
                               decoration: BoxDecoration(
-                                color: displayColor.withValues(alpha: 0.12),
+                                color: displayColor.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: displayColor.withValues(alpha: 0.3)),
+                                border: Border.all(color: displayColor.withOpacity(0.3)),
                               ),
                               alignment: Alignment.center,
                               child: Text(
@@ -691,7 +839,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                     displayType,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: const Color(0xFF0F172A).withValues(alpha: 0.4),
+                                      color: const Color(0xFF0F172A).withOpacity(0.4),
                                     ),
                                   ),
                                 ],
@@ -707,15 +855,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                               '$displayCount sinh viên',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.5),
+                                color: const Color(0xFF0F172A).withOpacity(0.5),
                               ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                                color: const Color(0xFF0F172A).withOpacity(0.06),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+                                border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
                               ),
                               child: Text(
                                 displaySemester,
@@ -786,7 +934,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             hintText: 'Tìm kiếm hoạt động',
-            hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
+            hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
             suffixIcon: const Icon(Icons.search, color: Color(0xFF7EC07E), size: 20),
             fillColor: const Color(0xFFFFFFFF),
             filled: true,
@@ -861,7 +1009,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             hintText: 'Tìm kiếm dự án',
-            hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3), fontSize: 14),
+            hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
             suffixIcon: const Icon(Icons.search, color: Color(0xFF7EC07E), size: 20),
             fillColor: const Color(0xFFFFFFFF),
             filled: true,
@@ -929,7 +1077,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -947,7 +1095,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7EC07E).withValues(alpha: 0.12),
+                    color: const Color(0xFF7EC07E).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -963,15 +1111,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 Text(
                   group,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
                 ),
                 Text(
                   members,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
                 ),
                 Text(
                   date,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
                 ),
               ],
             ),
@@ -1016,7 +1164,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1026,7 +1174,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7EC07E).withValues(alpha: 0.12),
+                    color: const Color(0xFF7EC07E).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.assignment, color: Color(0xFF7EC07E), size: 20),
@@ -1046,14 +1194,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 Text(
                   submissions,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7EC07E).withValues(alpha: 0.15),
+                    color: const Color(0xFF7EC07E).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF7EC07E).withValues(alpha: 0.3)),
+                    border: Border.all(color: const Color(0xFF7EC07E).withOpacity(0.3)),
                   ),
                   child: Text(
                     className,
@@ -1083,14 +1231,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
+                color: color.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -1107,12 +1255,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.4), fontSize: 11),
+                    style: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.4), fontSize: 11),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+            Icon(Icons.chevron_right, color: const Color(0xFF0F172A).withOpacity(0.3)),
           ],
         ),
       ),

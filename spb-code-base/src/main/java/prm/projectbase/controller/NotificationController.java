@@ -18,10 +18,6 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    /**
-     * Get all notifications for the current user
-     * GET /api/v1/notifications
-     */
     @GetMapping
     public ResponseEntity<BaseResponse<List<NotificationResponse>>> getUserNotifications() {
         log.info("GET /api/v1/notifications - Fetching user notifications");
@@ -29,10 +25,6 @@ public class NotificationController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get notifications successfully"));
     }
 
-    /**
-     * Get only unread notifications for the current user
-     * GET /api/v1/notifications/unread
-     */
     @GetMapping("/unread")
     public ResponseEntity<BaseResponse<List<NotificationResponse>>> getUnreadNotifications() {
         log.info("GET /api/v1/notifications/unread - Fetching unread notifications");
@@ -40,10 +32,6 @@ public class NotificationController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get unread notifications successfully"));
     }
 
-    /**
-     * Get unread notification count
-     * GET /api/v1/notifications/unread-count
-     */
     @GetMapping("/unread-count")
     public ResponseEntity<BaseResponse<Long>> getUnreadCount() {
         log.info("GET /api/v1/notifications/unread-count - Fetching unread count");
@@ -51,10 +39,6 @@ public class NotificationController {
         return ResponseEntity.ok(BaseResponse.success(count, "Get unread count successfully"));
     }
 
-    /**
-     * Mark a notification as read
-     * PUT /api/v1/notifications/{notificationId}/read
-     */
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<BaseResponse<NotificationResponse>> markAsRead(
             @PathVariable Long notificationId) {
@@ -63,10 +47,6 @@ public class NotificationController {
         return ResponseEntity.ok(BaseResponse.success(response, "Marked notification as read successfully"));
     }
 
-    /**
-     * Mark all notifications of the current user as read
-     * PUT /api/v1/notifications/read-all
-     */
     @PutMapping("/read-all")
     public ResponseEntity<BaseResponse<Void>> markAllAsRead() {
         log.info("PUT /api/v1/notifications/read-all - Marking all notifications as read");

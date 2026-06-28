@@ -16,4 +16,7 @@ public class ProjectGroupListResponse {
     UserResponse leader;
     String status;
     Integer memberCount;
+    Long classroomId;
+    String classroomCode;
+    String classroomName;
 }

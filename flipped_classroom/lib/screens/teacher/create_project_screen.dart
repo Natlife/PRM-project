@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import '../../services/classroom_service.dart';
+import '../../services/project_service.dart';
 
 class CreateProjectScreen extends StatefulWidget {
+  final int? fixedClassroomId;
   final String? fixedClass;
-  final List<String> availableClasses;
+  final List<Map<String, dynamic>> availableClassrooms;
 
   const CreateProjectScreen({
     super.key,
+    this.fixedClassroomId,
     this.fixedClass,
-    required this.availableClasses,
+    this.availableClassrooms = const [],
   });
 
   @override
@@ -16,119 +20,175 @@ class CreateProjectScreen extends StatefulWidget {
 
 class _CreateProjectScreenState extends State<CreateProjectScreen> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedClass;
   final _projectNameController = TextEditingController();
   final _groupNameController = TextEditingController();
-  final _deadlineController = TextEditingController();
-  
-  String? _selectedLeader;
-  String? _selectedMemberDropdown;
-  final List<String> _selectedMembers = [];
+  final _descriptionController = TextEditingController();
 
-  final List<String> _mockStudents = [
-    'Nguyễn Văn A',
-    'Trần Thị B',
-    'Lê Văn C',
-    'Phạm Văn D',
-    'Vũ Thị E',
-    'Hoàng Văn F',
-    'Đỗ Thị G',
-  ];
+  int? _selectedClassroomId;
+  String? _selectedClassLabel;
+  int? _selectedLeaderId;
+  int? _selectedMemberId;
+  List<Map<String, dynamic>> _students = [];
+  List<int> _selectedStudentIds = [];
+  bool _isLoadingStudents = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.fixedClass != null) {
-      _selectedClass = widget.fixedClass;
-    } else if (widget.availableClasses.isNotEmpty) {
-      _selectedClass = widget.availableClasses.first;
+    if (widget.fixedClassroomId != null) {
+      _selectedClassroomId = widget.fixedClassroomId;
+      _selectedClassLabel = widget.fixedClass;
+      _loadStudents(widget.fixedClassroomId!);
+    } else if (widget.availableClassrooms.isNotEmpty) {
+      final first = widget.availableClassrooms.first;
+      _selectedClassroomId = (first['id'] as num?)?.toInt();
+      _selectedClassLabel = first['code'] ?? first['title'] ?? first['className'];
+      if (_selectedClassroomId != null) {
+        _loadStudents(_selectedClassroomId!);
+      }
     }
-    _selectedLeader = _mockStudents.first;
-    _selectedMemberDropdown = _mockStudents.first;
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime now = DateTime.now();
-    final DateTime tomorrow = now.add(const Duration(days: 1));
+  @override
+  void dispose() {
+    _projectNameController.dispose();
+    _groupNameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: tomorrow,
-      firstDate: tomorrow,
-      lastDate: now.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF7EC07E),
-              onPrimary: Colors.white,
-              surface: Color(0xFFFFFFFF),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+  Future<void> _loadStudents(int classroomId) async {
+    setState(() {
+      _isLoadingStudents = true;
+      _students = [];
+      _selectedStudentIds = [];
+      _selectedLeaderId = null;
+      _selectedMemberId = null;
+    });
 
-    if (picked != null) {
+    try {
+      final students = await ClassroomService().getTeacherClassroomStudents(
+        classroomId,
+      );
+      if (!mounted) return;
+
       setState(() {
-        _deadlineController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+        _students = students;
+        if (students.isNotEmpty) {
+          _selectedLeaderId = (students.first['id'] as num?)?.toInt();
+          _selectedMemberId = (students.first['id'] as num?)?.toInt();
+        }
+        _isLoadingStudents = false;
       });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStudents = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Khong tai duoc sinh vien trong lop: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
   void _addMember() {
-    if (_selectedMemberDropdown == null) return;
-    if (_selectedMembers.contains(_selectedMemberDropdown!)) {
+    if (_selectedMemberId == null) return;
+    if (_selectedStudentIds.contains(_selectedMemberId)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Thành viên này đã có trong danh sách!'),
+          content: Text('Sinh vien nay da co trong danh sach!'),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
+
     setState(() {
-      _selectedMembers.add(_selectedMemberDropdown!);
+      _selectedStudentIds.add(_selectedMemberId!);
     });
   }
 
-  void _removeMember(String member) {
+  void _removeMember(int studentId) {
     setState(() {
-      _selectedMembers.remove(member);
+      _selectedStudentIds.remove(studentId);
+      if (_selectedLeaderId == studentId) {
+        _selectedLeaderId =
+            _selectedStudentIds.isNotEmpty ? _selectedStudentIds.first : null;
+      }
     });
   }
 
-  void _submitForm() {
+  String _studentNameById(int studentId) {
+    final match = _students.cast<Map<String, dynamic>?>().firstWhere(
+      (student) => (student?['id'] as num?)?.toInt() == studentId,
+      orElse: () => null,
+    );
+    return match?['fullName'] ?? match?['userName'] ?? 'Sinh vien';
+  }
+
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedClassroomId == null) return;
 
-    if (_selectedMembers.isEmpty) {
+    if (_selectedStudentIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui lòng thêm ít nhất một thành viên vào nhóm!'),
+          content: Text('Vui long them it nhat mot thanh vien vao nhom!'),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    final projectData = {
-      'title': _projectNameController.text.trim(),
-      'group': _groupNameController.text.trim(),
-      'groupName': _groupNameController.text.trim(),
-      'className': _selectedClass,
-      'class': _selectedClass,
-      'date': _deadlineController.text,
-      'leader': _selectedLeader,
-      'members': '${_selectedMembers.length} sinh viên',
-      'membersList': _selectedMembers,
-      'progress': 0.0,
-      'milestones': <Map<String, dynamic>>[],
-    };
+    if (_selectedLeaderId == null ||
+        !_selectedStudentIds.contains(_selectedLeaderId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nhom truong phai nam trong danh sach thanh vien!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    Navigator.of(context).pop(projectData);
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final response = await ProjectService().createProjectGroup(
+        _selectedClassroomId!,
+        {
+          'groupName': _groupNameController.text.trim().isEmpty
+              ? _projectNameController.text.trim()
+              : _groupNameController.text.trim(),
+          'projectName': _projectNameController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'leaderId': _selectedLeaderId,
+          'studentIds': _selectedStudentIds,
+        },
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(response);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Tao du an that bai: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
@@ -139,12 +199,20 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: Color(0xFF0F172A),
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Tạo dự án mới',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          'Tao du an moi',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -156,29 +224,61 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Lớp học *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Lop hoc *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
-              if (widget.fixedClass != null)
+              if (widget.fixedClassroomId != null)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.05)),
+                    border: Border.all(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                    ),
                   ),
                   child: Text(
-                    widget.fixedClass!,
-                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.bold),
+                    _selectedClassLabel ?? '',
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 )
               else
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedClass,
-                  dropdownColor: const Color(0xFFFFFFFF),
-                  style: const TextStyle(color: Color(0xFF0F172A)),
+                DropdownButtonFormField<int>(
+                  initialValue: _selectedClassroomId,
+                  items: widget.availableClassrooms.map((classroom) {
+                    return DropdownMenuItem<int>(
+                      value: (classroom['id'] as num?)?.toInt(),
+                      child: Text(
+                        classroom['code'] ??
+                            classroom['title'] ??
+                            classroom['className'] ??
+                            '',
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    final match = widget.availableClassrooms.firstWhere(
+                      (classroom) => (classroom['id'] as num?)?.toInt() == value,
+                    );
+                    setState(() {
+                      _selectedClassroomId = value;
+                      _selectedClassLabel =
+                          match['code'] ?? match['title'] ?? match['className'];
+                    });
+                    if (value != null) {
+                      _loadStudents(value);
+                    }
+                  },
                   decoration: InputDecoration(
                     fillColor: const Color(0xFFFFFFFF),
                     filled: true,
@@ -187,33 +287,20 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  items: widget.availableClasses.map((cls) {
-                    return DropdownMenuItem<String>(
-                      value: cls,
-                      child: Text(cls),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedClass = val),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) {
-                      return 'Vui lòng chọn lớp học';
-                    }
-                    return null;
-                  },
                 ),
               const SizedBox(height: 18),
-
               const Text(
-                'Tên dự án *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Ten du an *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _projectNameController,
-                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Nhập tên dự án',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
@@ -221,26 +308,26 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Tên dự án là bắt buộc';
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Vui long nhap ten du an';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 18),
-
               const Text(
-                'Tên nhóm',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Ten nhom *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _groupNameController,
-                style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Nhập tên nhóm (ví dụ: Nhóm 1)',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
@@ -248,48 +335,26 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-              ),
-              const SizedBox(height: 18),
-
-              const Text(
-                'Hạn nộp *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _deadlineController,
-                readOnly: true,
-                onTap: () => _selectDate(context),
-                style: const TextStyle(color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  hintText: 'Chọn ngày hạn nộp',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                  prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF334155), size: 18),
-                  fillColor: const Color(0xFFFFFFFF),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                validator: (val) {
-                  if (val == null || val.isEmpty) {
-                    return 'Hạn nộp là bắt buộc';
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Vui long nhap ten nhom';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 18),
-
               const Text(
-                'Nhóm trưởng',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Mo ta',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedLeader,
-                dropdownColor: const Color(0xFFFFFFFF),
-                style: const TextStyle(color: Color(0xFF0F172A)),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
                 decoration: InputDecoration(
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
@@ -298,45 +363,85 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                items: _mockStudents.map((student) {
-                  return DropdownMenuItem<String>(
-                    value: student,
-                    child: Text(student),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => _selectedLeader = val),
               ),
               const SizedBox(height: 18),
-
+              const Text(
+                'Nhom truong',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_isLoadingStudents)
+                const LinearProgressIndicator(color: Color(0xFF7EC07E))
+              else
+                DropdownButtonFormField<int>(
+                  initialValue: _selectedLeaderId,
+                  items: _students.map((student) {
+                    return DropdownMenuItem<int>(
+                      value: (student['id'] as num?)?.toInt(),
+                      child: Text(student['fullName'] ?? student['userName'] ?? ''),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLeaderId = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    fillColor: const Color(0xFFFFFFFF),
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 18),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Thành viên',
-                    style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                    'Thanh vien',
+                    style: TextStyle(
+                      color: Color(0xFF334155),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: _addMember,
+                    onPressed: _isLoadingStudents ? null : _addMember,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7EC07E),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
                     ),
                     icon: const Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
                     label: const Text(
-                      'Thêm',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      'Them',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedMemberDropdown,
-                dropdownColor: const Color(0xFFFFFFFF),
-                style: const TextStyle(color: Color(0xFF0F172A)),
+              DropdownButtonFormField<int>(
+                initialValue: _selectedMemberId,
+                items: _students.map((student) {
+                  return DropdownMenuItem<int>(
+                    value: (student['id'] as num?)?.toInt(),
+                    child: Text(student['fullName'] ?? student['userName'] ?? ''),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMemberId = value;
+                  });
+                },
                 decoration: InputDecoration(
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
@@ -345,93 +450,68 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                items: _mockStudents.map((student) {
-                  return DropdownMenuItem<String>(
-                    value: student,
-                    child: Text(student),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => _selectedMemberDropdown = val),
               ),
               const SizedBox(height: 12),
-
-              // Selected Members list representation
-              if (_selectedMembers.isNotEmpty) ...[
-                const SizedBox(height: 6),
+              if (_selectedStudentIds.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+                    border: Border.all(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                    ),
                   ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _selectedMembers.length,
-                    itemBuilder: (context, index) {
-                      final member = _selectedMembers[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              member,
-                              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
+                  child: Column(
+                    children: _selectedStudentIds.map((studentId) {
+                      final studentName = _studentNameById(studentId);
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              studentName,
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 14,
+                              ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFEC4899), size: 20),
-                              onPressed: () => _removeMember(member),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: Color(0xFFEC4899),
+                              size: 20,
                             ),
-                          ],
-                        ),
+                            onPressed: () => _removeMember(studentId),
+                          ),
+                        ],
                       );
-                    },
+                    }).toList(),
                   ),
                 ),
-              ],
-
               const SizedBox(height: 32),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEC4899),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'Hủy',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF22C55E),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF22C55E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'Tạo mới',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+                  child: Text(
+                    _isSubmitting ? 'Dang tao...' : 'Tao moi',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),

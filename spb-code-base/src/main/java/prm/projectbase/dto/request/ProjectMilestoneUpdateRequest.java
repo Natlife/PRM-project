@@ -15,5 +15,5 @@ public class ProjectMilestoneUpdateRequest {
     String title;
     String description;
     LocalDateTime dueAt;
-    String status; // NOT_STARTED, IN_PROGRESS, COMPLETED, OVERDUE
+    String status; 
 }

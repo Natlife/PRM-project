@@ -22,11 +22,7 @@ import java.util.List;
 public class ActivityController {
     
     private final ActivityService activityService;
-    
-    /**
-     * Teacher creates a learning activity in a classroom
-     * POST /api/v1/teacher/classrooms/{classroomId}/activities
-     */
+
     @PostMapping("/teacher/classrooms/{classroomId}/activities")
     public ResponseEntity<BaseResponse<ActivityDetailResponse>> createActivity(
             @PathVariable Long classroomId,
@@ -38,11 +34,7 @@ public class ActivityController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Activity created successfully", HttpStatus.CREATED));
     }
-    
-    /**
-     * Teacher updates an activity
-     * PUT /api/v1/teacher/activities/{activityId}
-     */
+
     @PutMapping("/teacher/activities/{activityId}")
     public ResponseEntity<BaseResponse<ActivityDetailResponse>> updateActivity(
             @PathVariable Long activityId,
@@ -53,11 +45,7 @@ public class ActivityController {
         ActivityDetailResponse response = activityService.updateActivity(activityId, request);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Get all activities in a classroom for teacher
-     * GET /api/v1/teacher/classrooms/{classroomId}/activities
-     */
+
     @GetMapping("/teacher/classrooms/{classroomId}/activities")
     public ResponseEntity<BaseResponse<List<ActivityListResponse>>> getTeacherActivities(
             @PathVariable Long classroomId) {
@@ -67,11 +55,7 @@ public class ActivityController {
         List<ActivityListResponse> response = activityService.getClassroomActivitiesForTeacher(classroomId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Get published activities in a classroom for student
-     * GET /api/v1/student/classrooms/{classroomId}/activities
-     */
+
     @GetMapping("/student/classrooms/{classroomId}/activities")
     public ResponseEntity<BaseResponse<List<ActivityListResponse>>> getStudentActivities(
             @PathVariable Long classroomId) {
@@ -81,11 +65,7 @@ public class ActivityController {
         List<ActivityListResponse> response = activityService.getClassroomActivitiesForStudent(classroomId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Get teacher activity detail
-     * GET /api/v1/teacher/activities/{activityId}
-     */
+
     @GetMapping("/teacher/activities/{activityId}")
     public ResponseEntity<BaseResponse<ActivityDetailResponse>> getTeacherActivityDetail(
             @PathVariable Long activityId) {
@@ -95,11 +75,7 @@ public class ActivityController {
         ActivityDetailResponse response = activityService.getActivityDetail(activityId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Get student activity detail
-     * GET /api/v1/student/activities/{activityId}
-     */
+
     @GetMapping("/student/activities/{activityId}")
     public ResponseEntity<BaseResponse<ActivityDetailResponse>> getStudentActivityDetail(
             @PathVariable Long activityId) {

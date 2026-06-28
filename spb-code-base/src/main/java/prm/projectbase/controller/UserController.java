@@ -37,14 +37,14 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @AuthFilter(permission = "ADMIN") // Allowed for ADMIN Globally, or standard USER if viewing their own ID
+    @AuthFilter(permission = "ADMIN") 
     public BaseResponse<UserResponse> getUserById(@PathVariable Long id) {
         UserResponse response = userService.getUserById(id);
         return BaseResponse.success(response, "Get user by ID successfully");
     }
 
     @PutMapping("/{id}")
-    @AuthFilter(permission = "ADMIN") // Allowed for ADMIN Globally, or standard USER if updating their own ID
+    @AuthFilter(permission = "ADMIN") 
     public BaseResponse<UserResponse> updateUser(@PathVariable Long id, @RequestBody @Valid UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return BaseResponse.success(response, "User updated successfully");

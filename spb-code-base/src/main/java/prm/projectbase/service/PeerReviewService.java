@@ -40,22 +40,18 @@ public class PeerReviewService {
 
         User currentStudent = userService.getCurrentUser();
 
-        // Verify enrollment
         Optional<ClassroomEnrollment> enrollment = enrollmentRepository
                 .findByClassroomIdAndStudentId(classroomId, currentStudent.getId());
         if (enrollment.isEmpty() || enrollment.get().getStatus() != ClassroomEnrollmentStatus.ACTIVE) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        // Find student's own group
         Optional<ProjectMember> ownMember = memberRepository
                 .findByStudentIdAndProjectGroupClassroomIdAndActiveTrue(currentStudent.getId(), classroomId);
         Long ownGroupId = ownMember.map(m -> m.getProjectGroup().getId()).orElse(null);
 
-        // Find all groups in classroom
         List<ProjectGroup> allGroups = groupRepository.findByClassroomId(classroomId);
 
-        // Filter out own group
         return allGroups.stream()
                 .filter(g -> ownGroupId == null || !g.getId().equals(ownGroupId))
                 .map(g -> {
@@ -75,21 +71,18 @@ public class PeerReviewService {
 
         Long classroomId = reviewedGroup.getClassroom().getId();
 
-        // Verify reviewer enrollment
         Optional<ClassroomEnrollment> enrollment = enrollmentRepository
                 .findByClassroomIdAndStudentId(classroomId, currentStudent.getId());
         if (enrollment.isEmpty() || enrollment.get().getStatus() != ClassroomEnrollmentStatus.ACTIVE) {
             throw new AppException(ErrorCode.REVIEWER_NOT_IN_CLASSROOM);
         }
 
-        // Verify reviewer is not in reviewed group
         Optional<ProjectMember> ownMember = memberRepository
                 .findByStudentIdAndProjectGroupClassroomIdAndActiveTrue(currentStudent.getId(), classroomId);
         if (ownMember.isPresent() && ownMember.get().getProjectGroup().getId().equals(request.getReviewedGroupId())) {
             throw new AppException(ErrorCode.CANNOT_REVIEW_OWN_GROUP);
         }
 
-        // Fetch or create peer review
         Optional<PeerReview> existingReview = peerReviewRepository
                 .findByReviewerStudentIdAndReviewedGroupId(currentStudent.getId(), request.getReviewedGroupId());
 
@@ -117,7 +110,6 @@ public class PeerReviewService {
 
         PeerReview saved = peerReviewRepository.save(review);
 
-        // Notify reviewed group leader
         if (saved.getReviewedGroup().getLeader() != null) {
             notificationService.createNotification(
                     saved.getReviewedGroup().getLeader(),
@@ -129,7 +121,6 @@ public class PeerReviewService {
             );
         }
 
-        // Notify teacher
         notificationService.createNotification(
                 saved.getClassroom().getTeacher(),
                 "Peer Review Submitted",
@@ -153,8 +144,6 @@ public class PeerReviewService {
 
         return reviews.stream().map(this::toResponse).collect(Collectors.toList());
     }
-
-    // DTO helpers
 
     private PeerReviewResponse toResponse(PeerReview review) {
         return PeerReviewResponse.builder()

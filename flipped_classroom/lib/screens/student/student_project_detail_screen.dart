@@ -19,27 +19,9 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
   @override
   void initState() {
     super.initState();
-    // Initialize milestones from project details, or use default list matching diagram
     _milestones = widget.project['milestones'] != null
         ? List<Map<String, dynamic>>.from(widget.project['milestones'])
-        : [
-            {
-              'title': 'Phân tích yêu cầu',
-              'dueDate': 'Hạn: 10/5/2026',
-              'status': 'Hoàn thành',
-              'color': Colors.greenAccent,
-              'progress': 1.0,
-              'description': 'Lấy yêu cầu từ khách hàng, phân tích sơ đồ luồng dữ liệu (Data Flow Diagram) và thiết kế cơ sở dữ liệu Entity Relationship Diagram (ERD).'
-            },
-            {
-              'title': 'Thiết kế hệ thống',
-              'dueDate': 'Hạn: 30/5/2026',
-              'status': 'Đang thực hiện',
-              'color': Colors.amberAccent,
-              'progress': 0.6,
-              'description': 'Vẽ wireframe chi tiết các màn hình (Mobile & Web), chuẩn bị kiến trúc thư mục Flutter, viết tài liệu đặc tả chức năng (SRS).'
-            },
-          ];
+        : [];
   }
 
   void _onBottomNavTapped(int index) {
@@ -48,10 +30,9 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Get members from project state, default to Nguyễn Văn A & Nguyễn Thị B if empty
     final membersList = widget.project['membersList'] != null
         ? List<String>.from(widget.project['membersList'])
-        : ['Nguyễn Văn A', 'Nguyễn Thị B'];
+        : <String>[];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -123,7 +104,6 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Render member cards
                     ...membersList.map((memberName) {
                       return Container(
                         width: double.infinity,
@@ -164,8 +144,35 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
 
               // Milestone list cards
               ..._milestones.map((milestone) {
-                final String status = milestone['status'] ?? 'Chưa bắt đầu';
-                final isCompleted = status == 'Hoàn thành';
+                final String statusRaw = milestone['status'] ?? 'NOT_STARTED';
+                String displayStatus = 'Chưa bắt đầu';
+                Color statusColor = Colors.grey;
+                if (statusRaw == 'COMPLETED' || statusRaw == 'Hoàn thành') {
+                  displayStatus = 'Hoàn thành';
+                  statusColor = const Color(0xFF7EC07E);
+                } else if (statusRaw == 'IN_PROGRESS' || statusRaw == 'Đang thực hiện') {
+                  displayStatus = 'Đang thực hiện';
+                  statusColor = Colors.amberAccent;
+                } else if (statusRaw == 'OVERDUE' || statusRaw == 'Quá hạn') {
+                  displayStatus = 'Quá hạn';
+                  statusColor = Colors.redAccent;
+                }
+                final isCompleted = displayStatus == 'Hoàn thành';
+
+                final String dueAtStr = milestone['dueAt'] ?? milestone['dueDate'] ?? '';
+                String formattedDue = '';
+                if (dueAtStr.isNotEmpty) {
+                  if (dueAtStr.contains('Hạn:')) {
+                    formattedDue = dueAtStr;
+                  } else {
+                    try {
+                      final DateTime dt = DateTime.parse(dueAtStr);
+                      formattedDue = 'Hạn: ${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+                    } catch (_) {
+                      formattedDue = dueAtStr;
+                    }
+                  }
+                }
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
@@ -202,6 +209,7 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                             setState(() {
                               milestone['status'] = result['status'];
                               milestone['progress'] = result['progress'];
+                              milestone['progressPercent'] = (result['progress'] * 100).toInt();
                               milestone['tasks'] = result['tasks'];
                               milestone['evidenceList'] = result['evidenceList'];
                               milestone['comments'] = result['comments'];
@@ -227,20 +235,18 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                                   ),
                                 ),
                                 Text(
-                                  status,
+                                  displayStatus,
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: isCompleted
-                                        ? const Color(0xFF7EC07E)
-                                        : const Color(0xFF0F172A).withOpacity(0.6),
+                                    color: statusColor,
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              milestone['dueDate'] ?? '',
+                              formattedDue,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: const Color(0xFF0F172A).withOpacity(0.4),
@@ -267,7 +273,7 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
           ),
         ),
         child: BottomNavigationBar(
-          currentIndex: 2, // Active under Projects tab navigation flow
+          currentIndex: 2,
           onTap: _onBottomNavTapped,
           type: BottomNavigationBarType.fixed,
           backgroundColor: const Color(0xFFFFFFFF),

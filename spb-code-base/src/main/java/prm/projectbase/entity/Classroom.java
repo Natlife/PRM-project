@@ -44,9 +44,9 @@ public class Classroom extends BaseEntity {
     @JoinColumn(name = "teacher_id", nullable = false)
     User teacher;
 
-    @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    List<ClassroomSchedule> schedules = List.of();
+    List<ClassroomSchedule> schedules = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

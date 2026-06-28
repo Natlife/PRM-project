@@ -48,7 +48,7 @@ public class ApplicationConfig {
                 .map(user -> {
                     List<org.springframework.security.core.GrantedAuthority> authorities = new ArrayList<>();
                     if (user.getRole() != null) {
-                        // (ROLE_ADMIN, ROLE_TEACHER, ROLE_STUDENT)
+                        
                         authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(user.getRole().getName()));
                     }
                     return new org.springframework.security.core.userdetails.User(

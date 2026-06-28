@@ -22,8 +22,8 @@ public class ClassroomSchedule extends BaseEntity {
     @JoinColumn(name = "classroom_id", nullable = false)
     Classroom classroom;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week", nullable = false, length = 20)
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "day_of_week", nullable = false)
     DayOfWeek dayOfWeek;
 
     @Column(name = "slot_label", length = 50)

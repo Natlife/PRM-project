@@ -41,18 +41,15 @@ public class DashboardService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        // Enrolled classrooms
         List<ClassroomEnrollment> enrollments = enrollmentRepository.findByStudentAndStatus(
                 student, ClassroomEnrollmentStatus.ACTIVE
         );
         int enrolledCount = enrollments.size();
 
-        // Get classrooms
         List<Classroom> classrooms = enrollments.stream()
                 .map(ClassroomEnrollment::getClassroom)
                 .collect(Collectors.toList());
 
-        // Pending and upcoming activities
         List<ActivityListResponse> upcomingActivities = new ArrayList<>();
         int pendingActivitiesCount = 0;
         LocalDateTime now = LocalDateTime.now();
@@ -60,7 +57,7 @@ public class DashboardService {
         for (Classroom classroom : classrooms) {
             List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroom.getId());
             for (LearningActivity activity : activities) {
-                // Check if student has submitted
+                
                 Optional<ActivitySubmission> submission = submissionRepository
                         .findByActivityIdAndStudentId(activity.getId(), student.getId());
 
@@ -84,10 +81,8 @@ public class DashboardService {
             }
         }
 
-        // Unread notifications count
         long unreadNotifications = notificationRepository.countByRecipientIdAndReadAtIsNull(student.getId());
 
-        // Active project groups student belongs to
         List<ProjectMember> memberships = memberRepository.findByStudentId(student.getId());
         List<ProjectGroupListResponse> activeGroups = memberships.stream()
                 .filter(ProjectMember::isActive)
@@ -115,11 +110,9 @@ public class DashboardService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        // Managed classrooms
-        List<Classroom> classrooms = classroomRepository.findByTeacherId(teacher.getId());
+        List<Classroom> classrooms = classroomRepository.findByTeacherIdAndActiveTrue(teacher.getId());
         int managedCount = classrooms.size();
 
-        // Enrolled students count
         int totalStudents = 0;
         int activeGroupsCount = 0;
         int pendingGradingCount = 0;
@@ -156,8 +149,6 @@ public class DashboardService {
                 .build();
     }
 
-    // DTO helpers
-
     private ProjectGroupListResponse toGroupListResponse(ProjectGroup group, int memberCount) {
         UserResponse leaderResponse = null;
         if (group.getLeader() != null) {
@@ -180,16 +171,35 @@ public class DashboardService {
                 .leader(leaderResponse)
                 .status(group.getStatus().name())
                 .memberCount(memberCount)
+                .classroomId(group.getClassroom().getId())
+                .classroomCode(group.getClassroom().getCode())
+                .classroomName(group.getClassroom().getName())
                 .build();
     }
 
     private ClassroomListResponse toClassroomListResponse(Classroom classroom) {
+        long studentCount = enrollmentRepository.countByClassroomAndStatus(
+                classroom, ClassroomEnrollmentStatus.ACTIVE
+        );
+
         return ClassroomListResponse.builder()
                 .id(classroom.getId())
                 .code(classroom.getCode())
                 .name(classroom.getName())
                 .semesterCode(classroom.getSemesterCode())
+                .teacher(UserResponse.builder()
+                        .id(classroom.getTeacher().getId())
+                        .userName(classroom.getTeacher().getUserName())
+                        .email(classroom.getTeacher().getEmail())
+                        .fullName(classroom.getTeacher().getFullName())
+                        .phone(classroom.getTeacher().getPhone())
+                        .avatarUrl(classroom.getTeacher().getAvatarUrl())
+                        .institutionalId(classroom.getTeacher().getInstitutionalId())
+                        .active(classroom.getTeacher().isActive())
+                        .build())
+                .studentCount((int) studentCount)
                 .active(classroom.isActive())
+                .createdAt(classroom.getCreatedAt())
                 .build();
     }
 }

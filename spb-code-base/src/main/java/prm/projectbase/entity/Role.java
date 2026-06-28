@@ -14,7 +14,7 @@ import lombok.experimental.FieldDefaults;
 public class Role extends BaseEntity{
 
     @Column(unique = true, nullable = false)
-    String name; // e.g. "ROLE_ADMIN", "ROLE_TEACHER", "ROLE_STUDENT"
+    String name; 
 
     String description;
 

@@ -60,7 +60,7 @@ public class JwtUtil {
             claims.put("role", user.getRole().getName());
         }
 
-        long expirationMs = 1000L * 60 * 60 * 24; // 24 hours
+        long expirationMs = 1000L * 60 * 60 * 24; 
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(String.valueOf(user.getId()))

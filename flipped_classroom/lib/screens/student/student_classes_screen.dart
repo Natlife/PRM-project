@@ -137,6 +137,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => StudentClassDetailScreen(
+                                    classroomId: item['id'],
                                     classCodeWithName: item['classCodeWithName'] ?? '${item['classCode']} - SE1904',
                                     className: item['className'] ?? '',
                                     instructor: item['instructor'] ?? '',

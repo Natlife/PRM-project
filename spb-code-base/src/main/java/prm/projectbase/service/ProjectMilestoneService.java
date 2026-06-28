@@ -141,7 +141,6 @@ public class ProjectMilestoneService {
 
         User currentUser = userService.getCurrentUser();
 
-        // Verify user is member of the project group
         boolean isMember = memberRepository.existsByProjectGroupIdAndStudentIdAndActiveTrue(
                 milestone.getProjectGroup().getId(), currentUser.getId());
         if (!isMember) {
@@ -153,7 +152,6 @@ public class ProjectMilestoneService {
 
         ProjectMilestone saved = milestoneRepository.save(milestone);
 
-        // Notify other group members
         List<ProjectMember> members = memberRepository.findByProjectGroupId(saved.getProjectGroup().getId());
         for (ProjectMember m : members) {
             if (m.isActive() && !m.getStudent().getId().equals(currentUser.getId())) {
@@ -168,7 +166,6 @@ public class ProjectMilestoneService {
             }
         }
 
-        // Notify teacher
         notificationService.createNotification(
                 saved.getProjectGroup().getClassroom().getTeacher(),
                 "Milestone Progress Updated",
@@ -189,7 +186,6 @@ public class ProjectMilestoneService {
 
         User currentUser = userService.getCurrentUser();
 
-        // Verify user is member of the project group
         boolean isMember = memberRepository.existsByProjectGroupIdAndStudentIdAndActiveTrue(
                 milestone.getProjectGroup().getId(), currentUser.getId());
         if (!isMember) {
@@ -218,8 +214,6 @@ public class ProjectMilestoneService {
 
         return responses;
     }
-
-    // DTO helpers
 
     private ProjectMilestoneResponse toResponse(ProjectMilestone milestone) {
         List<MilestoneAttachment> attachments = attachmentRepository.findByMilestoneId(milestone.getId());

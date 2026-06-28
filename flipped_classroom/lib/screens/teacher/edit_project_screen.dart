@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import '../../services/classroom_service.dart';
+import '../../services/project_service.dart';
 
 class EditProjectScreen extends StatefulWidget {
   final Map<String, dynamic> project;
-  final List<String> availableClasses;
+  final int classroomId;
+  final String classLabel;
 
   const EditProjectScreen({
     super.key,
     required this.project,
-    required this.availableClasses,
+    required this.classroomId,
+    required this.classLabel,
   });
 
   @override
@@ -16,139 +20,141 @@ class EditProjectScreen extends StatefulWidget {
 
 class _EditProjectScreenState extends State<EditProjectScreen> {
   final _formKey = GlobalKey<FormState>();
-  late String _selectedClass;
-  late TextEditingController _projectNameController;
-  late TextEditingController _groupNameController;
-  late TextEditingController _deadlineController;
-  
-  String? _selectedLeader;
-  String? _selectedMemberDropdown;
-  final List<String> _selectedMembers = [];
+  late final TextEditingController _projectNameController;
+  late final TextEditingController _groupNameController;
+  late final TextEditingController _descriptionController;
 
-  final List<String> _mockStudents = [
-    'Nguyễn Văn A',
-    'Nguyễn Văn B',
-    'Nguyễn Văn C',
-    'Nguyễn Văn D',
-    'Trần Thị B',
-    'Lê Văn C',
-    'Phạm Văn D',
-    'Vũ Thị E',
-  ];
+  List<Map<String, dynamic>> _students = [];
+  List<int> _selectedStudentIds = [];
+  int? _selectedLeaderId;
+  int? _selectedMemberId;
+  bool _isLoading = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    final proj = widget.project;
-    _projectNameController = TextEditingController(text: proj['title'] ?? '');
-    _groupNameController = TextEditingController(text: proj['group'] ?? proj['groupName'] ?? '');
-    _deadlineController = TextEditingController(text: proj['date'] ?? '');
-    _selectedClass = proj['className'] ?? proj['class'] ?? (widget.availableClasses.isNotEmpty ? widget.availableClasses.first : '');
-    
-    _selectedLeader = proj['leader'];
-    if (_selectedLeader == null || !_mockStudents.contains(_selectedLeader)) {
-      _selectedLeader = _mockStudents.contains('Nguyễn Văn B') ? 'Nguyễn Văn B' : _mockStudents.first;
-    }
+    _projectNameController = TextEditingController(
+      text: widget.project['projectName'] ?? widget.project['title'] ?? '',
+    );
+    _groupNameController = TextEditingController(
+      text: widget.project['groupName'] ?? widget.project['group'] ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.project['description'] ?? '',
+    );
+    _hydrateSelectedMembers();
+    _loadStudents();
+  }
 
-    if (proj['membersList'] != null) {
-      _selectedMembers.addAll(List<String>.from(proj['membersList']));
-    } else {
-      _selectedMembers.addAll(['Nguyễn Văn C', 'Nguyễn Văn D']);
+  void _hydrateSelectedMembers() {
+    final membersData = widget.project['membersData'] as List<dynamic>?;
+    if (membersData != null && membersData.isNotEmpty) {
+      _selectedStudentIds = membersData
+          .map((member) => (member['id'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
     }
-
-    _selectedMemberDropdown = _mockStudents.first;
+    _selectedLeaderId = (widget.project['leaderData']?['id'] as num?)?.toInt();
   }
 
   @override
   void dispose() {
     _projectNameController.dispose();
     _groupNameController.dispose();
-    _deadlineController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime now = DateTime.now();
-    final DateTime tomorrow = now.add(const Duration(days: 1));
-
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: tomorrow,
-      firstDate: tomorrow,
-      lastDate: now.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF7EC07E),
-              onPrimary: Colors.white,
-              surface: Color(0xFFFFFFFF),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
+  Future<void> _loadStudents() async {
+    try {
+      final students = await ClassroomService().getTeacherClassroomStudents(
+        widget.classroomId,
+      );
+      if (!mounted) return;
+      final firstStudentId = students.isNotEmpty
+          ? (students.first['id'] as num?)?.toInt()
+          : null;
       setState(() {
-        _deadlineController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+        _students = students;
+        _selectedLeaderId ??= firstStudentId;
+        _selectedMemberId ??= firstStudentId;
+        _isLoading = false;
       });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Khong tai duoc sinh vien trong lop: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
   void _addMember() {
-    if (_selectedMemberDropdown == null) return;
-    if (_selectedMembers.contains(_selectedMemberDropdown!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thành viên này đã có trong danh sách!'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+    if (_selectedMemberId == null) return;
+    if (_selectedStudentIds.contains(_selectedMemberId)) return;
     setState(() {
-      _selectedMembers.add(_selectedMemberDropdown!);
+      _selectedStudentIds.add(_selectedMemberId!);
     });
   }
 
-  void _removeMember(String member) {
+  void _removeMember(int studentId) {
     setState(() {
-      _selectedMembers.remove(member);
+      _selectedStudentIds.remove(studentId);
+      if (_selectedLeaderId == studentId) {
+        _selectedLeaderId =
+            _selectedStudentIds.isNotEmpty ? _selectedStudentIds.first : null;
+      }
     });
   }
 
-  void _submitForm() {
+  String _studentNameById(int studentId) {
+    final match = _students.cast<Map<String, dynamic>?>().firstWhere(
+      (student) => (student?['id'] as num?)?.toInt() == studentId,
+      orElse: () => null,
+    );
+    return match?['fullName'] ?? match?['userName'] ?? 'Sinh vien';
+  }
+
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+    final groupId = (widget.project['id'] as num?)?.toInt();
+    if (groupId == null) return;
 
-    if (_selectedMembers.isEmpty) {
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final response = await ProjectService().updateProjectGroup(groupId, {
+        'groupName': _groupNameController.text.trim(),
+        'projectName': _projectNameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'leaderId': _selectedLeaderId,
+        'studentIds': _selectedStudentIds,
+      });
+
+      if (!mounted) return;
+      Navigator.of(context).pop(response);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng thêm ít nhất một thành viên vào nhóm!'),
+        SnackBar(
+          content: Text('Cap nhat du an that bai: $e'),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
         ),
       );
-      return;
     }
-
-    final projectData = {
-      'title': _projectNameController.text.trim(),
-      'group': _groupNameController.text.trim(),
-      'groupName': _groupNameController.text.trim(),
-      'className': _selectedClass,
-      'class': _selectedClass,
-      'date': _deadlineController.text,
-      'leader': _selectedLeader,
-      'members': '${_selectedMembers.length} sinh viên',
-      'membersList': _selectedMembers,
-      'progress': widget.project['progress'] ?? 0.0,
-      'milestones': widget.project['milestones'] ?? [],
-    };
-
-    Navigator.of(context).pop(projectData);
   }
 
   @override
@@ -163,270 +169,99 @@ class _EditProjectScreenState extends State<EditProjectScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Chỉnh sửa dự án',
+          'Chinh sua du an',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Lớp học *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.05)),
-                ),
-                child: Text(
-                  _selectedClass,
-                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 18),
-
-              const Text(
-                'Tên dự án *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _projectNameController,
-                style: const TextStyle(color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  hintText: 'Nhập tên dự án',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFFFFFFFF),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Tên dự án là bắt buộc';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 18),
-
-              const Text(
-                'Tên nhóm',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _groupNameController,
-                style: const TextStyle(color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  hintText: 'Nhập tên nhóm (ví dụ: Nhóm 1)',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                  fillColor: const Color(0xFFFFFFFF),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-
-              const Text(
-                'Hạn nộp *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _deadlineController,
-                readOnly: true,
-                onTap: () => _selectDate(context),
-                style: const TextStyle(color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  hintText: 'Chọn ngày hạn nộp',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                  prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF334155), size: 18),
-                  fillColor: const Color(0xFFFFFFFF),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                validator: (val) {
-                  if (val == null || val.isEmpty) {
-                    return 'Hạn nộp là bắt buộc';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 18),
-
-              const Text(
-                'Nhóm trưởng',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedLeader,
-                dropdownColor: const Color(0xFFFFFFFF),
-                style: const TextStyle(color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  fillColor: const Color(0xFFFFFFFF),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                items: _mockStudents.map((student) {
-                  return DropdownMenuItem<String>(
-                    value: student,
-                    child: Text(student),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => _selectedLeader = val),
-              ),
-              const SizedBox(height: 18),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Thành viên',
-                    style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _addMember,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7EC07E),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF7EC07E)))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.classLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _projectNameController,
+                      decoration: const InputDecoration(labelText: 'Ten du an'),
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? 'Vui long nhap ten du an'
+                          : null,
                     ),
-                    icon: const Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
-                    label: const Text(
-                      'Thêm',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _groupNameController,
+                      decoration: const InputDecoration(labelText: 'Ten nhom'),
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? 'Vui long nhap ten nhom'
+                          : null,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedMemberDropdown,
-                dropdownColor: const Color(0xFFFFFFFF),
-                style: const TextStyle(color: Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  fillColor: const Color(0xFFFFFFFF),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                items: _mockStudents.map((student) {
-                  return DropdownMenuItem<String>(
-                    value: student,
-                    child: Text(student),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => _selectedMemberDropdown = val),
-              ),
-              const SizedBox(height: 12),
-
-              if (_selectedMembers.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFFFF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _selectedMembers.length,
-                    itemBuilder: (context, index) {
-                      final member = _selectedMembers[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              member,
-                              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFEC4899), size: 20),
-                              onPressed: () => _removeMember(member),
-                            ),
-                          ],
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(labelText: 'Mo ta'),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      initialValue: _selectedLeaderId,
+                      items: _students.map((student) {
+                        return DropdownMenuItem<int>(
+                          value: (student['id'] as num?)?.toInt(),
+                          child: Text(student['fullName'] ?? student['userName'] ?? ''),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedLeaderId = value),
+                      decoration: const InputDecoration(labelText: 'Nhom truong'),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            initialValue: _selectedMemberId,
+                            items: _students.map((student) {
+                              return DropdownMenuItem<int>(
+                                value: (student['id'] as num?)?.toInt(),
+                                child: Text(student['fullName'] ?? student['userName'] ?? ''),
+                              );
+                            }).toList(),
+                            onChanged: (value) => setState(() => _selectedMemberId = value),
+                            decoration: const InputDecoration(labelText: 'Them thanh vien'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: _addMember,
+                          child: const Text('Them'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ..._selectedStudentIds.map((studentId) {
+                      return ListTile(
+                        title: Text(_studentNameById(studentId)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () => _removeMember(studentId),
                         ),
                       );
-                    },
-                  ),
+                    }),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submitForm,
+                        child: Text(_isSubmitting ? 'Dang luu...' : 'Luu'),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-
-              const SizedBox(height: 32),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEC4899),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'Hủy',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF22C55E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'Lưu',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

@@ -73,14 +73,12 @@ public class ProjectGroupService {
                 User student = userRepository.findById(studentId)
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-                // Verify enrollment
                 Optional<ClassroomEnrollment> enrollment = enrollmentRepository
                         .findByClassroomAndStudent(classroom, student);
                 if (enrollment.isEmpty() || enrollment.get().getStatus() != ClassroomEnrollmentStatus.ACTIVE) {
                     throw new AppException(ErrorCode.STUDENT_NOT_ENROLLED);
                 }
 
-                // Verify no other active group in this classroom
                 Optional<ProjectMember> existingGroupMember = memberRepository
                         .findByStudentIdAndProjectGroupClassroomIdAndActiveTrue(studentId, classroomId);
                 if (existingGroupMember.isPresent()) {
@@ -101,7 +99,6 @@ public class ProjectGroupService {
             }
         }
 
-        // Validate leader is a member
         if (leader != null) {
             boolean leaderIsMember = request.getStudentIds() != null && request.getStudentIds().contains(leader.getId());
             if (!leaderIsMember) {
@@ -154,7 +151,7 @@ public class ProjectGroupService {
         List<ProjectMember> members = memberRepository.findByProjectGroupId(groupId);
 
         if (request.getStudentIds() != null) {
-            // Remove old members
+            
             memberRepository.deleteAll(members);
             members.clear();
 
@@ -162,14 +159,12 @@ public class ProjectGroupService {
                 User student = userRepository.findById(studentId)
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-                // Verify enrollment
                 Optional<ClassroomEnrollment> enrollment = enrollmentRepository
                         .findByClassroomAndStudent(group.getClassroom(), student);
                 if (enrollment.isEmpty() || enrollment.get().getStatus() != ClassroomEnrollmentStatus.ACTIVE) {
                     throw new AppException(ErrorCode.STUDENT_NOT_ENROLLED);
                 }
 
-                // Verify no other active group in this classroom
                 Optional<ProjectMember> existingGroupMember = memberRepository
                         .findByStudentIdAndProjectGroupClassroomIdAndActiveTrue(studentId, group.getClassroom().getId());
                 if (existingGroupMember.isPresent() && !existingGroupMember.get().getProjectGroup().getId().equals(groupId)) {
@@ -190,7 +185,6 @@ public class ProjectGroupService {
             }
         }
 
-        // Validate leader is a member if leader exists
         if (leader != null) {
             final User finalLeader = leader;
             boolean leaderIsMember = members.stream().anyMatch(m -> m.getStudent().getId().equals(finalLeader.getId()));
@@ -212,7 +206,6 @@ public class ProjectGroupService {
         User currentUser = userService.getCurrentUser();
         boolean isTeacher = group.getClassroom().getTeacher().getId().equals(currentUser.getId());
 
-        // Check if student in classroom
         boolean isEnrolled = enrollmentRepository.findByClassroomAndStudent(group.getClassroom(), currentUser)
                 .map(e -> e.getStatus() == ClassroomEnrollmentStatus.ACTIVE)
                 .orElse(false);
@@ -263,8 +256,6 @@ public class ProjectGroupService {
         List<ProjectMember> members = memberRepository.findByProjectGroupId(member.getProjectGroup().getId());
         return toDetailResponse(member.getProjectGroup(), members);
     }
-
-    // DTO helpers
 
     private ProjectGroupDetailResponse toDetailResponse(ProjectGroup group, List<ProjectMember> members) {
         UserResponse leaderResponse = null;

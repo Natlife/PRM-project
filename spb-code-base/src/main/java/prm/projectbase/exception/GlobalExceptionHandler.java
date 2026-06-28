@@ -30,7 +30,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode()).body(response);
     }
 
-    // 403
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<BaseResponse<?>> handleAccessDeniedException(AccessDeniedException ex) {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
@@ -38,7 +37,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode()).body(response);
     }
 
-    // Validation Exceptions
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<BaseResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String defaultErrorKey = "INVALID_KEY";
@@ -73,7 +71,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode()).body(response);
     }
 
-    // Bad Credentials Exception
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<BaseResponse<?>> handleBadCredentialsException(BadCredentialsException ex) {
         ErrorCode errorCode = ErrorCode.INVALID_CREDENTIALS;
@@ -81,7 +78,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode()).body(response);
     }
 
-    // Max File Upload Size Exception
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<BaseResponse<?>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
         ErrorCode errorCode = ErrorCode.FILE_STORAGE_ERROR;
@@ -89,28 +85,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatusCode()).body(response);
     }
 
-    // IllegalArgumentException
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<BaseResponse<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
         BaseResponse<?> response = BaseResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    // JSON Format Parsing Exception
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<BaseResponse<?>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         BaseResponse<?> response = BaseResponse.error(ErrorCode.INVALID_KEY.getCode(), "Invalid request body format");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    // ResponseStatusException
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<BaseResponse<?>> handleResponseStatusException(ResponseStatusException ex) {
         BaseResponse<?> response = BaseResponse.error(ex.getStatusCode().value(), ex.getReason());
         return ResponseEntity.status(ex.getStatusCode()).body(response);
     }
 
-    // All Other Unhandled Runtime/Checked Exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponse<?>> handleGlobalExceptions(Exception ex) {
         LOGGER.error("UNCATEGORIZED_EXCEPTION", ex);

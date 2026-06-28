@@ -23,7 +23,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _projectData = Map<String, dynamic>.from(widget.project);
+    _projectData = _normalizeProjectData(widget.project);
     if (_projectData['milestones'] == null) {
       _projectData['milestones'] = [
         {
@@ -35,19 +35,42 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
+  Map<String, dynamic> _normalizeProjectData(Map<String, dynamic> project) {
+    final members = project['members'] as List<dynamic>? ?? project['membersData'] as List<dynamic>? ?? [];
+    final membersList = project['membersList'] as List<dynamic>? ??
+        members
+            .map((member) => member['fullName'] ?? member['userName'] ?? 'Thanh vien')
+            .toList();
+
+    return {
+      ...project,
+      'title': project['title'] ?? project['projectName'] ?? 'Du an',
+      'projectName': project['projectName'] ?? project['title'] ?? 'Du an',
+      'group': project['group'] ?? project['groupName'] ?? '',
+      'groupName': project['groupName'] ?? project['group'] ?? '',
+      'membersList': membersList,
+      'membersData': members,
+      'members': project['members'] ?? '${membersList.length} sinh vien',
+      'leader': project['leader'] ?? project['leaderData']?['fullName'],
+      'leaderData': project['leaderData'] ?? project['leader'],
+      'milestones': project['milestones'] ?? [],
+    };
+  }
+
   Future<void> _navigateToEditProject() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
         builder: (context) => EditProjectScreen(
-          availableClasses: widget.availableClasses,
           project: _projectData,
+          classroomId: (_projectData['classroomId'] as num?)?.toInt() ?? 0,
+          classLabel: _projectData['class'] ?? _projectData['className'] ?? '',
         ),
       ),
     );
     if (result != null) {
       setState(() {
-        _projectData = result;
+        _projectData = _normalizeProjectData(result);
       });
     }
   }

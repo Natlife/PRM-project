@@ -19,5 +19,5 @@ public class MilestoneProgressUpdateRequest {
     Integer progressPercent;
 
     @NotNull(message = "Status is required")
-    String status; // NOT_STARTED, IN_PROGRESS, COMPLETED, OVERDUE
+    String status; 
 }

@@ -26,10 +26,6 @@ public class ProjectMilestoneController {
 
     private final ProjectMilestoneService milestoneService;
 
-    /**
-     * Teacher creates a milestone for a project group
-     * POST /api/v1/teacher/project-groups/{groupId}/milestones
-     */
     @PostMapping("/teacher/project-groups/{groupId}/milestones")
     public ResponseEntity<BaseResponse<ProjectMilestoneResponse>> createMilestone(
             @PathVariable Long groupId,
@@ -42,10 +38,6 @@ public class ProjectMilestoneController {
                 .body(BaseResponse.success(response, "Milestone created successfully", HttpStatus.CREATED));
     }
 
-    /**
-     * Teacher updates a milestone (title, description, due date, status)
-     * PUT /api/v1/teacher/milestones/{milestoneId}
-     */
     @PutMapping("/teacher/milestones/{milestoneId}")
     public ResponseEntity<BaseResponse<ProjectMilestoneResponse>> updateMilestone(
             @PathVariable Long milestoneId,
@@ -57,10 +49,6 @@ public class ProjectMilestoneController {
         return ResponseEntity.ok(BaseResponse.success(response, "Milestone updated successfully"));
     }
 
-    /**
-     * Get all milestones for a project group
-     * GET /api/v1/project-groups/{groupId}/milestones
-     */
     @GetMapping("/project-groups/{groupId}/milestones")
     public ResponseEntity<BaseResponse<List<ProjectMilestoneResponse>>> getGroupMilestones(
             @PathVariable Long groupId) {
@@ -71,10 +59,6 @@ public class ProjectMilestoneController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get group milestones successfully"));
     }
 
-    /**
-     * Get details of a milestone
-     * GET /api/v1/milestones/{milestoneId}
-     */
     @GetMapping("/milestones/{milestoneId}")
     public ResponseEntity<BaseResponse<ProjectMilestoneResponse>> getMilestone(
             @PathVariable Long milestoneId) {
@@ -85,10 +69,6 @@ public class ProjectMilestoneController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get milestone details successfully"));
     }
 
-    /**
-     * Student updates progress percent and status of a milestone
-     * PUT /api/v1/student/milestones/{milestoneId}/progress
-     */
     @PutMapping("/student/milestones/{milestoneId}/progress")
     public ResponseEntity<BaseResponse<ProjectMilestoneResponse>> updateMilestoneProgress(
             @PathVariable Long milestoneId,
@@ -100,10 +80,6 @@ public class ProjectMilestoneController {
         return ResponseEntity.ok(BaseResponse.success(response, "Milestone progress updated successfully"));
     }
 
-    /**
-     * Student uploads milestone evidence files
-     * POST /api/v1/student/milestones/{milestoneId}/attachments
-     */
     @PostMapping(value = "/student/milestones/{milestoneId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse<List<MilestoneAttachmentResponse>>> addMilestoneAttachment(
             @PathVariable Long milestoneId,

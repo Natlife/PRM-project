@@ -63,10 +63,6 @@ public class FileService {
         return baseUrl + "/assets/" + storedName;
     }
 
-    /**
-     *
-     * @param storedName "3f2a1b4c-uuid.jpg"
-     */
     public void delete(String storedName) {
         if (storedName.contains("..") || storedName.contains("/") || storedName.contains("\\")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file name");
@@ -151,8 +147,6 @@ public class FileService {
         String contentType;
         Long sizeBytes;
     }
-
-    // ── helpers ───────────────────────────────────────────────────────────────
 
     private String extractExtension(String filename) {
         if (filename == null || filename.isBlank()) return "";

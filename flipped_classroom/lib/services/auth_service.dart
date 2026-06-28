@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 
 enum UserRole { teacher, student }
 
@@ -20,6 +22,20 @@ class UserModel {
     this.avatarUrl = '',
     required this.id,
   });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    final roleName = json['role']?['name'] ?? '';
+    final role = roleName == 'ROLE_TEACHER' ? UserRole.teacher : UserRole.student;
+    return UserModel(
+      username: json['userName'] ?? '',
+      fullName: json['fullName'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      role: role,
+      avatarUrl: json['avatarUrl'] ?? '',
+      id: json['institutionalId'] ?? (json['id']?.toString() ?? ''),
+    );
+  }
 }
 
 class AuthService extends ChangeNotifier {
@@ -35,78 +51,48 @@ class AuthService extends ChangeNotifier {
   bool get rememberMe => _rememberMe;
   bool get isLoggedIn => _currentUser != null;
 
-  // Mock accounts database
-  final Map<String, UserModel> _mockUsers = {
-    'teacher': UserModel(
-      username: 'teacher',
-      fullName: 'GV. Nguyễn Văn A',
-      email: 'anv@flippedclassroom.edu.vn',
-      phone: '0912345678',
-      role: UserRole.teacher,
-      id: 'GV001',
-    ),
-    'student': UserModel(
-      username: 'student',
-      fullName: 'SV. Trần Thị B',
-      email: 'btt@flippedclassroom.edu.vn',
-      phone: '0987654321',
-      role: UserRole.student,
-      id: 'HE160123',
-    ),
-  };
-
   void setRememberMe(bool value) {
     _rememberMe = value;
     notifyListeners();
   }
 
   Future<bool> login(String username, String password) async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    final normalizedUser = username.trim().toLowerCase();
-    
-    // Simple validation rule: if it matches mock database
-    if (_mockUsers.containsKey(normalizedUser) && password == '${normalizedUser}123') {
-      _currentUser = _mockUsers[normalizedUser];
-      notifyListeners();
-      return true;
-    }
-    
-    // Dynamic generation if username contains teacher or student for testing flexibility
-    if (normalizedUser.contains('teacher') && password.isNotEmpty) {
-      _currentUser = UserModel(
-        username: normalizedUser,
-        fullName: 'GV. Nguyễn Văn Test',
-        email: '$normalizedUser@flippedclassroom.edu.vn',
-        phone: '0900000001',
-        role: UserRole.teacher,
-        id: 'GV999',
+    try {
+      final response = await ApiService().post(
+        '/auth/login',
+        body: {
+          'username': username.trim(),
+          'password': password,
+        },
       );
-      notifyListeners();
-      return true;
-    } else if (normalizedUser.contains('student') && password.isNotEmpty) {
-      _currentUser = UserModel(
-        username: normalizedUser,
-        fullName: 'SV. Nguyễn Văn Học Sinh',
-        email: '$normalizedUser@flippedclassroom.edu.vn',
-        phone: '0900000002',
-        role: UserRole.student,
-        id: 'HE999999',
-      );
-      notifyListeners();
-      return true;
-    }
 
-    return false;
+      final responseBody = jsonDecode(response.body);
+      final authData = responseBody['data'];
+      final token = authData['token'];
+      final userData = authData['user'];
+
+      ApiService().setToken(token);
+      _currentUser = UserModel.fromJson(userData);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Login error: $e');
+      return false;
+    }
   }
 
   void logout() {
     _currentUser = null;
+    ApiService().setToken(null);
     notifyListeners();
   }
 
-  void updateProfile({required String fullName, required String email, required String phone, String? avatarUrl}) {
+  void updateProfile({
+    required String fullName,
+    required String email,
+    required String phone,
+    String? avatarUrl,
+  }) {
     if (_currentUser != null) {
       _currentUser!.fullName = fullName;
       _currentUser!.email = email;

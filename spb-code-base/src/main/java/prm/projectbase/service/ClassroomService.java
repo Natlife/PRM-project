@@ -38,28 +38,20 @@ public class ClassroomService {
     JwtUtil jwtUtil;
     NotificationService notificationService;
 
-    /**
-     * Create a new classroom with schedules
-     * Only teachers can create classrooms
-     */
     @Transactional
     public ClassroomDetailResponse createClassroom(ClassroomCreateRequest request) {
         User teacher = getCurrentUser();
-        
-        // Validate teacher role
+
         if (!"ROLE_TEACHER".equals(teacher.getRole().getName())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        // Check if classroom code already exists
         if (classroomRepository.existsByCode(request.getCode())) {
             throw new AppException(ErrorCode.CLASSROOM_CODE_ALREADY_EXISTS);
         }
 
-        // Generate unique join code
         String joinCode = generateUniqueJoinCode();
 
-        // Create classroom
         Classroom classroom = Classroom.builder()
                 .code(request.getCode())
                 .name(request.getName())
@@ -70,21 +62,27 @@ public class ClassroomService {
                 .active(true)
                 .build();
 
-        Classroom savedClassroom = classroomRepository.save(classroom);
-
-        // Create schedules
+        List<ClassroomSchedule> schedules = new ArrayList<>();
         if (request.getSchedules() != null && !request.getSchedules().isEmpty()) {
-            request.getSchedules().forEach(scheduleRequest -> 
-                createScheduleForClassroom(savedClassroom, scheduleRequest)
-            );
+            request.getSchedules().forEach(scheduleRequest -> {
+                ClassroomSchedule schedule = ClassroomSchedule.builder()
+                        .classroom(classroom)
+                        .dayOfWeek(DayOfWeek.of(scheduleRequest.getDayOfWeek() + 1)) 
+                        .slotLabel(scheduleRequest.getSlotLabel())
+                        .startTime(scheduleRequest.getStartTime())
+                        .endTime(scheduleRequest.getEndTime())
+                        .roomName(scheduleRequest.getRoomName())
+                        .build();
+                schedules.add(schedule);
+            });
         }
+        classroom.setSchedules(schedules);
+
+        Classroom savedClassroom = classroomRepository.save(classroom);
 
         return mapToClassroomDetailResponse(savedClassroom);
     }
 
-    /**
-     * Get all classrooms for the current teacher
-     */
     @Transactional(readOnly = true)
     public List<ClassroomListResponse> getTeacherClassrooms() {
         User teacher = getCurrentUser();
@@ -100,17 +98,13 @@ public class ClassroomService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get classroom detail for teacher
-     */
     @Transactional(readOnly = true)
     public ClassroomDetailResponse getClassroomDetail(Long classroomId) {
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
 
         User currentUser = getCurrentUser();
-        
-        // Teacher can only see their own classrooms
+
         if ("ROLE_TEACHER".equals(currentUser.getRole().getName()) && 
                 !classroom.getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
@@ -119,22 +113,34 @@ public class ClassroomService {
         return mapToClassroomDetailResponse(classroom);
     }
 
-    /**
-     * Update classroom information
-     */
+    @Transactional(readOnly = true)
+    public List<UserResponse> getTeacherClassroomStudents(Long classroomId) {
+        Classroom classroom = classroomRepository.findById(classroomId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
+
+        User currentUser = getCurrentUser();
+        if (!classroom.getTeacher().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        return enrollmentRepository.findByClassroomId(classroomId).stream()
+                .filter(enrollment -> enrollment.getStatus() == ClassroomEnrollmentStatus.ACTIVE)
+                .map(ClassroomEnrollment::getStudent)
+                .map(this::mapToUserResponse)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public ClassroomDetailResponse updateClassroom(Long classroomId, ClassroomUpdateRequest request) {
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
 
         User currentUser = getCurrentUser();
-        
-        // Only teacher who owns this classroom can update it
+
         if (!classroom.getTeacher().getId().equals(currentUser.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        // Update fields
         if (request.getName() != null) {
             classroom.setName(request.getName());
         }
@@ -150,24 +156,18 @@ public class ClassroomService {
 
         Classroom updatedClassroom = classroomRepository.save(classroom);
 
-        // Update schedules if provided
         if (request.getSchedules() != null && !request.getSchedules().isEmpty()) {
-            // Delete existing schedules (for simplicity in Phase 1)
-            // In production, implement soft delete or merge logic
+
             updateSchedulesForClassroom(updatedClassroom, request.getSchedules());
         }
 
         return mapToClassroomDetailResponse(updatedClassroom);
     }
 
-    /**
-     * Student joins classroom by join code
-     */
     @Transactional
     public ClassroomEnrollmentResponse studentJoinClassroom(String joinCode) {
         User student = getCurrentUser();
-        
-        // Validate student role
+
         if (!"ROLE_STUDENT".equals(student.getRole().getName())) {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
@@ -179,12 +179,10 @@ public class ClassroomService {
             throw new AppException(ErrorCode.CLASSROOM_INACTIVE);
         }
 
-        // Check if already enrolled
         if (enrollmentRepository.findByClassroomAndStudent(classroom, student).isPresent()) {
             throw new AppException(ErrorCode.ALREADY_ENROLLED);
         }
 
-        // Create enrollment
         ClassroomEnrollment enrollment = ClassroomEnrollment.builder()
                 .classroom(classroom)
                 .student(student)
@@ -205,9 +203,21 @@ public class ClassroomService {
         return mapToClassroomEnrollmentResponse(savedEnrollment);
     }
 
-    /**
-     * Get all classrooms for the current student
-     */
+    @Transactional
+    public ClassroomDetailResponse rotateJoinCode(Long classroomId) {
+        Classroom classroom = classroomRepository.findById(classroomId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
+
+        User currentUser = getCurrentUser();
+        if (!classroom.getTeacher().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        classroom.setJoinCode(generateUniqueJoinCode());
+        Classroom updated = classroomRepository.save(classroom);
+        return mapToClassroomDetailResponse(updated);
+    }
+
     @Transactional(readOnly = true)
     public List<ClassroomListResponse> getStudentClassrooms() {
         User student = getCurrentUser();
@@ -225,17 +235,13 @@ public class ClassroomService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get classroom detail for student
-     */
     @Transactional(readOnly = true)
     public ClassroomDetailResponse getStudentClassroomDetail(Long classroomId) {
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
 
         User student = getCurrentUser();
-        
-        // Student can only see classrooms they are enrolled in
+
         ClassroomEnrollment enrollment = enrollmentRepository.findByClassroomAndStudent(classroom, student)
                 .orElseThrow(() -> new AppException(ErrorCode.FORBIDDEN));
 
@@ -246,17 +252,20 @@ public class ClassroomService {
         return mapToClassroomDetailResponse(classroom);
     }
 
-    // ========== HELPER METHODS ==========
-
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        
-        String username = authentication.getName();
-        return userRepository.findByUserName(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        try {
+            Long userId = Long.parseLong(authentication.getName());
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        } catch (NumberFormatException e) {
+            String username = authentication.getName();
+            return userRepository.findByUserName(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        }
     }
 
     private String generateUniqueJoinCode() {
@@ -280,19 +289,39 @@ public class ClassroomService {
     private void createScheduleForClassroom(Classroom classroom, ClassroomScheduleRequest request) {
         ClassroomSchedule schedule = ClassroomSchedule.builder()
                 .classroom(classroom)
-                .dayOfWeek(DayOfWeek.of(request.getDayOfWeek() + 1)) // Convert 0-6 to DayOfWeek 1-7
+                .dayOfWeek(DayOfWeek.of(request.getDayOfWeek() + 1)) 
                 .slotLabel(request.getSlotLabel())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .roomName(request.getRoomName())
                 .build();
-        // Repository save is managed by Hibernate cascade
+        if (classroom.getSchedules() == null) {
+            classroom.setSchedules(new ArrayList<>());
+        }
+        classroom.getSchedules().add(schedule);
     }
 
     private void updateSchedulesForClassroom(Classroom classroom, List<ClassroomScheduleRequest> scheduleRequests) {
-        // For Phase 1: simple replacement logic
-        // In production: implement merge/update logic
-        scheduleRequests.forEach(req -> createScheduleForClassroom(classroom, req));
+        List<ClassroomSchedule> newSchedules = new ArrayList<>();
+        if (scheduleRequests != null) {
+            scheduleRequests.forEach(req -> {
+                ClassroomSchedule schedule = ClassroomSchedule.builder()
+                        .classroom(classroom)
+                        .dayOfWeek(DayOfWeek.of(req.getDayOfWeek() + 1)) 
+                        .slotLabel(req.getSlotLabel())
+                        .startTime(req.getStartTime())
+                        .endTime(req.getEndTime())
+                        .roomName(req.getRoomName())
+                        .build();
+                newSchedules.add(schedule);
+            });
+        }
+        if (classroom.getSchedules() == null) {
+            classroom.setSchedules(new ArrayList<>());
+        } else {
+            classroom.getSchedules().clear();
+        }
+        classroom.getSchedules().addAll(newSchedules);
     }
 
     private ClassroomDetailResponse mapToClassroomDetailResponse(Classroom classroom) {
@@ -342,7 +371,7 @@ public class ClassroomService {
     private ClassroomScheduleResponse mapToScheduleResponse(ClassroomSchedule schedule) {
         return ClassroomScheduleResponse.builder()
                 .id(schedule.getId())
-                .dayOfWeek(schedule.getDayOfWeek().getValue() - 1) // Convert DayOfWeek to 0-6
+                .dayOfWeek(schedule.getDayOfWeek().getValue() - 1) 
                 .slotLabel(schedule.getSlotLabel())
                 .startTime(schedule.getStartTime())
                 .endTime(schedule.getEndTime())

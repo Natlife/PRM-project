@@ -6,14 +6,17 @@ import 'edit_class_screen.dart';
 import 'create_project_screen.dart';
 import 'project_detail_screen.dart';
 import 'create_activity_screen.dart';
+import '../../services/classroom_service.dart';
 
 class ClassDetailScreen extends StatefulWidget {
+  final int? classroomId;
   final String className;
   final String classCode;
   final int studentsCount;
 
   const ClassDetailScreen({
     super.key,
+    this.classroomId,
     required this.className,
     required this.classCode,
     required this.studentsCount,
@@ -29,6 +32,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   late String _className;
   late String _classCode;
   late List<String> _schedules;
+  late String _semester;
+  late String _description;
+  bool _isLoading = false;
 
   late List<Map<String, dynamic>> _activities;
   late List<Map<String, dynamic>> _documents;
@@ -39,10 +45,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     super.initState();
     _className = widget.className;
     _classCode = widget.classCode;
-    _schedules = [
-      'Thứ 2: Slot 1 (7:30 - 9:50)',
-      'Thứ 5: Slot 2 (10:00 - 12:20)',
-    ];
+    _semester = 'SU26';
+    _description = 'Lớp học Flipped Classroom dành cho sinh viên chuyên ngành';
+    _schedules = [];
 
     _activities = [
       {
@@ -82,6 +87,53 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         'progress': '65%',
       },
     ];
+
+    _fetchClassroomDetails();
+  }
+
+  Future<void> _fetchClassroomDetails() async {
+    if (widget.classroomId == null) return;
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final detail = await ClassroomService().getTeacherClassroomDetail(widget.classroomId!);
+      setState(() {
+        _className = detail['name'] ?? widget.className;
+        _classCode = detail['code'] ?? widget.classCode;
+        _semester = detail['semesterCode'] ?? 'SU26';
+        _description = detail['description'] ?? 'Lớp học Flipped Classroom dành cho sinh viên chuyên ngành';
+        
+        final List<dynamic> schedulesRaw = detail['schedules'] as List<dynamic>? ?? [];
+        _schedules = schedulesRaw.map<String>((s) {
+          final int dayNum = s['dayOfWeek'] ?? 0;
+          final days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+          final dayStr = (dayNum >= 0 && dayNum < days.length) ? days[dayNum] : 'Thứ 2';
+          
+          final slotLabel = s['slotLabel'] ?? 'Slot 1';
+          
+          String timeStr = '';
+          final startTimeRaw = s['startTime'] as String?;
+          final endTimeRaw = s['endTime'] as String?;
+          if (startTimeRaw != null && endTimeRaw != null) {
+            final startParts = startTimeRaw.split(':');
+            final endParts = endTimeRaw.split(':');
+            final startFormatted = startParts.length >= 2 ? '${int.parse(startParts[0])}:${startParts[1]}' : startTimeRaw;
+            final endFormatted = endParts.length >= 2 ? '${int.parse(endParts[0])}:${endParts[1]}' : endTimeRaw;
+            timeStr = ' ($startFormatted - $endFormatted)';
+          }
+          
+          return '$dayStr: $slotLabel$timeStr';
+        }).toList();
+        
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading class details: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _handleCreateNew() async {
@@ -90,8 +142,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => CreateProjectScreen(
+            fixedClassroomId: widget.classroomId,
             fixedClass: _className,
-            availableClasses: [_classCode],
           ),
         ),
       );
@@ -99,13 +151,22 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         if (!mounted) return;
         setState(() {
           _projects.insert(0, {
-            'title': result['title'] as String,
-            'members': result['members'] as String,
-            'membersList': result['membersList'],
-            'leader': result['leader'],
-            'date': result['date'],
+            'id': result['id'],
+            'classroomId': widget.classroomId,
+            'title': result['projectName'] ?? result['groupName'] ?? 'Du an',
+            'projectName': result['projectName'] ?? result['groupName'] ?? 'Du an',
+            'group': result['groupName'] ?? '',
+            'groupName': result['groupName'] ?? '',
+            'members': '${(result['members'] as List<dynamic>? ?? []).length} sinh vien',
+            'membersList': (result['members'] as List<dynamic>? ?? [])
+                .map((member) => member['fullName'] ?? member['userName'] ?? 'Thanh vien')
+                .toList(),
+            'membersData': result['members'] ?? [],
+            'leader': result['leader']?['fullName'],
+            'leaderData': result['leader'],
+            'date': '',
             'progress': '0%',
-            'milestones': result['milestones'],
+            'milestones': <Map<String, dynamic>>[],
           });
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -393,20 +454,102 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                               builder: (context) => EditClassScreen(
                                 className: _className,
                                 classCode: _classCode,
-                                semester: 'SU26',
-                                description: 'Lớp học Flipped Classroom dành cho sinh viên chuyên ngành',
+                                semester: _semester,
+                                description: _description,
                                 schedules: _schedules,
                               ),
                             ),
                           );
                           if (result != null) {
-                            setState(() {
-                              _className = result['title'] as String;
-                              _classCode = result['code'] as String;
-                              if (result['schedules'] != null) {
-                                _schedules = List<String>.from(result['schedules'] as Iterable);
+                            try {
+                              final List<dynamic> schedulesRaw = result['schedules'] as List<dynamic>? ?? [];
+                              final List<Map<String, dynamic>> schedulesRequest = [];
+                              for (var s in schedulesRaw) {
+                                if (s is String) {
+                                  // Split only at the FIRST ': ' to avoid splitting on times like '7:30'
+                                  final sepIdx = s.indexOf(': ');
+                                  if (sepIdx != -1) {
+                                    final dayStr = s.substring(0, sepIdx).trim();
+                                    final slotStr = s.substring(sepIdx + 2).trim();
+                                    
+                                    int dayOfWeek = 0;
+                                    if (dayStr == 'Thứ 2') dayOfWeek = 0;
+                                    else if (dayStr == 'Thứ 3') dayOfWeek = 1;
+                                    else if (dayStr == 'Thứ 4') dayOfWeek = 2;
+                                    else if (dayStr == 'Thứ 5') dayOfWeek = 3;
+                                    else if (dayStr == 'Thứ 6') dayOfWeek = 4;
+                                    else if (dayStr == 'Thứ 7') dayOfWeek = 5;
+                                    else if (dayStr == 'Chủ nhật') dayOfWeek = 6;
+                                    
+                                    String slotLabel = 'Slot 1';
+                                    String startTime = '07:30:00';
+                                    String endTime = '09:50:00';
+                                    
+                                    if (slotStr.contains('Slot 1')) {
+                                      slotLabel = 'Slot 1';
+                                      startTime = '07:30:00';
+                                      endTime = '09:50:00';
+                                    } else if (slotStr.contains('Slot 2')) {
+                                      slotLabel = 'Slot 2';
+                                      startTime = '10:00:00';
+                                      endTime = '12:20:00';
+                                    } else if (slotStr.contains('Slot 3')) {
+                                      slotLabel = 'Slot 3';
+                                      startTime = '12:50:00';
+                                      endTime = '15:10:00';
+                                    } else if (slotStr.contains('Slot 4')) {
+                                      slotLabel = 'Slot 4';
+                                      startTime = '15:20:00';
+                                      endTime = '17:40:00';
+                                    } else if (slotStr.contains('Slot 5')) {
+                                      slotLabel = 'Slot 5';
+                                      startTime = '18:00:00';
+                                      endTime = '20:20:00';
+                                    }
+                                    
+                                    schedulesRequest.add({
+                                      'dayOfWeek': dayOfWeek,
+                                      'slotLabel': slotLabel,
+                                      'startTime': startTime,
+                                      'endTime': endTime,
+                                      'roomName': 'Phòng học trực tuyến',
+                                    });
+                                  }
+                                }
                               }
-                            });
+
+                              if (widget.classroomId != null) {
+                                await ClassroomService().updateClassroom(
+                                  classroomId: widget.classroomId!,
+                                  name: result['title'] as String? ?? '',
+                                  description: result['description'] as String? ?? '',
+                                  semesterCode: result['semester'] as String? ?? 'SU26',
+                                  schedules: schedulesRequest,
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Cập nhật lớp học thành công!'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Color(0xFF7EC07E),
+                                  ),
+                                );
+                                _fetchClassroomDetails();
+                              } else {
+                                setState(() {
+                                  _className = result['title'] as String;
+                                  _classCode = result['code'] as String;
+                                  _schedules = List<String>.from(result['schedules'] as Iterable);
+                                });
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Lỗi cập nhật lớp học: $e'),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -475,8 +618,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => StudentListScreen(
+                                  classroomId: widget.classroomId ?? 0,
                                   className: _className,
-                                  studentsCount: widget.studentsCount,
                                 ),
                               ),
                             );
@@ -525,9 +668,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                               ),
                               const SizedBox(height: 6),
-                              const Text(
-                                'HK1 2026',
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              Text(
+                                _semester,
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -542,7 +685,15 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  ..._schedules.map((s) => _buildScheduleBox(s)),
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Center(
+                        child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+                      ),
+                    )
+                  else
+                    ..._schedules.map((s) => _buildScheduleBox(s)),
                   const SizedBox(height: 22),
 
                   _buildInnerTabs(),

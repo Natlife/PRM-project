@@ -40,13 +40,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String role = jwtUtil.extractRole(claims);
 
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                
-                // (ROLE_ADMIN, ROLE_TEACHER, ROLE_STUDENT)
+
                 if (role != null) {
                     authorities.add(new SimpleGrantedAuthority(role));
                 }
 
-                // safest fallback for this app is student, but real clients should always carry role claim
                 if (authorities.isEmpty()) {
                     authorities.add(new SimpleGrantedAuthority("ROLE_STUDENT"));
                 }

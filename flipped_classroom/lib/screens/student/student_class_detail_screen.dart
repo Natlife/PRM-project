@@ -3,8 +3,12 @@ import 'student_activity_detail_screen.dart';
 import 'student_project_detail_screen.dart';
 import 'student_milestone_detail_screen.dart';
 import 'student_peer_review_screen.dart';
+import '../../services/activity_service.dart';
+import '../../services/material_service.dart';
+import '../../services/project_service.dart';
 
 class StudentClassDetailScreen extends StatefulWidget {
+  final int? classroomId;
   final String classCodeWithName;
   final String className;
   final String instructor;
@@ -12,6 +16,7 @@ class StudentClassDetailScreen extends StatefulWidget {
 
   const StudentClassDetailScreen({
     super.key,
+    this.classroomId,
     required this.classCodeWithName,
     required this.className,
     required this.instructor,
@@ -26,124 +31,136 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
   int _activeTab = 0; // 0: Hoạt động, 1: Tài liệu, 2: Dự án
   int _activeSubFilter = 0; // 0: Trước buổi học, 1: Trong buổi học
 
-  // Mock list of activities
-  late List<Map<String, dynamic>> _activities;
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _activities = [];
+  List<Map<String, dynamic>> _materials = [];
+  Map<String, dynamic> _projectInfo = {};
 
   @override
   void initState() {
     super.initState();
-    _activities = [
-      {
-        'id': 'act_1',
-        'title': 'Bài tập buổi 5: Thực hiện các bài lab',
-        'type': 'Trước buổi học',
-        'deadline': 'Hạn: 29/05/2026',
-        'status': 'Chưa làm',
-        'description': 'Đọc kỹ slide bài 5 và thực hiện các bài lab 1, 2, 3 trong tài liệu đính kèm. Chuẩn bị mã nguồn Github để chạy thử nghiệm trên lớp.',
-        'evidence': '',
-        'submissionTime': '',
-      },
-      {
-        'id': 'act_2',
-        'title': 'Bài tập buổi 1: Tìm hiểu về Dart',
-        'type': 'Trước buổi học',
-        'deadline': 'Hạn: 10/05/2026',
-        'status': 'Đã làm',
-        'description': 'Làm quen với cú pháp Dart cơ bản: biến, hàm, class, kế thừa, asynchronous programming (Future, Stream). Nộp link Github repository chứa bài tập.',
-        'evidence': 'https://github.com/huynguyen/dart-prm-intro',
-        'submissionTime': 'Nộp lúc: 09/05/2026 15:45',
-      },
-      {
-        'id': 'act_3',
-        'title': 'Thực hành buổi 6: Flutter Widget Layout',
-        'type': 'Trong buổi học',
-        'deadline': 'Hạn: 12/06/2026',
-        'status': 'Chưa làm',
-        'description': 'Thực hành thiết kế giao diện phức tạp bằng Row, Column, Stack, ListView. Thực hiện căn chỉnh giao diện Responsive cho các kích thước màn hình khác nhau.',
-        'evidence': '',
-        'submissionTime': '',
-      },
-      {
-        'id': 'act_4',
-        'title': 'Trắc nghiệm bài 3: State Management',
-        'type': 'Trong buổi học',
-        'deadline': 'Hạn: 25/05/2026',
-        'status': 'Đã làm',
-        'description': 'Hoàn thành bài kiểm tra trắc nghiệm nhanh 15 câu về cách quản lý trạng thái trong Flutter (setState, Provider, InheritedWidget).',
-        'evidence': 'Kết quả: 15/15 câu đúng. Hoàn thành trực tuyến.',
-        'submissionTime': 'Nộp lúc: 24/05/2026 21:10',
-      },
-    ];
+    _loadData();
   }
 
-  // Mock list of materials
-  final List<Map<String, dynamic>> _materials = [
-    {
-      'title': 'Syllabus môn học PRM393',
-      'type': 'pdf',
-      'size': '1.2 MB',
-      'date': 'Đăng ngày: 15/05/2026',
-    },
-    {
-      'title': 'Slide 1: Giới thiệu môn học & Dart cơ bản',
-      'type': 'pdf',
-      'size': '2.4 MB',
-      'date': 'Đăng ngày: 16/05/2026',
-    },
-    {
-      'title': 'Slide 2: Flutter Widgets & Giao diện Responsive',
-      'type': 'pdf',
-      'size': '4.1 MB',
-      'date': 'Đăng ngày: 22/05/2026',
-    },
-    {
-      'title': 'Slide 3: State Management & Flutter Architecture',
-      'type': 'pdf',
-      'size': '3.8 MB',
-      'date': 'Đăng ngày: 28/05/2026',
-    },
-    {
-      'title': 'Video Record: Buổi học 1 - Hướng dẫn cài đặt môi trường Flutter',
-      'type': 'video',
-      'duration': '1h 45m',
-      'date': 'Đăng ngày: 17/05/2026',
-    },
-  ];
+  Future<void> _loadData() async {
+    if (widget.classroomId == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      // 1. Fetch activities
+      final rawActs = await ActivityService().getStudentActivities(widget.classroomId!);
+      final List<Map<String, dynamic>> loadedActivities = rawActs.map((act) {
+        final String dueStr = act['dueAt'] != null
+            ? act['dueAt'].toString().split('T').first
+            : 'N/A';
+        final String status = (act['status'] == 'SUBMITTED' ||
+                act['status'] == 'GRADED' ||
+                act['status'] == 'RETURNED' ||
+                act['status'] == 'Đã làm')
+            ? 'Đã làm'
+            : 'Chưa làm';
+        return {
+          'id': act['id'].toString(),
+          'title': act['title'] ?? 'Bài tập',
+          'type': act['activityType'] == 'PRE_CLASS' ? 'Trước buổi học' : 'Trong buổi học',
+          'deadline': 'Hạn: $dueStr',
+          'status': status,
+          'description': act['description'] ?? '',
+          'evidence': '',
+          'submissionTime': '',
+        };
+      }).toList();
 
-  // Mock project details
-  final Map<String, dynamic> _projectInfo = {
-    'groupName': 'Nhóm 1',
-    'projectName': 'Ứng dụng quản lý lớp học đảo ngược (Flipped Classroom)',
-    'members': [
-      {'name': 'Nguyễn Văn A', 'role': 'Trưởng nhóm'},
-      {'name': 'Trần Thị B', 'role': 'Thành viên'},
-      {'name': 'Lê Văn C', 'role': 'Thành viên'},
-      {'name': 'Phạm Văn D', 'role': 'Thành viên'},
-    ],
-    'milestones': [
-      {
-        'title': 'Milestone 1: Wireframe & Database Design',
-        'dueDate': 'Hạn chót: Đã nộp (01/06/2026)',
-        'progress': 1.0,
-        'status': 'Đã hoàn thành',
-        'color': Colors.greenAccent,
-      },
-      {
-        'title': 'Milestone 2: MVP Front-end & Auth',
-        'dueDate': 'Hạn chót: 15/06/2026',
-        'progress': 0.6,
-        'status': 'Đang thực hiện',
-        'color': Colors.amberAccent,
-      },
-      {
-        'title': 'Milestone 3: Final Submission & Demo',
-        'dueDate': 'Hạn chót: 30/06/2026',
-        'progress': 0.0,
-        'status': 'Chưa bắt đầu',
-        'color': Colors.white24,
-      },
-    ]
-  };
+      // 2. Fetch materials
+      final rawMats = await MaterialService().getClassroomMaterials(widget.classroomId!);
+      final List<Map<String, dynamic>> loadedMaterials = rawMats.map((mat) {
+        final String type = mat['materialType'] == 'VIDEO' ? 'video' : 'pdf';
+        final String dateStr = mat['createdAt'] != null
+            ? mat['createdAt'].toString().split('T').first
+            : 'N/A';
+        return {
+          'title': mat['title'] ?? '',
+          'type': type,
+          'size': type == 'pdf' ? '2.5 MB' : null,
+          'duration': type == 'video' ? '1h 20m' : null,
+          'date': 'Đăng ngày: $dateStr',
+        };
+      }).toList();
+
+      // 3. Fetch project info and milestones
+      Map<String, dynamic> loadedProject = {};
+      try {
+        final projectGroup = await ProjectService().getStudentProjectGroup(widget.classroomId!);
+        if (projectGroup.isNotEmpty) {
+          final int? groupId = projectGroup['id'];
+          List<Map<String, dynamic>> milestones = [];
+          if (groupId != null) {
+            final rawMilestones = await ProjectService().getGroupMilestones(groupId);
+            milestones = rawMilestones.map((m) {
+              final double progress = (m['progressPercent'] ?? 0) / 100.0;
+              final String status = m['status'] ?? 'Chưa bắt đầu';
+              Color color = Colors.white24;
+              if (status == 'COMPLETED' || status == 'Hoàn thành') {
+                color = Colors.greenAccent;
+              } else if (status == 'IN_PROGRESS' || status == 'Đang thực hiện') {
+                color = Colors.amberAccent;
+              }
+              final String dueStr = m['dueAt'] != null
+                  ? m['dueAt'].toString().split('T').first
+                  : 'N/A';
+              return {
+                'id': m['id'],
+                'title': m['title'] ?? '',
+                'dueDate': 'Hạn chót: $dueStr',
+                'progress': progress,
+                'status': status == 'COMPLETED' ? 'Đã hoàn thành' : (status == 'IN_PROGRESS' ? 'Đang thực hiện' : 'Chưa bắt đầu'),
+                'color': color,
+              };
+            }).toList();
+          }
+
+          final List<dynamic> rawMembers = projectGroup['members'] ?? [];
+          final List<Map<String, dynamic>> members = rawMembers.map((m) {
+            final isLeader = m['id'] == projectGroup['leader']?['id'];
+            return {
+              'name': m['fullName'] ?? m['userName'] ?? '',
+              'role': isLeader ? 'Trưởng nhóm' : 'Thành viên',
+            };
+          }).toList();
+
+          loadedProject = {
+            'id': groupId,
+            'groupName': projectGroup['groupName'] ?? 'Nhóm chưa đặt tên',
+            'projectName': projectGroup['projectName'] ?? 'Dự án chưa đặt tên',
+            'leader': projectGroup['leader'],
+            'members': members,
+            'membersData': rawMembers,
+            'milestones': milestones,
+          };
+        }
+      } catch (e) {
+        debugPrint('No project group found for student: $e');
+      }
+
+      setState(() {
+        _activities = loadedActivities;
+        _materials = loadedMaterials;
+        _projectInfo = loadedProject;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading student classroom detail data: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   void _onBottomNavTapped(int index) {
     // Return selected index to Home Screen to change index
@@ -196,17 +213,19 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
             
             // Sub-filters for Activity Tab
             if (_activeTab == 0) _buildSubFilters(),
-
-            // Main Content Area
             Expanded(
-              child: IndexedStack(
-                index: _activeTab,
-                children: [
-                  _buildActivitiesContent(),
-                  _buildMaterialsContent(),
-                  _buildProjectsContent(),
-                ],
-              ),
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+                    )
+                  : IndexedStack(
+                      index: _activeTab,
+                      children: [
+                        _buildActivitiesContent(),
+                        _buildMaterialsContent(),
+                        _buildProjectsContent(),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -527,6 +546,19 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
 
   // TAB 2 CONTENT: PROJECTS
   Widget _buildProjectsContent() {
+    if (_projectInfo.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text(
+            'Bạn chưa tham gia nhóm dự án nào trong lớp học này.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+          ),
+        ),
+      );
+    }
+
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(20),
@@ -546,11 +578,14 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                 MaterialPageRoute(
                   builder: (context) => StudentProjectDetailScreen(
                     project: {
+                      'id': _projectInfo['id'],
                       'title': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
                       'projectName': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
+                      'leader': _projectInfo['leader'],
                       'membersList': (_projectInfo['members'] as List)
                           .map((m) => m['name'] as String)
                           .toList(),
+                      'milestones': _projectInfo['milestones'] ?? [],
                     },
                   ),
                 ),
@@ -630,6 +665,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => StudentPeerReviewScreen(
+                  classroomId: widget.classroomId ?? 0,
                   classCode: widget.classCodeWithName.split(' - ').first,
                 ),
               ),
@@ -674,8 +710,10 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                     builder: (context) => StudentMilestoneDetailScreen(
                       milestone: milestone,
                       project: {
+                        'id': _projectInfo['id'],
                         'title': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
                         'projectName': _projectInfo['projectName'] ?? 'App lớp học đảo ngược',
+                        'leader': _projectInfo['leader'],
                         'membersList': (_projectInfo['members'] as List)
                             .map((m) => m['name'] as String)
                             .toList(),

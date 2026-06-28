@@ -36,9 +36,15 @@ public class UserService {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        String username = authentication.getName();
-        return userRepository.findByUserName(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        try {
+            Long userId = Long.parseLong(authentication.getName());
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        } catch (NumberFormatException e) {
+            String username = authentication.getName();
+            return userRepository.findByUserName(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        }
     }
 
     @Transactional

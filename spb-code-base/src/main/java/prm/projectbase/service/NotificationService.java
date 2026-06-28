@@ -97,7 +97,7 @@ public class NotificationService {
         log.info("Marking notification {} as read", notificationId);
 
         AppNotification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new AppException(ErrorCode.FILE_NOT_FOUND)); // Or notification not found, let's keep it simple
+                .orElseThrow(() -> new AppException(ErrorCode.FILE_NOT_FOUND)); 
 
         User currentUser = userService.getCurrentUser();
         if (!notification.getRecipient().getId().equals(currentUser.getId())) {

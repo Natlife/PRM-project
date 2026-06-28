@@ -24,11 +24,7 @@ import java.util.List;
 public class SubmissionController {
     
     private final SubmissionService submissionService;
-    
-    /**
-     * Student creates or updates their submission (draft)
-     * PUT /api/v1/student/activities/{activityId}/submission
-     */
+
     @PutMapping("/student/activities/{activityId}/submission")
     public ResponseEntity<BaseResponse<SubmissionDetailResponse>> updateSubmission(
             @PathVariable Long activityId,
@@ -39,11 +35,7 @@ public class SubmissionController {
         SubmissionDetailResponse response = submissionService.submitActivity(activityId, request);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Student finalizes their submission (marks as submitted)
-     * POST /api/v1/student/activities/{activityId}/submission/finalize
-     */
+
     @PostMapping("/student/activities/{activityId}/submission/finalize")
     public ResponseEntity<BaseResponse<SubmissionDetailResponse>> finalizeSubmission(
             @PathVariable Long activityId) {
@@ -53,11 +45,7 @@ public class SubmissionController {
         SubmissionDetailResponse response = submissionService.finalizeSubmission(activityId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Student gets their submission
-     * GET /api/v1/student/activities/{activityId}/submission
-     */
+
     @GetMapping("/student/activities/{activityId}/submission")
     public ResponseEntity<BaseResponse<SubmissionDetailResponse>> getStudentSubmission(
             @PathVariable Long activityId) {
@@ -67,11 +55,7 @@ public class SubmissionController {
         SubmissionDetailResponse response = submissionService.getStudentSubmission(activityId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Teacher gets all submissions for an activity
-     * GET /api/v1/teacher/activities/{activityId}/submissions
-     */
+
     @GetMapping("/teacher/activities/{activityId}/submissions")
     public ResponseEntity<BaseResponse<List<SubmissionListResponse>>> getActivitySubmissions(
             @PathVariable Long activityId) {
@@ -81,11 +65,7 @@ public class SubmissionController {
         List<SubmissionListResponse> response = submissionService.getActivitySubmissions(activityId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Teacher gets a specific submission
-     * GET /api/v1/teacher/submissions/{submissionId}
-     */
+
     @GetMapping("/teacher/submissions/{submissionId}")
     public ResponseEntity<BaseResponse<SubmissionDetailResponse>> getSubmission(
             @PathVariable Long submissionId) {
@@ -95,11 +75,7 @@ public class SubmissionController {
         SubmissionDetailResponse response = submissionService.getSubmission(submissionId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Teacher grades a submission
-     * PUT /api/v1/teacher/submissions/{submissionId}/grade
-     */
+
     @PutMapping("/teacher/submissions/{submissionId}/grade")
     public ResponseEntity<BaseResponse<SubmissionDetailResponse>> gradeSubmission(
             @PathVariable Long submissionId,
@@ -110,11 +86,7 @@ public class SubmissionController {
         SubmissionDetailResponse response = submissionService.gradeSubmission(submissionId, request);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
-    
-    /**
-     * Add a comment to a submission (teacher feedback or student reply)
-     * POST /api/v1/submissions/{submissionId}/comments
-     */
+
     @PostMapping("/submissions/{submissionId}/comments")
     public ResponseEntity<BaseResponse<SubmissionCommentResponse>> addComment(
             @PathVariable Long submissionId,
@@ -126,11 +98,7 @@ public class SubmissionController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Comment added successfully", HttpStatus.CREATED));
     }
-    
-    /**
-     * Get all comments for a submission
-     * GET /api/v1/submissions/{submissionId}/comments
-     */
+
     @GetMapping("/submissions/{submissionId}/comments")
     public ResponseEntity<BaseResponse<List<SubmissionCommentResponse>>> getSubmissionComments(
             @PathVariable Long submissionId) {

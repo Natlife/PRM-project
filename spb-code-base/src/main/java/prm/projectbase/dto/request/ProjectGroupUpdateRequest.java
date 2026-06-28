@@ -16,6 +16,6 @@ public class ProjectGroupUpdateRequest {
     String projectName;
     String description;
     Long leaderId;
-    String status; // ACTIVE, LOCKED, ARCHIVED
+    String status; 
     List<Long> studentIds;
 }

@@ -19,10 +19,6 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
-    /**
-     * Get dashboard summary for the current student
-     * GET /api/v1/student/dashboard/summary
-     */
     @GetMapping("/student/dashboard/summary")
     public ResponseEntity<BaseResponse<StudentDashboardResponse>> getStudentDashboard() {
         log.info("GET /student/dashboard/summary - Fetching student dashboard summary");
@@ -30,10 +26,6 @@ public class DashboardController {
         return ResponseEntity.ok(BaseResponse.success(response, "Get student dashboard summary successfully"));
     }
 
-    /**
-     * Get dashboard summary for the current teacher
-     * GET /api/v1/teacher/dashboard/summary
-     */
     @GetMapping("/teacher/dashboard/summary")
     public ResponseEntity<BaseResponse<TeacherDashboardResponse>> getTeacherDashboard() {
         log.info("GET /teacher/dashboard/summary - Fetching teacher dashboard summary");
