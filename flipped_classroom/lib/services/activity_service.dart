@@ -33,4 +33,81 @@ class ActivityService {
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
+
+  /// Get teacher activity detail
+  Future<Map<String, dynamic>> getTeacherActivityDetail(int activityId) async {
+    final response = await _apiService.get('/teacher/activities/$activityId');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  /// Update a learning activity (Teacher only)
+  Future<Map<String, dynamic>> updateActivity(
+    int activityId,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiService.put(
+      '/teacher/activities/$activityId',
+      body: data,
+    );
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  /// Get all submissions for a teacher activity
+  Future<List<Map<String, dynamic>>> getActivitySubmissions(int activityId) async {
+    final response = await _apiService.get('/teacher/activities/$activityId/submissions');
+    final responseBody = jsonDecode(response.body);
+    final List<dynamic> data = responseBody['data'] ?? [];
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// Get teacher submission detail
+  Future<Map<String, dynamic>> getTeacherSubmissionDetail(int submissionId) async {
+    final response = await _apiService.get('/teacher/submissions/$submissionId');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  /// Grade a submission
+  Future<Map<String, dynamic>> gradeSubmission(
+    int submissionId, {
+    required num score,
+    String? feedback,
+  }) async {
+    final response = await _apiService.put(
+      '/teacher/submissions/$submissionId/grade',
+      body: {
+        'score': score,
+        'feedback': feedback,
+      },
+    );
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  /// Get comments for a submission
+  Future<List<Map<String, dynamic>>> getSubmissionComments(int submissionId) async {
+    final response = await _apiService.get('/submissions/$submissionId/comments');
+    final responseBody = jsonDecode(response.body);
+    final List<dynamic> data = responseBody['data'] ?? [];
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// Add comment to a submission
+  Future<Map<String, dynamic>> addSubmissionComment(
+    int submissionId, {
+    required String content,
+    String scope = 'PUBLIC',
+  }) async {
+    final response = await _apiService.post(
+      '/submissions/$submissionId/comments',
+      body: {
+        'content': content,
+        'scope': scope,
+      },
+    );
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
 }

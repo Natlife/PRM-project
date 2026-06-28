@@ -36,8 +36,9 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
     
     DateTime initial = tomorrow;
     try {
-      if (widget.deadline.contains('/')) {
-        final parts = widget.deadline.split('/');
+      final sourceDeadline = _deadlineController.text;
+      if (sourceDeadline.contains('/')) {
+        final parts = sourceDeadline.split('/');
         final day = int.parse(parts[0]);
         final month = int.parse(parts[1]);
         final year = int.parse(parts[2]);
@@ -56,11 +57,11 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: const ColorScheme.light(
               primary: Color(0xFF7EC07E),
               onPrimary: Colors.white,
               surface: Color(0xFFFFFFFF),
-              onSurface: Colors.white,
+              onSurface: Color(0xFF0F172A),
             ),
           ),
           child: child!,

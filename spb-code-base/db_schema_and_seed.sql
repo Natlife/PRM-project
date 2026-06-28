@@ -385,8 +385,8 @@ INSERT INTO classroom_enrollments (id, classroom_id, student_id, status) VALUES
 
 -- Seed learning activities
 INSERT INTO learning_activities (id, classroom_id, title, description, activity_type, open_at, due_at, max_score, status) VALUES
-  (1, 1, 'Bài tập lập trình Dart', 'Đọc kỹ slide bài 1, thực hiện các bài lab giới thiệu về Dart cơ bản, hướng đối tượng OOP và lập trình bất đồng bộ.', 'BEFORE_CLASS', CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 2 DAY), 10.00, 'PUBLISHED'),
-  (2, 1, 'Trắc nghiệm Flutter Widget', 'Làm bài trắc nghiệm nhanh 15 câu về Stateless và Stateful widget.', 'BEFORE_CLASS', CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 5 DAY), 10.00, 'PUBLISHED');
+  (1, 1, 'Bài tập lập trình Dart', 'Đọc kỹ slide bài 1, thực hiện các bài lab giới thiệu về Dart cơ bản, hướng đối tượng OOP và lập trình bất đồng bộ.', 'PRE_CLASS', CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 2 DAY), 10.00, 'PUBLISHED'),
+  (2, 1, 'Trắc nghiệm Flutter Widget', 'Làm bài trắc nghiệm nhanh 15 câu về Stateless và Stateful widget.', 'PRE_CLASS', CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 5 DAY), 10.00, 'PUBLISHED');
 
 -- Seed project groups
 INSERT INTO project_groups (id, classroom_id, group_name, project_name, description, leader_id, status) VALUES

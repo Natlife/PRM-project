@@ -47,8 +47,20 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
       final loadedClasses = results[0] as List<Map<String, dynamic>>;
       final summary = results[1] as Map<String, dynamic>;
-      final loadedActivities = await _loadTeacherActivities(loadedClasses);
-      final loadedProjects = await _loadTeacherProjects(loadedClasses);
+      List<Map<String, dynamic>> loadedActivities = [];
+      List<Map<String, dynamic>> loadedProjects = [];
+
+      try {
+        loadedActivities = await _loadTeacherActivities(loadedClasses);
+      } catch (e) {
+        debugPrint('Error loading teacher activities: $e');
+      }
+
+      try {
+        loadedProjects = await _loadTeacherProjects(loadedClasses);
+      } catch (e) {
+        debugPrint('Error loading teacher projects: $e');
+      }
 
       if (!mounted) return;
       setState(() {
@@ -64,10 +76,27 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       debugPrint('Error loading dashboard data: $e');
       try {
         final loadedClasses = await ClassroomService().getTeacherClassrooms();
+        List<Map<String, dynamic>> loadedActivities = [];
+        List<Map<String, dynamic>> loadedProjects = [];
+
+        try {
+          loadedActivities = await _loadTeacherActivities(loadedClasses);
+        } catch (e) {
+          debugPrint('Error loading teacher activities in fallback: $e');
+        }
+
+        try {
+          loadedProjects = await _loadTeacherProjects(loadedClasses);
+        } catch (e) {
+          debugPrint('Error loading teacher projects in fallback: $e');
+        }
+
         if (!mounted) return;
 
         setState(() {
           _classes = loadedClasses;
+          _activitiesList = loadedActivities;
+          _projectsList = loadedProjects;
           _totalStudents = loadedClasses.fold<int>(
             0,
             (sum, item) => sum + ((item['studentsCount'] as int?) ?? 0),
@@ -100,19 +129,27 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         final items = await ActivityService().getTeacherActivities(classroomId);
         for (final activity in items) {
           final dueAt = activity['dueAt']?.toString() ?? '';
-          final date = dueAt.isNotEmpty ? dueAt.split('T').first : '';
+          final date = dueAt.isNotEmpty
+              ? () {
+                  final rawDate = dueAt.split('T').first;
+                  final parts = rawDate.split('-');
+                  return parts.length == 3
+                      ? '${parts[2]}/${parts[1]}/${parts[0]}'
+                      : rawDate;
+                }()
+              : '';
           final status = (activity['status'] ?? '').toString();
 
           activities.add({
             'id': activity['id'],
             'classroomId': classroomId,
             'title': activity['title'] ?? 'Hoat dong',
-            'className': classroom['code'] ?? '',
+            'className': classroom['className'] ?? classroom['title'] ?? classroom['code'] ?? '',
             'status': status,
             'statusColor': status == 'PUBLISHED'
                 ? const Color(0xFF7EC07E)
                 : Colors.amberAccent,
-            'submissions': activity['activityType'] ?? '',
+            'submissions': activity['activityType'] ?? 'Activity',
             'date': date,
             'description': activity['description'] ?? '',
           });
@@ -224,25 +261,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Future<void> _navigateToCreateActivity() async {
-    final classNames = _classes.map((c) => c['code'] as String).toList();
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateActivityScreen(classNames: classNames),
+        builder: (context) => CreateActivityScreen(availableClassrooms: _classes),
       ),
     );
     if (result != null) {
-      setState(() {
-        _activitiesList.insert(0, {
-          'title': result['title'] as String,
-          'className': result['className'] as String,
-          'status': result['status'] as String,
-          'statusColor': result['statusColor'] as Color,
-          'submissions': result['submissions'] as String,
-          'date': result['date'] as String,
-          'description': result['description'] as String,
-        });
-      });
+      _loadClasses();
     }
   }
 
@@ -1142,6 +1168,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => ActivityDetailScreen(
+              activityId: activity['id'] as int?,
               activityTitle: title,
               deadline: deadline,
               submissions: submissions,

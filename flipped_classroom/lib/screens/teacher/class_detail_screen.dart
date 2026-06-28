@@ -7,6 +7,9 @@ import 'create_project_screen.dart';
 import 'project_detail_screen.dart';
 import 'create_activity_screen.dart';
 import '../../services/classroom_service.dart';
+import '../../services/activity_service.dart';
+import '../../services/material_service.dart';
+import '../../services/project_service.dart';
 
 class ClassDetailScreen extends StatefulWidget {
   final int? classroomId;
@@ -35,6 +38,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   late String _semester;
   late String _description;
   bool _isLoading = false;
+  List<Map<String, dynamic>> _rawSchedules = [];
 
   late List<Map<String, dynamic>> _activities;
   late List<Map<String, dynamic>> _documents;
@@ -48,47 +52,103 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     _semester = 'SU26';
     _description = 'Lớp học Flipped Classroom dành cho sinh viên chuyên ngành';
     _schedules = [];
-
-    _activities = [
-      {
-        'title': 'Chuẩn bị bài 4: Flutter Widget cơ bản',
-        'submissions': '0/45 người nộp',
-        'date': '19/03/2026',
-      },
-      {
-        'title': 'Báo cáo Milestone 1: Phân tích yêu cầu',
-        'submissions': '42/45 người nộp',
-        'date': '15/03/2026',
-      },
-    ];
-
-    _documents = [
-      {
-        'title': 'Slide 1: Giới thiệu môn học & Flutter SDK',
-        'size': '2.4 MB',
-        'date': '10/03/2026',
-      },
-      {
-        'title': 'Tài liệu hướng dẫn cài đặt môi trường Android Studio',
-        'size': '4.8 MB',
-        'date': '11/03/2026',
-      },
-    ];
-
-    _projects = [
-      {
-        'title': 'Nhóm 1: Hệ thống quản lý Flipped Classroom',
-        'members': '4 thành viên',
-        'progress': '80%',
-      },
-      {
-        'title': 'Nhóm 2: Ứng dụng theo dõi sức khỏe Gymtelligent',
-        'members': '3 thành viên',
-        'progress': '65%',
-      },
-    ];
+    _activities = [];
+    _documents = [];
+    _projects = [];
 
     _fetchClassroomDetails();
+    _fetchTabData();
+  }
+
+  String _formatDate(dynamic rawValue) {
+    if (rawValue == null) {
+      return '';
+    }
+    final raw = rawValue.toString().split('T').first;
+    final parts = raw.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return raw;
+  }
+
+  String _formatScheduleLabel(Map<String, dynamic> schedule) {
+    final int dayNum = schedule['dayOfWeek'] ?? 0;
+    final days = [
+      'Thu 2',
+      'Thu 3',
+      'Thu 4',
+      'Thu 5',
+      'Thu 6',
+      'Thu 7',
+      'Chu nhat',
+    ];
+    final dayStr = (dayNum >= 0 && dayNum < days.length) ? days[dayNum] : days.first;
+    final slotLabel = schedule['slotLabel']?.toString() ?? 'Slot 1';
+
+    String timeStr = '';
+    final startTimeRaw = schedule['startTime'] as String?;
+    final endTimeRaw = schedule['endTime'] as String?;
+    if (startTimeRaw != null && endTimeRaw != null) {
+      final startParts = startTimeRaw.split(':');
+      final endParts = endTimeRaw.split(':');
+      final startFormatted = startParts.length >= 2
+          ? '${int.parse(startParts[0])}:${startParts[1]}'
+          : startTimeRaw;
+      final endFormatted = endParts.length >= 2
+          ? '${int.parse(endParts[0])}:${endParts[1]}'
+          : endTimeRaw;
+      timeStr = ' ($startFormatted - $endFormatted)';
+    }
+
+    return '$dayStr: $slotLabel$timeStr';
+  }
+
+  String _formatMaterialSize(dynamic sizeBytes) {
+    if (sizeBytes == null) {
+      return 'Khong ro';
+    }
+    final bytes = sizeBytes is num ? sizeBytes.toDouble() : double.tryParse(sizeBytes.toString());
+    if (bytes == null) {
+      return 'Khong ro';
+    }
+    if (bytes >= 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    if (bytes >= 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${bytes.toStringAsFixed(0)} B';
+  }
+
+  Map<String, dynamic> _normalizeProject(Map<String, dynamic> raw) {
+    final members = List<Map<String, dynamic>>.from(raw['members'] ?? const []);
+    final milestones = List<Map<String, dynamic>>.from(raw['milestones'] ?? const []);
+    final progress = milestones.isEmpty
+        ? 0
+        : milestones
+                .map((milestone) => milestone['progressPercent'] as num? ?? 0)
+                .fold<num>(0, (sum, item) => sum + item) /
+            milestones.length;
+
+    return {
+      'id': raw['id'],
+      'classroomId': raw['classroomId'] ?? widget.classroomId,
+      'title': raw['projectName'] ?? raw['groupName'] ?? 'Du an',
+      'projectName': raw['projectName'] ?? raw['groupName'] ?? 'Du an',
+      'group': raw['groupName'] ?? 'Nhom',
+      'groupName': raw['groupName'] ?? 'Nhom',
+      'members': '${members.length} sinh vien',
+      'membersList': members
+          .map((member) => member['fullName'] ?? member['userName'] ?? 'Thanh vien')
+          .toList(),
+      'membersData': members,
+      'leader': raw['leader']?['fullName'],
+      'leaderData': raw['leader'],
+      'date': _formatDate(raw['createdAt']),
+      'progress': '${progress.round()}%',
+      'milestones': milestones,
+    };
   }
 
   Future<void> _fetchClassroomDetails() async {
@@ -103,29 +163,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         _classCode = detail['code'] ?? widget.classCode;
         _semester = detail['semesterCode'] ?? 'SU26';
         _description = detail['description'] ?? 'Lớp học Flipped Classroom dành cho sinh viên chuyên ngành';
-        
-        final List<dynamic> schedulesRaw = detail['schedules'] as List<dynamic>? ?? [];
-        _schedules = schedulesRaw.map<String>((s) {
-          final int dayNum = s['dayOfWeek'] ?? 0;
-          final days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
-          final dayStr = (dayNum >= 0 && dayNum < days.length) ? days[dayNum] : 'Thứ 2';
-          
-          final slotLabel = s['slotLabel'] ?? 'Slot 1';
-          
-          String timeStr = '';
-          final startTimeRaw = s['startTime'] as String?;
-          final endTimeRaw = s['endTime'] as String?;
-          if (startTimeRaw != null && endTimeRaw != null) {
-            final startParts = startTimeRaw.split(':');
-            final endParts = endTimeRaw.split(':');
-            final startFormatted = startParts.length >= 2 ? '${int.parse(startParts[0])}:${startParts[1]}' : startTimeRaw;
-            final endFormatted = endParts.length >= 2 ? '${int.parse(endParts[0])}:${endParts[1]}' : endTimeRaw;
-            timeStr = ' ($startFormatted - $endFormatted)';
-          }
-          
-          return '$dayStr: $slotLabel$timeStr';
-        }).toList();
-        
+
+        _rawSchedules = List<Map<String, dynamic>>.from(detail['schedules'] ?? const []);
+        _schedules = _rawSchedules.map(_formatScheduleLabel).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -133,6 +173,61 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchTabData() async {
+    if (widget.classroomId == null) return;
+    try {
+      final rawActs = await ActivityService().getTeacherActivities(widget.classroomId!);
+      final loaded = rawActs.map<Map<String, dynamic>>((act) {
+        return {
+          'id': act['id'],
+          'title': act['title'] ?? 'Hoat dong',
+          'description': act['description'] ?? '',
+          'submissions': 'Xem danh sach nop bai',
+          'date': _formatDate(act['dueAt']),
+          'activityType': act['activityType'] ?? '',
+          'status': act['status'] ?? '',
+          'dueAt': act['dueAt'],
+        };
+      }).toList();
+
+      List<Map<String, dynamic>> loadedMats = [];
+      try {
+        final rawMats = await MaterialService().getClassroomMaterials(widget.classroomId!);
+        loadedMats = rawMats.map<Map<String, dynamic>>((mat) {
+          return {
+            'id': mat['id'],
+            'title': mat['title'] ?? '',
+            'description': mat['description'] ?? '',
+            'size': _formatMaterialSize(mat['sizeBytes']),
+            'date': _formatDate(mat['publishedAt']),
+            'fileName': mat['originalFileName'] ?? '',
+            'materialType': mat['materialType'] ?? '',
+          };
+        }).toList();
+      } catch (e) {
+        debugPrint('Error loading materials: $e');
+      }
+
+      List<Map<String, dynamic>> loadedProjects = [];
+      try {
+        final rawProjects = await ProjectService().getClassroomProjectGroups(widget.classroomId!);
+        loadedProjects = rawProjects.map(_normalizeProject).toList();
+      } catch (e) {
+        debugPrint('Error loading projects: $e');
+      }
+
+      if (mounted) {
+        setState(() {
+          _activities = loaded;
+          _documents = loadedMats;
+          _projects = loadedProjects;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading activities: \$e');
     }
   }
 
@@ -184,7 +279,14 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => CreateActivityScreen(
-            classNames: [_className],
+            classroomId: widget.classroomId,
+            availableClassrooms: [
+              {
+                'id': widget.classroomId,
+                'className': _className,
+                'code': _classCode,
+              },
+            ],
           ),
         ),
       );
@@ -192,10 +294,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         if (!mounted) return;
         setState(() {
           _activities.insert(0, {
+            'id': result['id'],
             'title': result['title'] as String,
-            'submissions': result['submissions'] ?? '0/45 người nộp',
+            'description': result['description'] ?? '',
+            'submissions': result['submissions'] ?? '0 người nộp',
             'date': result['date'] ?? 'Hôm nay',
-            'description': result['description'] ?? 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành',
+            'activityType': result['activityType'] ?? '',
+            'status': result['status'] ?? '',
             'className': result['className'] ?? _className,
           });
         });
@@ -210,188 +315,11 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
     }
 
     if (_currentTab == 'Tài liệu') {
-      final titleController = TextEditingController();
-      String? selectedFileName;
-      String? selectedFileSize;
-
-      showDialog(
-        context: context,
-        builder: (context) {
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              Future<void> simulateFilePicker() async {
-                final mockFiles = [
-                  {'name': 'Slide_Flutter_Co_Ban.pdf', 'size': '2.4 MB'},
-                  {'name': 'Huong_Dan_Lab_1.docx', 'size': '1.8 MB'},
-                  {'name': 'Tai_Lieu_Tham_Khao_API.pdf', 'size': '3.2 MB'},
-                  {'name': 'Flipped_Classroom_Overview.pptx', 'size': '4.5 MB'},
-                  {'name': 'SourceCode_Starter.zip', 'size': '12.0 MB'},
-                ];
-
-                final chosen = await showDialog<Map<String, String>>(
-                  context: context,
-                  builder: (ctx) {
-                    return AlertDialog(
-                      backgroundColor: const Color(0xFFFFFFFF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: const Text(
-                        'Chọn file từ thiết bị',
-                        style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      content: SizedBox(
-                        width: double.maxFinite,
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: mockFiles.length,
-                          itemBuilder: (c, idx) {
-                            final f = mockFiles[idx];
-                            return ListTile(
-                              leading: const Icon(Icons.insert_drive_file, color: Color(0xFF7EC07E)),
-                              title: Text(f['name']!, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14)),
-                              subtitle: Text(f['size']!, style: const TextStyle(color: Color(0xFF475569), fontSize: 12)),
-                              onTap: () => Navigator.of(ctx).pop(f),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                );
-
-                if (chosen != null) {
-                  setDialogState(() {
-                    selectedFileName = chosen['name'];
-                    selectedFileSize = chosen['size'];
-                    if (titleController.text.trim().isEmpty) {
-                      titleController.text = chosen['name']!.split('.').first.replaceAll('_', ' ');
-                    }
-                  });
-                }
-              }
-
-              return AlertDialog(
-                backgroundColor: const Color(0xFFFFFFFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                title: const Text(
-                  'Tải lên tài liệu',
-                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Tên tài liệu *', style: TextStyle(color: Color(0xFF334155), fontSize: 12)),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: titleController,
-                        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
-                        decoration: InputDecoration(
-                          fillColor: const Color(0xFFF8FAFC),
-                          filled: true,
-                          hintText: 'Nhập tên hiển thị của tài liệu...',
-                          hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('Tập tin đính kèm *', style: TextStyle(color: Color(0xFF334155), fontSize: 12)),
-                      const SizedBox(height: 6),
-                      GestureDetector(
-                        onTap: simulateFilePicker,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selectedFileName != null ? const Color(0xFF7EC07E) : const Color(0xFF0F172A).withValues(alpha: 0.1),
-                              style: BorderStyle.solid,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                selectedFileName != null ? Icons.check_circle : Icons.cloud_upload_outlined,
-                                color: selectedFileName != null ? const Color(0xFF22C55E) : const Color(0xFF7EC07E),
-                                size: 32,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                selectedFileName ?? 'Nhấp để chọn file từ thiết bị...',
-                                style: TextStyle(
-                                  color: selectedFileName != null ? Colors.white : Colors.white60,
-                                  fontSize: 13,
-                                  fontWeight: selectedFileName != null ? FontWeight.bold : FontWeight.normal,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              if (selectedFileSize != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Dung lượng: $selectedFileSize',
-                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      final titleVal = titleController.text.trim();
-                      if (titleVal.isEmpty || selectedFileName == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Vui lòng nhập tên tài liệu và chọn file tải lên!'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setState(() {
-                        _documents.insert(0, {
-                          'title': titleVal,
-                          'size': selectedFileSize ?? '1.0 MB',
-                          'date': 'Hôm nay',
-                          'fileName': selectedFileName,
-                        });
-                      });
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Tải lên tài liệu thành công!'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF22C55E),
-                    ),
-                    child: const Text('Tải lên', style: TextStyle(color: Color(0xFF0F172A))),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Danh sach tai lieu da dung API. Upload file chua duoc noi vao picker trong app nay.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -456,76 +384,25 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                 classCode: _classCode,
                                 semester: _semester,
                                 description: _description,
-                                schedules: _schedules,
+                                schedules: _rawSchedules,
                               ),
                             ),
                           );
                           if (result != null) {
                             try {
-                              final List<dynamic> schedulesRaw = result['schedules'] as List<dynamic>? ?? [];
-                              final List<Map<String, dynamic>> schedulesRequest = [];
-                              for (var s in schedulesRaw) {
-                                if (s is String) {
-                                  // Split only at the FIRST ': ' to avoid splitting on times like '7:30'
-                                  final sepIdx = s.indexOf(': ');
-                                  if (sepIdx != -1) {
-                                    final dayStr = s.substring(0, sepIdx).trim();
-                                    final slotStr = s.substring(sepIdx + 2).trim();
-                                    
-                                    int dayOfWeek = 0;
-                                    if (dayStr == 'Thứ 2') dayOfWeek = 0;
-                                    else if (dayStr == 'Thứ 3') dayOfWeek = 1;
-                                    else if (dayStr == 'Thứ 4') dayOfWeek = 2;
-                                    else if (dayStr == 'Thứ 5') dayOfWeek = 3;
-                                    else if (dayStr == 'Thứ 6') dayOfWeek = 4;
-                                    else if (dayStr == 'Thứ 7') dayOfWeek = 5;
-                                    else if (dayStr == 'Chủ nhật') dayOfWeek = 6;
-                                    
-                                    String slotLabel = 'Slot 1';
-                                    String startTime = '07:30:00';
-                                    String endTime = '09:50:00';
-                                    
-                                    if (slotStr.contains('Slot 1')) {
-                                      slotLabel = 'Slot 1';
-                                      startTime = '07:30:00';
-                                      endTime = '09:50:00';
-                                    } else if (slotStr.contains('Slot 2')) {
-                                      slotLabel = 'Slot 2';
-                                      startTime = '10:00:00';
-                                      endTime = '12:20:00';
-                                    } else if (slotStr.contains('Slot 3')) {
-                                      slotLabel = 'Slot 3';
-                                      startTime = '12:50:00';
-                                      endTime = '15:10:00';
-                                    } else if (slotStr.contains('Slot 4')) {
-                                      slotLabel = 'Slot 4';
-                                      startTime = '15:20:00';
-                                      endTime = '17:40:00';
-                                    } else if (slotStr.contains('Slot 5')) {
-                                      slotLabel = 'Slot 5';
-                                      startTime = '18:00:00';
-                                      endTime = '20:20:00';
-                                    }
-                                    
-                                    schedulesRequest.add({
-                                      'dayOfWeek': dayOfWeek,
-                                      'slotLabel': slotLabel,
-                                      'startTime': startTime,
-                                      'endTime': endTime,
-                                      'roomName': 'Phòng học trực tuyến',
-                                    });
-                                  }
-                                }
-                              }
+                              final schedulesRequest =
+                                  List<Map<String, dynamic>>.from(result['schedules'] ?? const []);
 
                               if (widget.classroomId != null) {
                                 await ClassroomService().updateClassroom(
                                   classroomId: widget.classroomId!,
-                                  name: result['title'] as String? ?? '',
+                                  name: result['name'] as String? ?? '',
                                   description: result['description'] as String? ?? '',
-                                  semesterCode: result['semester'] as String? ?? 'SU26',
+                                  semesterCode: result['semesterCode'] as String? ?? 'SU26',
                                   schedules: schedulesRequest,
                                 );
+                                await _fetchClassroomDetails();
+                                await _fetchTabData();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Cập nhật lớp học thành công!'),
@@ -533,12 +410,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                     backgroundColor: Color(0xFF7EC07E),
                                   ),
                                 );
-                                _fetchClassroomDetails();
                               } else {
                                 setState(() {
-                                  _className = result['title'] as String;
-                                  _classCode = result['code'] as String;
-                                  _schedules = List<String>.from(result['schedules'] as Iterable);
+                                  _className = result['name'] as String;
+                                  _description = result['description'] as String? ?? _description;
+                                  _semester = result['semesterCode'] as String? ?? _semester;
+                                  _rawSchedules = schedulesRequest;
+                                  _schedules = _rawSchedules.map(_formatScheduleLabel).toList();
                                 });
                               }
                             } catch (e) {
@@ -882,17 +760,34 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             ),
             const SizedBox(width: 8),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _documents.remove(doc);
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Đã xóa tài liệu "${doc['title']}"!'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+              onPressed: () async {
+                try {
+                  final materialId = doc['id'] as int?;
+                  if (materialId != null) {
+                    await MaterialService().deleteMaterial(materialId);
+                  }
+                  if (!mounted) return;
+                  setState(() {
+                    _documents.remove(doc);
+                  });
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Đã xóa tài liệu "${doc['title']}"!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Khong the xoa tai lieu: $e'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF22C55E),
@@ -914,16 +809,32 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 
   List<Widget> _buildTabContent() {
     if (_currentTab == 'Hoạt động') {
+      if (_activities.isEmpty) {
+        return const [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'Chua co hoat dong nao.',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+            ),
+          ),
+        ];
+      }
       return _activities.map((act) {
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ActivityDetailScreen(
+                  activityId: act['id'] as int?,
                   activityTitle: act['title'],
                   deadline: act['date'],
                   submissions: act['submissions'],
+                  description: act['description'] ?? '',
                   className: _className,
                 ),
               ),
@@ -952,18 +863,23 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                       act['submissions'],
                       style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF7EC07E).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF7EC07E).withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        _className,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7EC07E).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF7EC07E).withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          _className,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       act['date'],
                       style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withValues(alpha: 0.4)),
@@ -976,6 +892,19 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         );
       }).toList();
     } else if (_currentTab == 'Tài liệu') {
+      if (_documents.isEmpty) {
+        return const [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'Chua co tai lieu nao.',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+            ),
+          ),
+        ];
+      }
       return _documents.map((doc) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -1025,6 +954,19 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         );
       }).toList();
     } else {
+      if (_projects.isEmpty) {
+        return const [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'Chua co du an nao.',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
+            ),
+          ),
+        ];
+      }
       return _projects.map((proj) {
         final String group = proj['group'] ?? proj['groupName'] ?? 'Nhóm 1';
         final String date = proj['date'] ?? '10/8/2026';

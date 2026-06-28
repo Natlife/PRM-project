@@ -321,7 +321,12 @@ public class ClassroomService {
         } else {
             classroom.getSchedules().clear();
         }
+        
+        // Force flush to delete orphan schedules first to prevent unique constraint conflict on insertion
+        classroomRepository.saveAndFlush(classroom);
+        
         classroom.getSchedules().addAll(newSchedules);
+        classroomRepository.saveAndFlush(classroom);
     }
 
     private ClassroomDetailResponse mapToClassroomDetailResponse(Classroom classroom) {

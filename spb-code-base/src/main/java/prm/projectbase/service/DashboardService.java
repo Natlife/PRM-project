@@ -57,26 +57,29 @@ public class DashboardService {
         for (Classroom classroom : classrooms) {
             List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroom.getId());
             for (LearningActivity activity : activities) {
-                
-                Optional<ActivitySubmission> submission = submissionRepository
-                        .findByActivityIdAndStudentId(activity.getId(), student.getId());
+                try {
+                    Optional<ActivitySubmission> submission = submissionRepository
+                            .findByActivityIdAndStudentId(activity.getId(), student.getId());
 
-                boolean submitted = submission.isPresent() &&
-                        (submission.get().getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
-                                submission.get().getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED ||
-                                submission.get().getStatus() == SubmissionWorkflowStatus.GRADED);
+                    boolean submitted = submission.isPresent() &&
+                            (submission.get().getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
+                                    submission.get().getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED ||
+                                    submission.get().getStatus() == SubmissionWorkflowStatus.GRADED);
 
-                if (!submitted && activity.getDueAt().isAfter(now)) {
-                    pendingActivitiesCount++;
-                    upcomingActivities.add(ActivityListResponse.builder()
-                            .id(activity.getId())
-                            .title(activity.getTitle())
-                            .description(activity.getDescription())
-                            .activityType(activity.getActivityType().name())
-                            .dueAt(activity.getDueAt())
-                            .maxScore(activity.getMaxScore())
-                            .status(activity.getStatus().name())
-                            .build());
+                    if (!submitted && activity.getDueAt() != null && activity.getDueAt().isAfter(now)) {
+                        pendingActivitiesCount++;
+                        upcomingActivities.add(ActivityListResponse.builder()
+                                .id(activity.getId())
+                                .title(activity.getTitle())
+                                .description(activity.getDescription())
+                                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
+                                .dueAt(activity.getDueAt())
+                                .maxScore(activity.getMaxScore())
+                                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
+                                .build());
+                    }
+                } catch (Exception ex) {
+                    log.error("Skipping malformed student dashboard activity {}", activity.getId(), ex);
                 }
             }
         }
@@ -126,12 +129,16 @@ public class DashboardService {
 
             List<LearningActivity> activities = activityRepository.findByClassroomIdOrderByDueAtAsc(classroom.getId());
             for (LearningActivity activity : activities) {
-                List<ActivitySubmission> submissions = submissionRepository.findByActivityId(activity.getId());
-                for (ActivitySubmission submission : submissions) {
-                    if (submission.getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
-                            submission.getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED) {
-                        pendingGradingCount++;
+                try {
+                    List<ActivitySubmission> submissions = submissionRepository.findByActivityId(activity.getId());
+                    for (ActivitySubmission submission : submissions) {
+                        if (submission.getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
+                                submission.getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED) {
+                            pendingGradingCount++;
+                        }
                     }
+                } catch (Exception ex) {
+                    log.error("Skipping malformed teacher dashboard activity {}", activity.getId(), ex);
                 }
             }
         }

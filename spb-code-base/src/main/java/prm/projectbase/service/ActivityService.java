@@ -139,9 +139,16 @@ public class ActivityService {
         }
         
         List<LearningActivity> activities = activityRepository.findByClassroomIdOrderByDueAtAsc(classroomId);
-        
         return activities.stream()
-                .map(this::toListResponse)
+                .map(activity -> {
+                    try {
+                        return toListResponse(activity);
+                    } catch (Exception ex) {
+                        log.error("Failed to map teacher activity {} in classroom {}", activity.getId(), classroomId, ex);
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -161,9 +168,16 @@ public class ActivityService {
         }
         
         List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroomId);
-        
         return activities.stream()
-                .map(this::toListResponse)
+                .map(activity -> {
+                    try {
+                        return toListResponse(activity);
+                    } catch (Exception ex) {
+                        log.error("Failed to map student activity {} in classroom {}", activity.getId(), classroomId, ex);
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -203,11 +217,11 @@ public class ActivityService {
                 .classroomId(activity.getClassroom().getId())
                 .title(activity.getTitle())
                 .description(activity.getDescription())
-                .activityType(activity.getActivityType().name())
+                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
                 .openAt(activity.getOpenAt())
                 .dueAt(activity.getDueAt())
                 .maxScore(activity.getMaxScore())
-                .status(activity.getStatus().name())
+                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
                 .createdAt(activity.getCreatedAt())
                 .updatedAt(activity.getUpdatedAt())
                 .build();
@@ -218,10 +232,10 @@ public class ActivityService {
                 .id(activity.getId())
                 .title(activity.getTitle())
                 .description(activity.getDescription())
-                .activityType(activity.getActivityType().name())
+                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
                 .dueAt(activity.getDueAt())
                 .maxScore(activity.getMaxScore())
-                .status(activity.getStatus().name())
+                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
                 .build();
     }
 }

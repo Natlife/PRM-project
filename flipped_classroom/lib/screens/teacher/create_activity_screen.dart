@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../../services/activity_service.dart';
+import '../../services/api_service.dart';
+
 class CreateActivityScreen extends StatefulWidget {
+  final int? classroomId;
   final List<String> classNames;
+  final List<Map<String, dynamic>> availableClassrooms;
 
   const CreateActivityScreen({
     super.key,
-    required this.classNames,
+    this.classroomId,
+    this.classNames = const [],
+    this.availableClassrooms = const [],
   });
 
   @override
@@ -14,94 +21,210 @@ class CreateActivityScreen extends StatefulWidget {
 
 class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedClass;
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _deadlineController = TextEditingController();
 
+  String? _selectedClass;
+  String _selectedActivityType = 'PRE_CLASS';
+  DateTime? _selectedDeadline;
+  bool _isSubmitting = false;
+
+  final List<Map<String, String>> _activityTypes = const [
+    {'value': 'PRE_CLASS', 'label': 'Trước buổi học'},
+    {'value': 'IN_CLASS', 'label': 'Trong buổi học'},
+  ];
+
   @override
   void initState() {
     super.initState();
-    if (widget.classNames.isNotEmpty) {
+    if (widget.availableClassrooms.isNotEmpty) {
+      _selectedClass = _classLabel(widget.availableClassrooms.first);
+    } else if (widget.classNames.isNotEmpty) {
       _selectedClass = widget.classNames.first;
     }
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime now = DateTime.now();
-    final DateTime tomorrow = now.add(const Duration(days: 1));
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _deadlineController.dispose();
+    super.dispose();
+  }
 
-    final DateTime? picked = await showDatePicker(
+  String _classLabel(Map<String, dynamic> classroom) {
+    return classroom['className']?.toString() ??
+        classroom['title']?.toString() ??
+        classroom['code']?.toString() ??
+        '';
+  }
+
+  int? _resolveClassroomId() {
+    if (widget.classroomId != null) {
+      return widget.classroomId;
+    }
+    if (_selectedClass == null) {
+      return null;
+    }
+
+    for (final classroom in widget.availableClassrooms) {
+      if (_classLabel(classroom) == _selectedClass) {
+        final dynamic id = classroom['id'];
+        if (id is int) {
+          return id;
+        }
+        return int.tryParse(id?.toString() ?? '');
+      }
+    }
+    return null;
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final now = DateTime.now();
+    final tomorrow = now.add(const Duration(days: 1));
+
+    final picked = await showDatePicker(
       context: context,
-      initialDate: tomorrow,
+      initialDate: _selectedDeadline ?? tomorrow,
       firstDate: tomorrow,
       lastDate: now.add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: const ColorScheme.light(
               primary: Color(0xFF7EC07E),
               onPrimary: Colors.white,
               surface: Color(0xFFFFFFFF),
-              onSurface: Colors.white,
+              onSurface: Color(0xFF0F172A),
             ),
           ),
-          child: child!,
+          child: child ?? const SizedBox.shrink(),
         );
       },
     );
 
-    if (picked != null) {
-      setState(() {
-        _deadlineController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-      });
+    if (picked == null) {
+      return;
     }
+
+    setState(() {
+      _selectedDeadline = picked;
+      _deadlineController.text =
+          '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+    });
   }
 
-  void _submitForm() {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate() || _isSubmitting) {
+      return;
+    }
 
-    final newActivity = {
-      'title': _titleController.text.trim(),
-      'className': _selectedClass,
-      'description': _descController.text.trim(),
-      'date': _deadlineController.text,
-      'submissions': '0/45 người nộp',
-      'status': 'Đang mở (Hạn chót: ${_deadlineController.text})',
-      'statusColor': const Color(0xFF22C55E),
-    };
+    final classroomId = _resolveClassroomId();
+    if (classroomId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Khong xac dinh duoc lop hoc de tao activity.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
-    Navigator.of(context).pop(newActivity);
+    setState(() => _isSubmitting = true);
+
+    try {
+      final deadline = _selectedDeadline!;
+      final dueAt =
+          '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}T23:59:59';
+
+      final created = await ActivityService().createActivity(classroomId, {
+        'title': _titleController.text.trim(),
+        'description': _descController.text.trim(),
+        'activityType': _selectedActivityType,
+        'dueAt': dueAt,
+        'maxScore': 10,
+      });
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop({
+        'id': created['id'],
+        'title': created['title'] ?? _titleController.text.trim(),
+        'description': created['description'] ?? _descController.text.trim(),
+        'date': _deadlineController.text,
+        'dueAt': created['dueAt'],
+        'submissions': '0 nguoi nop',
+        'activityType': created['activityType'] ?? _selectedActivityType,
+        'status': created['status'] ?? 'DRAFT',
+        'className': _selectedClass ?? '',
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Loi tao hoat dong: ${e is ApiException ? e.message : e.toString()}',
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final classOptions = widget.availableClassrooms.isNotEmpty
+        ? widget.availableClassrooms.map(_classLabel).toList()
+        : widget.classNames;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: Color(0xFF0F172A),
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Tạo hoạt động mới',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          'Tao hoat dong moi',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
         ),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Lớp học *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Lop hoc *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
@@ -116,27 +239,81 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                items: widget.classNames.map((code) {
-                  return DropdownMenuItem<String>(
-                    value: code,
-                    child: Text(code),
-                  );
-                }).toList(),
-                onChanged: (val) => setState(() => _selectedClass = val),
+                items: classOptions
+                    .map(
+                      (code) => DropdownMenuItem<String>(
+                        value: code,
+                        child: Text(code),
+                      ),
+                    )
+                    .toList(),
+                onChanged: widget.classroomId != null
+                    ? null
+                    : (value) => setState(() => _selectedClass = value),
               ),
               const SizedBox(height: 18),
-
               const Text(
-                'Tiêu đề *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Loai hoat dong *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFFFF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedActivityType,
+                    dropdownColor: const Color(0xFFFFFFFF),
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Color(0xFF334155),
+                    ),
+                    isExpanded: true,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 15,
+                    ),
+                    items: _activityTypes
+                        .map(
+                          (type) => DropdownMenuItem<String>(
+                            value: type['value'],
+                            child: Text(type['label']!),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedActivityType = value);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Tieu de *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _titleController,
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Nhập tiêu đề hoạt động',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  hintText: 'Nhap tieu de hoat dong',
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                  ),
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
@@ -144,18 +321,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Tiêu đề hoạt động là bắt buộc';
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Tieu de hoat dong la bat buoc';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 18),
-
               const Text(
-                'Mô tả yêu cầu',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Mo ta yeu cau *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -163,8 +343,10 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 maxLines: 3,
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Nhập mô tả yêu cầu...',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                  hintText: 'Nhap mo ta yeu cau...',
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                  ),
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
@@ -172,12 +354,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Mo ta yeu cau la bat buoc';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 18),
-
               const Text(
-                'Hạn nộp *',
-                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+                'Han nop *',
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -186,9 +377,15 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 onTap: () => _selectDate(context),
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Chọn ngày hạn nộp',
-                  hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                  prefixIcon: const Icon(Icons.calendar_today, color: Color(0xFF334155), size: 18),
+                  hintText: 'Chon ngay han nop',
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.3),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.calendar_today,
+                    color: Color(0xFF334155),
+                    size: 18,
+                  ),
                   fillColor: const Color(0xFFFFFFFF),
                   filled: true,
                   border: OutlineInputBorder(
@@ -196,15 +393,14 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                validator: (val) {
-                  if (val == null || val.isEmpty) {
-                    return 'Hạn nộp là bắt buộc';
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Han nop la bat buoc';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 32),
-
               Row(
                 children: [
                   Expanded(
@@ -218,15 +414,19 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: const Text(
-                        'Hủy',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        'Huy',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _submitForm,
+                      onPressed: _isSubmitting ? null : _submitForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF22C55E),
                         shape: RoundedRectangleBorder(
@@ -234,15 +434,27 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text(
-                        'Lưu',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Luu',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
