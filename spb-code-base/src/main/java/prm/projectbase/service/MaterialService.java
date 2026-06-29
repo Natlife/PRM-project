@@ -141,6 +141,7 @@ public class MaterialService {
                 .originalFileName(material.getOriginalFileName())
                 .contentType(material.getContentType())
                 .sizeBytes(material.getSizeBytes())
+                .fileUrl(fileService.getFileUrl(material.getStorageKey()))
                 .publishedAt(material.getPublishedAt())
                 .createdAt(material.getCreatedAt())
                 .build();
@@ -154,6 +155,7 @@ public class MaterialService {
                 .materialType(material.getMaterialType().name())
                 .originalFileName(material.getOriginalFileName())
                 .sizeBytes(material.getSizeBytes())
+                .fileUrl(fileService.getFileUrl(material.getStorageKey()))
                 .publishedAt(material.getPublishedAt())
                 .build();
     }

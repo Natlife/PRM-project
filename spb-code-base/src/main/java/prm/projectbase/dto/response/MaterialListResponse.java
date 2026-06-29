@@ -22,6 +22,8 @@ public class MaterialListResponse {
     private String originalFileName;
     
     private Long sizeBytes;
+
+    private String fileUrl;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime publishedAt;

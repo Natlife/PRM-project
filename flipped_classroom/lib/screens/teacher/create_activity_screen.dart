@@ -28,6 +28,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   String? _selectedClass;
   String _selectedActivityType = 'PRE_CLASS';
   DateTime? _selectedDeadline;
+  bool _publishImmediately = true;
   bool _isSubmitting = false;
 
   final List<Map<String, String>> _activityTypes = const [
@@ -147,19 +148,34 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         'maxScore': 10,
       });
 
+      Map<String, dynamic> finalActivity = created;
+      if (_publishImmediately && created['id'] != null) {
+        try {
+          final activityId = (created['id'] as num).toInt();
+          finalActivity = await ActivityService().updateActivity(
+            activityId,
+            {
+              'status': 'PUBLISHED',
+            },
+          );
+        } catch (e) {
+          debugPrint('Error publishing activity right after create: $e');
+        }
+      }
+
       if (!mounted) {
         return;
       }
 
       Navigator.of(context).pop({
-        'id': created['id'],
-        'title': created['title'] ?? _titleController.text.trim(),
-        'description': created['description'] ?? _descController.text.trim(),
+        'id': finalActivity['id'] ?? created['id'],
+        'title': finalActivity['title'] ?? created['title'] ?? _titleController.text.trim(),
+        'description': finalActivity['description'] ?? created['description'] ?? _descController.text.trim(),
         'date': _deadlineController.text,
-        'dueAt': created['dueAt'],
+        'dueAt': finalActivity['dueAt'] ?? created['dueAt'],
         'submissions': '0 nguoi nop',
-        'activityType': created['activityType'] ?? _selectedActivityType,
-        'status': created['status'] ?? 'DRAFT',
+        'activityType': finalActivity['activityType'] ?? created['activityType'] ?? _selectedActivityType,
+        'status': finalActivity['status'] ?? created['status'] ?? 'DRAFT',
         'className': _selectedClass ?? '',
       });
     } catch (e) {
@@ -398,6 +414,27 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     return 'Han nop la bat buoc';
                   }
                   return null;
+                },
+              ),
+              const SizedBox(height: 18),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _publishImmediately,
+                activeColor: const Color(0xFF22C55E),
+                title: const Text(
+                  'Publish ngay cho hoc vien',
+                  style: TextStyle(
+                    color: Color(0xFF334155),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text(
+                  'Tat de luu tam o DRAFT, bat de hien cho hoc vien ngay.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                onChanged: (value) {
+                  setState(() => _publishImmediately = value);
                 },
               ),
               const SizedBox(height: 32),

@@ -27,4 +27,30 @@ class MaterialService {
   Future<void> deleteMaterial(int materialId) async {
     await _apiService.delete('/teacher/materials/$materialId');
   }
+
+  /// Upload classroom material
+  Future<Map<String, dynamic>> uploadMaterial({
+    required int classroomId,
+    required String title,
+    required String description,
+    required String materialType,
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    final fields = {
+      'title': title,
+      'description': description,
+      'materialType': materialType,
+      'publishImmediately': 'true',
+    };
+    final response = await _apiService.upload(
+      '/teacher/classrooms/$classroomId/materials',
+      fields,
+      'file',
+      fileBytes,
+      fileName,
+    );
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
 }

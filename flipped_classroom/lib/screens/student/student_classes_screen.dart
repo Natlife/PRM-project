@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'student_class_detail_screen.dart';
 
 class StudentClassesScreen extends StatefulWidget {
@@ -27,12 +28,25 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
     super.dispose();
   }
 
+  String _buildClassCodeWithName(Map<String, dynamic> item) {
+    final existing = item['classCodeWithName']?.toString().trim() ?? '';
+    if (existing.isNotEmpty) {
+      return existing;
+    }
+
+    final code = item['classCode']?.toString().trim() ?? '';
+    final name = item['className']?.toString().trim() ?? '';
+    if (code.isNotEmpty && name.isNotEmpty) {
+      return '$code - $name';
+    }
+    return code.isNotEmpty ? code : name;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Filter classes based on query
     final filteredClasses = widget.myClasses.where((item) {
       final query = _searchQuery.toLowerCase();
-      final classCodeWithName = (item['classCodeWithName'] ?? '').toString().toLowerCase();
+      final classCodeWithName = _buildClassCodeWithName(item).toLowerCase();
       final className = (item['className'] ?? '').toString().toLowerCase();
       final instructor = (item['instructor'] ?? '').toString().toLowerCase();
       final semester = (item['semester'] ?? '').toString().toLowerCase();
@@ -46,21 +60,18 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // Header
         const SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.only(left: 20.0, right: 20.0, top: 20.0, bottom: 8.0),
+            padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 8),
             child: Text(
-              'Danh sách lớp học',
+              'Danh sach lop hoc',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
           ),
         ),
-
-        // Search Bar (thanh tìm kiếm lớp học)
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
@@ -69,7 +80,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
                 });
               },
               decoration: InputDecoration(
-                hintText: 'Tìm kiếm lớp học (môn học, giảng viên, học kỳ)...',
+                hintText: 'Tim kiem lop hoc...',
                 hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
                 prefixIcon: Icon(Icons.search, color: const Color(0xFF0F172A).withOpacity(0.4), size: 20),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -102,129 +113,126 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
             ),
           ),
         ),
-
-        // Classes list
-        filteredClasses.isEmpty
-            ? const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40.0),
-                  child: Center(
-                    child: Text(
-                      'Không tìm thấy lớp học nào!',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
+        if (filteredClasses.isEmpty)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Text(
+                  'Khong tim thay lop hoc nao!',
+                  style: TextStyle(color: Colors.grey),
                 ),
-              )
-            : SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final item = filteredClasses[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(color: const Color(0xFF0F172A).withOpacity(0.06), width: 1.2),
-                          ),
-                          color: Colors.white,
-                          child: InkWell(
-                            onTap: () async {
-                              final targetIndex = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => StudentClassDetailScreen(
-                                    classroomId: item['id'],
-                                    classCodeWithName: item['classCodeWithName'] ?? '${item['classCode']} - SE1904',
-                                    className: item['className'] ?? '',
-                                    instructor: item['instructor'] ?? '',
-                                    semester: item['semester'] ?? 'SU26',
-                                  ),
-                                ),
-                              );
-                              if (targetIndex != null && targetIndex is int) {
-                                widget.onTabTapped?.call(targetIndex);
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = filteredClasses[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: const Color(0xFF0F172A).withOpacity(0.06), width: 1.2),
+                      ),
+                      color: Colors.white,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () async {
+                          final targetIndex = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StudentClassDetailScreen(
+                                classroomId: item['id'],
+                                classCodeWithName: _buildClassCodeWithName(item),
+                                className: item['className'] ?? '',
+                                instructor: item['instructor'] ?? '',
+                                semester: item['semester'] ?? '',
+                              ),
+                            ),
+                          );
+                          if (targetIndex != null && targetIndex is int) {
+                            widget.onTabTapped?.call(targetIndex);
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        // Top Row: Class name + code, Semester on the right
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              item['classCodeWithName'] ?? '',
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF0F172A),
-                                              ),
+                                        Expanded(
+                                          child: Text(
+                                            _buildClassCodeWithName(item),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0F172A),
                                             ),
-                                            Text(
-                                              item['semester'] ?? '',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: const Color(0xFF0F172A).withOpacity(0.4),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        // Instructor
-                                        Text(
-                                          item['instructor'] ?? '',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: const Color(0xFF0F172A).withOpacity(0.6),
-                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        // Student count (e.g. 30 sinh viên)
+                                        const SizedBox(width: 12),
                                         Text(
-                                          '${item['studentCount'] ?? 0} sinh viên',
+                                          item['semester'] ?? '',
                                           style: TextStyle(
                                             fontSize: 12,
+                                            fontWeight: FontWeight.w600,
                                             color: const Color(0xFF0F172A).withOpacity(0.4),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Icon(Icons.chevron_right, color: const Color(0xFF0F172A).withOpacity(0.3)),
-                                ],
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      item['instructor'] ?? '',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: const Color(0xFF0F172A).withOpacity(0.6),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '${item['studentCount'] ?? 0} sinh vien',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: const Color(0xFF0F172A).withOpacity(0.4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Icon(Icons.chevron_right, color: const Color(0xFF0F172A).withOpacity(0.3)),
+                            ],
                           ),
                         ),
-                      );
-                    },
-                    childCount: filteredClasses.length,
-                  ),
-                ),
+                      ),
+                    ),
+                  );
+                },
+                childCount: filteredClasses.length,
               ),
-
-        // Bottom Join Class Button
+            ),
+          ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20),
             child: OutlinedButton.icon(
               onPressed: widget.onJoinClassPressed,
               icon: const Icon(Icons.qr_code, color: Color(0xFF7EC07E)),
               label: const Text(
-                'Quét mã tham gia lớp học mới',
+                'Quet ma tham gia lop hoc moi',
                 style: TextStyle(color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+
 import '../../services/peer_review_service.dart';
-import '../../services/project_service.dart';
 
 class StudentPeerReviewScreen extends StatefulWidget {
   final int classroomId;
@@ -41,53 +41,44 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
     });
 
     try {
-      final targets = await PeerReviewService().getPeerReviewTargets(
-        widget.classroomId,
-      );
-      final submittedReviews = await PeerReviewService().getMyPeerReviews(
-        widget.classroomId,
-      );
+      final targets = await PeerReviewService().getPeerReviewTargets(widget.classroomId);
+      final submittedReviews = await PeerReviewService().getMyPeerReviews(widget.classroomId);
 
-      final Map<int, Map<String, dynamic>> reviewByGroupId = {
+      final reviewByGroupId = <int, Map<String, dynamic>>{
         for (final review in submittedReviews)
-          (review['reviewedGroupId'] as num).toInt(): review,
+          ((review['reviewedGroupId'] as num).toInt()): review,
       };
 
       final List<Map<String, dynamic>> loadedGroups = [];
       for (final target in targets) {
-        final int groupId = (target['id'] as num).toInt();
+        final groupId = (target['id'] as num).toInt();
         final review = reviewByGroupId[groupId];
-
-        List<String> members = [];
-        try {
-          final detail = await ProjectService().getTeacherProjectGroupDetail(groupId);
-          members = (detail['members'] as List<dynamic>? ?? [])
-              .map((member) => member['fullName'] as String? ?? 'Thanh vien')
-              .toList();
-        } catch (_) {}
 
         loadedGroups.add({
           'id': groupId,
           'name': target['groupName'] ?? 'Nhom',
-          'projectName': target['projectName'] ?? 'Du an',
-          'members': members,
+          'projectName': target['projectName'] ?? '',
+          'memberCount': (target['memberCount'] as num?)?.toInt() ?? 0,
           'scoreCode': (review?['codeQualityScore'] as num?)?.toDouble() ?? 0.0,
           'scoreUI': (review?['uiUxScore'] as num?)?.toDouble() ?? 0.0,
           'scoreFeature': (review?['featureScore'] as num?)?.toDouble() ?? 0.0,
-          'scorePresentation':
-              (review?['presentationScore'] as num?)?.toDouble() ?? 0.0,
+          'scorePresentation': (review?['presentationScore'] as num?)?.toDouble() ?? 0.0,
           'comment': review?['comment'] ?? '',
           'isSubmitted': review != null,
         });
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _peerGroups = loadedGroups;
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _isLoading = false;
       });
@@ -128,15 +119,11 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
               ),
             ),
             Text(
-              currentScore == 0.0
-                  ? 'Chua cham'
-                  : '${currentScore.toStringAsFixed(1)} / 5.0',
+              currentScore == 0.0 ? 'Chua cham' : '${currentScore.toStringAsFixed(1)} / 5.0',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: currentScore == 0.0
-                    ? Colors.grey
-                    : const Color(0xFF7EC07E),
+                color: currentScore == 0.0 ? Colors.grey : const Color(0xFF7EC07E),
               ),
             ),
           ],
@@ -144,18 +131,14 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
         const SizedBox(height: 6),
         Row(
           children: List.generate(5, (starIndex) {
-            final double starValue = starIndex + 1.0;
+            final starValue = starIndex + 1.0;
             return GestureDetector(
               onTap: () => onRatingChanged(starValue),
               child: Padding(
-                padding: const EdgeInsets.only(right: 6.0),
+                padding: const EdgeInsets.only(right: 6),
                 child: Icon(
-                  starValue <= currentScore
-                      ? Icons.star_rounded
-                      : Icons.star_border_rounded,
-                  color: starValue <= currentScore
-                      ? Colors.amber
-                      : const Color(0xFFCBD5E1),
+                  starValue <= currentScore ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: starValue <= currentScore ? Colors.amber : const Color(0xFFCBD5E1),
                   size: 30,
                 ),
               ),
@@ -168,7 +151,9 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
   }
 
   Future<void> _submitReview() async {
-    if (_selectedGroupIndex == null) return;
+    if (_selectedGroupIndex == null) {
+      return;
+    }
 
     final group = _peerGroups[_selectedGroupIndex!];
     if (group['scoreCode'] == 0.0 ||
@@ -195,7 +180,9 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
         comment: _commentController.text.trim(),
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() {
         group['comment'] = response['comment'] ?? _commentController.text.trim();
         group['isSubmitted'] = true;
@@ -204,15 +191,15 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Da gui danh gia cheo cho ${group['name']} thanh cong!',
-          ),
+          content: Text('Da gui danh gia cheo cho ${group['name']} thanh cong!'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF7EC07E),
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gui danh gia that bai: $e'),
@@ -232,11 +219,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Color(0xFF0F172A),
-            size: 18,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 18),
           onPressed: () {
             if (_selectedGroupIndex != null) {
               setState(() {
@@ -248,9 +231,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
           },
         ),
         title: Text(
-          _selectedGroupIndex != null
-              ? 'Danh gia chi tiet'
-              : 'Danh gia cheo - ${widget.classCode}',
+          _selectedGroupIndex != null ? 'Danh gia chi tiet' : 'Danh gia cheo - ${widget.classCode}',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
@@ -289,18 +270,16 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
       onRefresh: _loadPeerGroups,
       color: const Color(0xFF7EC07E),
       child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: const EdgeInsets.all(20.0),
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.all(20),
         itemCount: _peerGroups.length,
         itemBuilder: (context, index) {
           final group = _peerGroups[index];
           final isSubmitted = group['isSubmitted'] == true;
-          final members = (group['members'] as List<dynamic>).cast<String>();
+          final memberCount = group['memberCount'] as int? ?? 0;
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
+            padding: const EdgeInsets.only(bottom: 12),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -315,7 +294,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                 borderRadius: BorderRadius.circular(20),
                 onTap: () => _selectGroup(index),
                 child: Padding(
-                  padding: const EdgeInsets.all(18.0),
+                  padding: const EdgeInsets.all(18),
                   child: Row(
                     children: [
                       Container(
@@ -345,12 +324,14 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  group['name'] ?? '',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFF0F172A),
+                                Expanded(
+                                  child: Text(
+                                    group['name'] ?? '',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
                                 ),
                                 if (isSubmitted)
@@ -375,15 +356,13 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              members.isEmpty
-                                  ? 'Chua co danh sach thanh vien'
-                                  : 'Thanh vien: ${members.join(', ')}',
+                              memberCount > 0
+                                  ? 'So thanh vien: $memberCount'
+                                  : 'Backend khong tra chi tiet thanh vien o man nay',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: const Color(0xFF0F172A).withOpacity(0.4),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -402,11 +381,11 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
   Widget _buildGroupReviewDetail() {
     final group = _peerGroups[_selectedGroupIndex!];
     final isSubmitted = group['isSubmitted'] == true;
-    final members = (group['members'] as List<dynamic>).cast<String>();
+    final memberCount = group['memberCount'] as int? ?? 0;
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -449,7 +428,9 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  members.isEmpty ? 'Chua co du lieu' : members.join(', '),
+                  memberCount > 0
+                      ? '$memberCount thanh vien'
+                      : 'Backend khong tra chi tiet thanh vien cho nhom nay.',
                   style: TextStyle(
                     color: const Color(0xFF0F172A).withOpacity(0.6),
                     fontSize: 13,
@@ -471,30 +452,22 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
           _buildStarRating(
             'Chat luong ma nguon',
             group['scoreCode'],
-            isSubmitted
-                ? (_) {}
-                : (val) => setState(() => group['scoreCode'] = val),
+            isSubmitted ? (_) {} : (val) => setState(() => group['scoreCode'] = val),
           ),
           _buildStarRating(
             'Giao dien va trai nghiem',
             group['scoreUI'],
-            isSubmitted
-                ? (_) {}
-                : (val) => setState(() => group['scoreUI'] = val),
+            isSubmitted ? (_) {} : (val) => setState(() => group['scoreUI'] = val),
           ),
           _buildStarRating(
             'Tinh nang ung dung',
             group['scoreFeature'],
-            isSubmitted
-                ? (_) {}
-                : (val) => setState(() => group['scoreFeature'] = val),
+            isSubmitted ? (_) {} : (val) => setState(() => group['scoreFeature'] = val),
           ),
           _buildStarRating(
             'Thuyet trinh va slide',
             group['scorePresentation'],
-            isSubmitted
-                ? (_) {}
-                : (val) => setState(() => group['scorePresentation'] = val),
+            isSubmitted ? (_) {} : (val) => setState(() => group['scorePresentation'] = val),
           ),
           const Text(
             'Nhan xet chi tiet:',
@@ -530,9 +503,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7EC07E),
                 minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: const Text(
                 'Gui danh gia',
@@ -550,9 +521,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF7EC07E).withOpacity(0.12),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF7EC07E).withOpacity(0.3),
-                ),
+                border: Border.all(color: const Color(0xFF7EC07E).withOpacity(0.3)),
               ),
               child: const Center(
                 child: Text(

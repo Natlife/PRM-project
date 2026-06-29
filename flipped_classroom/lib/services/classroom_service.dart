@@ -79,8 +79,8 @@ class ClassroomService {
       'classCodeWithName': '$code - $name',
       'className': name,
       'instructor': 'GV: ${item['teacherName'] ?? 'Chua cap nhat'}',
-      'semester': item['semesterCode'] ?? 'SU26',
-      'studentCount': 30,
+      'semester': item['semesterCode'] ?? '',
+      'studentCount': item['studentCount'] ?? 0,
       'progress': 0.0,
       'nextSession': 'Thoi gian: Chua xep lich',
     };

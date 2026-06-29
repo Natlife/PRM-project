@@ -148,6 +148,13 @@ public class FileService {
         Long sizeBytes;
     }
 
+    public String getFileUrl(String storageKey) {
+        if (storageKey == null || storageKey.isBlank()) {
+            return "";
+        }
+        return baseUrl + "/assets/" + storageKey;
+    }
+
     private String extractExtension(String filename) {
         if (filename == null || filename.isBlank()) return "";
         int dot = filename.lastIndexOf('.');

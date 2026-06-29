@@ -173,6 +173,7 @@ public class ClassroomService {
         }
 
         Classroom classroom = classroomRepository.findByJoinCode(joinCode)
+                .or(() -> classroomRepository.findByCode(joinCode))
                 .orElseThrow(() -> new AppException(ErrorCode.CLASSROOM_NOT_FOUND));
 
         if (!classroom.isActive()) {

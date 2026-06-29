@@ -404,6 +404,6 @@ INSERT INTO project_milestones (id, project_group_id, title, description, due_at
 
 -- Seed notifications
 INSERT INTO notifications (id, recipient_id, title, body, notification_type, reference_type, reference_id, read_at) VALUES
-  (1, 3, 'Hạn nộp bài tập chuẩn bị', 'Bạn có bài tập môn PRM393 - Lập trình Mobile cần nộp trước 23:59 hôm nay.', 'URGENT', 'ACTIVITY', 1, NULL),
-  (2, 3, 'Điểm số mới được cập nhật', 'Giảng viên đã công bố điểm đánh giá Milestone 1 cho nhóm của bạn.', 'GRADE', 'MILESTONE', 1, NULL),
-  (3, 3, 'Thông báo lớp học Flipped', 'Tài liệu chuẩn bị cho Bài 5: Flutter State Management đã được đăng tải.', 'ASSIGNMENT', 'MATERIAL', 1, CURRENT_TIMESTAMP);
+  (1, 3, 'Hạn nộp bài tập chuẩn bị', 'Bạn có bài tập môn PRM393 - Lập trình Mobile cần nộp trước 23:59 hôm nay.', 'ACTIVITY_ASSIGNED', 'ACTIVITY', 1, NULL),
+  (2, 3, 'Điểm số mới được cập nhật', 'Giảng viên đã công bố điểm đánh giá Milestone 1 cho nhóm của bạn.', 'MILESTONE_UPDATED', 'MILESTONE', 1, NULL),
+  (3, 3, 'Thông báo lớp học Flipped', 'Tài liệu chuẩn bị cho Bài 5: Flutter State Management đã được đăng tải.', 'MATERIAL_PUBLISHED', 'MATERIAL', 1, CURRENT_TIMESTAMP);

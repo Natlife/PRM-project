@@ -24,12 +24,19 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
   String _classSearchQuery = '';
   String _activitySearchQuery = '';
+  String _projectSearchQuery = '';
 
   List<Map<String, dynamic>> _classes = [];
   bool _isLoadingClasses = true;
+  bool _isLoadingActivities = false;
+  bool _isLoadingProjects = false;
+  bool _hasLoadedActivities = false;
+  bool _hasLoadedProjects = false;
   int _totalStudents = 0;
   int _pendingGrading = 0;
   int _activeGroups = 0;
+  List<Map<String, dynamic>> _activitiesList = [];
+  List<Map<String, dynamic>> _projectsList = [];
 
   @override
   void initState() {
@@ -47,56 +54,28 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
       final loadedClasses = results[0] as List<Map<String, dynamic>>;
       final summary = results[1] as Map<String, dynamic>;
-      List<Map<String, dynamic>> loadedActivities = [];
-      List<Map<String, dynamic>> loadedProjects = [];
-
-      try {
-        loadedActivities = await _loadTeacherActivities(loadedClasses);
-      } catch (e) {
-        debugPrint('Error loading teacher activities: $e');
-      }
-
-      try {
-        loadedProjects = await _loadTeacherProjects(loadedClasses);
-      } catch (e) {
-        debugPrint('Error loading teacher projects: $e');
-      }
 
       if (!mounted) return;
       setState(() {
         _classes = loadedClasses;
-        _activitiesList = loadedActivities;
-        _projectsList = loadedProjects;
         _totalStudents = summary['totalStudentsCount'] ?? 0;
         _pendingGrading = summary['pendingGradingCount'] ?? 0;
         _activeGroups = summary['activeGroupsCount'] ?? 0;
         _isLoadingClasses = false;
+        _hasLoadedActivities = false;
+        _hasLoadedProjects = false;
+        _activitiesList = [];
+        _projectsList = [];
       });
     } catch (e) {
       debugPrint('Error loading dashboard data: $e');
       try {
         final loadedClasses = await ClassroomService().getTeacherClassrooms();
-        List<Map<String, dynamic>> loadedActivities = [];
-        List<Map<String, dynamic>> loadedProjects = [];
-
-        try {
-          loadedActivities = await _loadTeacherActivities(loadedClasses);
-        } catch (e) {
-          debugPrint('Error loading teacher activities in fallback: $e');
-        }
-
-        try {
-          loadedProjects = await _loadTeacherProjects(loadedClasses);
-        } catch (e) {
-          debugPrint('Error loading teacher projects in fallback: $e');
-        }
 
         if (!mounted) return;
 
         setState(() {
           _classes = loadedClasses;
-          _activitiesList = loadedActivities;
-          _projectsList = loadedProjects;
           _totalStudents = loadedClasses.fold<int>(
             0,
             (sum, item) => sum + ((item['studentsCount'] as int?) ?? 0),
@@ -104,6 +83,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           _pendingGrading = 0;
           _activeGroups = 0;
           _isLoadingClasses = false;
+          _hasLoadedActivities = false;
+          _hasLoadedProjects = false;
+          _activitiesList = [];
+          _projectsList = [];
         });
       } catch (innerError) {
         debugPrint('Error loading teacher classrooms: $innerError');
@@ -113,6 +96,58 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           _isLoadingClasses = false;
         });
       }
+    }
+  }
+
+  Future<void> _ensureActivitiesLoaded({bool force = false}) async {
+    if (_isLoadingActivities || _isLoadingClasses) {
+      return;
+    }
+    if (!force && _hasLoadedActivities) {
+      return;
+    }
+
+    setState(() => _isLoadingActivities = true);
+    try {
+      final loadedActivities = await _loadTeacherActivities(_classes);
+      if (!mounted) return;
+      setState(() {
+        _activitiesList = loadedActivities;
+        _hasLoadedActivities = true;
+        _isLoadingActivities = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading teacher activities: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoadingActivities = false;
+      });
+    }
+  }
+
+  Future<void> _ensureProjectsLoaded({bool force = false}) async {
+    if (_isLoadingProjects || _isLoadingClasses) {
+      return;
+    }
+    if (!force && _hasLoadedProjects) {
+      return;
+    }
+
+    setState(() => _isLoadingProjects = true);
+    try {
+      final loadedProjects = await _loadTeacherProjects(_classes);
+      if (!mounted) return;
+      setState(() {
+        _projectsList = loadedProjects;
+        _hasLoadedProjects = true;
+        _isLoadingProjects = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading teacher projects: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoadingProjects = false;
+      });
     }
   }
 
@@ -234,12 +269,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     return projects;
   }
 
-  List<Map<String, dynamic>> _activitiesList = [];
-
-  String _projectSearchQuery = '';
-
-  List<Map<String, dynamic>> _projectsList = [];
-
   Future<void> _navigateToCreateProject() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -250,7 +279,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       ),
     );
     if (result != null) {
-      _loadClasses();
+      await _ensureProjectsLoaded(force: true);
     }
   }
 
@@ -258,6 +287,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+
+    if (index == 2) {
+      _ensureActivitiesLoaded();
+    } else if (index == 3) {
+      _ensureProjectsLoaded();
+    }
   }
 
   Future<void> _navigateToCreateActivity() async {
@@ -268,7 +303,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       ),
     );
     if (result != null) {
-      _loadClasses();
+      await _ensureActivitiesLoaded(force: true);
     }
   }
 
@@ -374,22 +409,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      _buildDashboardTab(),
-      _buildClassesTab(),
-      _buildActivitiesTab(),
-      _buildProjectsTab(),
-      const NotificationScreen(showBackButton: false),
-      const ProfileScreen(showBackButton: false),
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: pages,
-        ),
+        child: _buildCurrentPage(),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -444,6 +467,25 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDashboardTab();
+      case 1:
+        return _buildClassesTab();
+      case 2:
+        return _buildActivitiesTab();
+      case 3:
+        return _buildProjectsTab();
+      case 4:
+        return const NotificationScreen(showBackButton: false);
+      case 5:
+        return const ProfileScreen(showBackButton: false);
+      default:
+        return _buildDashboardTab();
+    }
   }
 
   Widget _buildDashboardTab() {
@@ -971,6 +1013,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ),
         ),
         const SizedBox(height: 18),
+        if (_isLoadingActivities)
+          const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(
+              child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+            ),
+          )
+        else
         if (filteredActivities.isEmpty)
           const Center(
             child: Padding(
@@ -1046,6 +1096,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ),
         ),
         const SizedBox(height: 18),
+        if (_isLoadingProjects)
+          const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(
+              child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+            ),
+          )
+        else
         if (filteredProjects.isEmpty)
           const Center(
             child: Padding(

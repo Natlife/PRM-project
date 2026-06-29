@@ -41,6 +41,20 @@ class ActivityService {
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
+  /// Get student activity detail
+  Future<Map<String, dynamic>> getStudentActivityDetail(int activityId) async {
+    final response = await _apiService.get('/student/activities/$activityId');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  /// Get current student's submission for an activity
+  Future<Map<String, dynamic>> getStudentSubmission(int activityId) async {
+    final response = await _apiService.get('/student/activities/$activityId/submission');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
   /// Update a learning activity (Teacher only)
   Future<Map<String, dynamic>> updateActivity(
     int activityId,

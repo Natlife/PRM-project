@@ -11,5 +11,6 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     List<Classroom> findByTeacherIdAndActiveTrue(Long teacherId);
     List<Classroom> findByActiveTrue();
     Optional<Classroom> findByJoinCode(String joinCode);
+    Optional<Classroom> findByCode(String code);
     boolean existsByCode(String code);
 }

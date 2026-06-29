@@ -72,6 +72,37 @@ class ApiService {
     return _handleResponse(response, 'DELETE', path);
   }
 
+  Future<http.Response> upload(
+    String path,
+    Map<String, String> fields,
+    String fileKey,
+    List<int> fileBytes,
+    String fileName,
+  ) async {
+    final url = Uri.parse('$baseUrl$path');
+    final request = http.MultipartRequest('POST', url);
+
+    final headers = _getHeaders();
+    headers.forEach((key, value) {
+      if (key != 'Content-Type') {
+        request.headers[key] = value;
+      }
+    });
+
+    request.fields.addAll(fields);
+
+    final multipartFile = http.MultipartFile.fromBytes(
+      fileKey,
+      fileBytes,
+      filename: fileName,
+    );
+    request.files.add(multipartFile);
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response, 'POST (Multipart)', path);
+  }
+
   http.Response _handleResponse(
     http.Response response,
     String method,

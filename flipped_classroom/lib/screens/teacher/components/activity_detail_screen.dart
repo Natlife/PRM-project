@@ -36,6 +36,53 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool _isSavingGrade = false;
   List<Map<String, dynamic>> _submissionsList = [];
 
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'PUBLISHED':
+        return const Color(0xFF22C55E);
+      case 'CLOSED':
+        return Colors.redAccent;
+      default:
+        return const Color(0xFFF59E0B);
+    }
+  }
+
+  Future<void> _changeStatus(String newStatus) async {
+    if (widget.activityId == null) {
+      return;
+    }
+
+    try {
+      final updated = await ActivityService().updateActivity(
+        widget.activityId!,
+        {'status': newStatus},
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _status = updated['status']?.toString() ?? newStatus;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Da doi trang thai activity sang $_status.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Khong the doi trang thai activity: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -233,6 +280,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           activityTitle: _activityTitle,
           description: _description,
           deadline: _deadline,
+          currentStatus: _status,
         ),
       ),
     );
@@ -251,6 +299,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           'title': result['title'],
           'description': result['description'],
           'dueAt': dueAt,
+          'status': result['status'],
         },
       );
       if (!mounted) {
@@ -426,12 +475,53 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               ),
                               if (_status.isNotEmpty) ...[
                                 const SizedBox(height: 6),
-                                Text(
-                                  'Trang thai: $_status',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF64748B),
-                                  ),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Trang thai: ',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _statusColor(_status).withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        _status,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: _statusColor(_status),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    if (_status != 'PUBLISHED')
+                                      OutlinedButton(
+                                        onPressed: () => _changeStatus('PUBLISHED'),
+                                        child: const Text('Publish'),
+                                      ),
+                                    if (_status != 'DRAFT')
+                                      OutlinedButton(
+                                        onPressed: () => _changeStatus('DRAFT'),
+                                        child: const Text('Ve Draft'),
+                                      ),
+                                    if (_status != 'CLOSED')
+                                      OutlinedButton(
+                                        onPressed: () => _changeStatus('CLOSED'),
+                                        child: const Text('Dong activity'),
+                                      ),
+                                  ],
                                 ),
                               ],
                             ],

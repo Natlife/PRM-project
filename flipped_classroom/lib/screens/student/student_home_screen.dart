@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
 import '../../services/classroom_service.dart';
 import '../common/profile_screen.dart';
 import '../common/notification_screen.dart';
@@ -154,24 +153,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      StudentDashboardTab(
-        myClasses: _myClasses,
-        onJoinClassPressed: _showJoinClassDialog,
-        onTabTapped: _onItemTapped,
-      ),
-      StudentClassesScreen(
-        myClasses: _myClasses,
-        onJoinClassPressed: _showJoinClassDialog,
-        onTabTapped: _onItemTapped,
-      ),
-      StudentProjectsTab(
-        onTabTapped: _onItemTapped,
-      ),
-      const NotificationScreen(showBackButton: false),
-      const ProfileScreen(showBackButton: false),
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -179,10 +160,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
               )
-            : IndexedStack(
-                index: _selectedIndex,
-                children: pages,
-              ),
+            : _buildCurrentPage(),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -232,6 +210,41 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return StudentDashboardTab(
+          key: const PageStorageKey('student-dashboard-tab'),
+          myClasses: _myClasses,
+          onJoinClassPressed: _showJoinClassDialog,
+          onTabTapped: _onItemTapped,
+        );
+      case 1:
+        return StudentClassesScreen(
+          key: const PageStorageKey('student-classes-tab'),
+          myClasses: _myClasses,
+          onJoinClassPressed: _showJoinClassDialog,
+          onTabTapped: _onItemTapped,
+        );
+      case 2:
+        return StudentProjectsTab(
+          key: const PageStorageKey('student-projects-tab'),
+          onTabTapped: _onItemTapped,
+        );
+      case 3:
+        return const NotificationScreen(showBackButton: false);
+      case 4:
+        return const ProfileScreen(showBackButton: false);
+      default:
+        return StudentDashboardTab(
+          key: const PageStorageKey('student-dashboard-tab-default'),
+          myClasses: _myClasses,
+          onJoinClassPressed: _showJoinClassDialog,
+          onTabTapped: _onItemTapped,
+        );
+    }
   }
 
 

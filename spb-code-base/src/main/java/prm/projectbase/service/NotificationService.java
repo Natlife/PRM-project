@@ -27,6 +27,20 @@ public class NotificationService {
     private final ClassroomEnrollmentRepository enrollmentRepository;
     private final UserService userService;
 
+    @jakarta.annotation.PostConstruct
+    @Transactional
+    public void init() {
+        log.info("Cleaning up invalid notification types in database...");
+        try {
+            notificationRepository.fixUrgentNotifications();
+            notificationRepository.fixGradeNotifications();
+            notificationRepository.fixAssignmentNotifications();
+            log.info("Database notification clean-up complete!");
+        } catch (Exception e) {
+            log.error("Failed to clean up database notifications: {}", e.getMessage());
+        }
+    }
+
     public AppNotification createNotification(
             User recipient,
             String title,

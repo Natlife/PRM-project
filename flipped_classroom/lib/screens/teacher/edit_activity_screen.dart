@@ -4,12 +4,14 @@ class EditActivityScreen extends StatefulWidget {
   final String activityTitle;
   final String description;
   final String deadline;
+  final String currentStatus;
 
   const EditActivityScreen({
     super.key,
     required this.activityTitle,
     required this.description,
     required this.deadline,
+    required this.currentStatus,
   });
 
   @override
@@ -21,6 +23,13 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   late TextEditingController _deadlineController;
+  late String _selectedStatus;
+
+  final List<Map<String, String>> _statusOptions = const [
+    {'value': 'DRAFT', 'label': 'Draft'},
+    {'value': 'PUBLISHED', 'label': 'Published'},
+    {'value': 'CLOSED', 'label': 'Closed'},
+  ];
 
   @override
   void initState() {
@@ -28,6 +37,7 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
     _titleController = TextEditingController(text: widget.activityTitle);
     _descController = TextEditingController(text: widget.description);
     _deadlineController = TextEditingController(text: widget.deadline);
+    _selectedStatus = widget.currentStatus.isNotEmpty ? widget.currentStatus : 'DRAFT';
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -83,6 +93,7 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
       'title': _titleController.text.trim(),
       'description': _descController.text.trim(),
       'deadline': _deadlineController.text,
+      'status': _selectedStatus,
     };
 
     Navigator.of(context).pop(updatedActivity);
@@ -188,6 +199,40 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Trang thai *',
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFFFF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedStatus,
+                    dropdownColor: const Color(0xFFFFFFFF),
+                    isExpanded: true,
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
+                    items: _statusOptions
+                        .map(
+                          (status) => DropdownMenuItem<String>(
+                            value: status['value'],
+                            child: Text(status['label']!),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedStatus = value);
+                      }
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
 
