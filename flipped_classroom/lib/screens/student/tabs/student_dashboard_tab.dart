@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/auth_service.dart';
 import '../student_class_detail_screen.dart';
 import '../student_activity_detail_screen.dart';
+import '../../common/notification_screen.dart';
 
 class StudentDashboardTab extends StatelessWidget {
   final List<Map<String, dynamic>> myClasses;
@@ -59,6 +60,49 @@ class StudentDashboardTab extends StatelessWidget {
                           style: TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.w600),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.notifications_outlined,
+                        size: 28,
+                        color: Color(0xFF0F172A),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationScreen(showBackButton: true),
+                          ),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: const Text(
+                          '2',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
                   ],
                 ),
