@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'student_event_review_screen.dart';
+import 'student_defense_room_screen.dart';
 
 class StudentEventDetailScreen extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -297,11 +299,13 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đang kết nối vào phòng phản biện...'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Color(0xFF7EC07E),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentDefenseRoomScreen(
+                          event: widget.event,
+                          role: _role,
+                        ),
                       ),
                     );
                   },
@@ -356,11 +360,12 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đang phát lại video/tài liệu ghi nhận sự kiện...'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Color(0xFF7EC07E),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentEventReviewScreen(
+                          event: widget.event,
+                        ),
                       ),
                     );
                   },
