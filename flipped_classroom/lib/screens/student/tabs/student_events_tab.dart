@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../student_event_detail_screen.dart';
 
 class StudentEventsTab extends StatefulWidget {
   final ValueChanged<int> onTabTapped;
@@ -64,156 +65,7 @@ class _StudentEventsTabState extends State<StudentEventsTab> {
     },
   ];
 
-  void _showEventDetail(Map<String, dynamic> event) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (event['statusColor'] as Color).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      event['classCode'],
-                      style: TextStyle(
-                        color: event['statusColor'] as Color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    event['status'],
-                    style: TextStyle(
-                      color: event['statusColor'] as Color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                event['title'],
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildDetailRow(Icons.calendar_today_outlined, 'Ngày diễn ra:', event['date']),
-              const SizedBox(height: 12),
-              _buildDetailRow(Icons.access_time, 'Thời gian:', event['time']),
-              const SizedBox(height: 12),
-              _buildDetailRow(Icons.location_on_outlined, 'Địa điểm:', event['location']),
-              const SizedBox(height: 12),
-              _buildDetailRow(Icons.person_outline, 'Giảng viên/Người phụ trách:', event['instructor']),
-              const SizedBox(height: 20),
-              const Text(
-                'Mô tả chi tiết',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                event['description'],
-                style: TextStyle(
-                  color: const Color(0xFF0F172A).withOpacity(0.7),
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7EC07E),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Đóng',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF0F172A).withOpacity(0.5)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: const Color(0xFF0F172A).withOpacity(0.5),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +128,14 @@ class _StudentEventsTabState extends State<StudentEventsTab> {
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () => _showEventDetail(event),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StudentEventDetailScreen(event: event),
+                              ),
+                            );
+                          },
                           child: Padding(
                             padding: const EdgeInsets.all(18.0),
                             child: Column(
