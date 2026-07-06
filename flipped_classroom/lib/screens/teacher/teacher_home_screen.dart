@@ -2,12 +2,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../common/profile_screen.dart';
 import '../common/notification_screen.dart';
+import 'teacher_event_detail_screen.dart';
 import 'class_detail_screen.dart';
 import 'create_class_screen.dart';
 import 'create_activity_screen.dart';
 import 'components/activity_detail_screen.dart';
 import 'create_project_screen.dart';
 import 'project_detail_screen.dart';
+import 'create_event_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -153,6 +155,59 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     },
   ];
 
+  String _eventSearchQuery = '';
+
+  final List<Map<String, dynamic>> _eventsList = [
+    {
+      'id': '1',
+      'title': 'Thuyết trình Dự án STEM',
+      'classCode': 'PRM393 - SE1904',
+      'date': '25/06/2026',
+      'time': '09:00 - 11:30',
+      'location': 'Phòng 402, Tòa nhà Gamma',
+      'instructor': 'GV. Vũ Trường Giang',
+      'description': 'Thuyết trình và demo sản phẩm dự án STEM cuối kỳ môn Lập trình Mobile.',
+      'status': 'Chưa diễn ra',
+      'duration': '15',
+    },
+    {
+      'id': '2',
+      'title': 'Bài tập chuẩn bị bài 5: Flutter State Management',
+      'classCode': 'PRM393 - SE1904',
+      'date': '28/06/2026',
+      'time': 'Trước 23:59',
+      'location': 'Nộp trên hệ thống Flipped Classroom',
+      'instructor': 'GV. Vũ Trường Giang',
+      'description': 'Xem slide và chuẩn bị code ví dụ về Provider/Bloc.',
+      'status': 'Chưa diễn ra',
+      'duration': '15',
+    },
+    {
+      'id': '3',
+      'title': 'Báo cáo tiến độ Milestone 2',
+      'classCode': 'PRW301 - SE1902',
+      'date': '02/07/2026',
+      'time': '10:00 - 12:20',
+      'location': 'Phòng 205, Tòa nhà Alpha',
+      'instructor': 'GV. Trần Thị B',
+      'description': 'Báo cáo tiến độ hoàn thiện UI/UX và API của dự án Web.',
+      'status': 'Đang diễn ra',
+      'duration': '20',
+    },
+    {
+      'id': '4',
+      'title': 'Hạn nộp báo cáo nghiên cứu công nghệ',
+      'classCode': 'FLC102 - SE1901',
+      'date': '04/07/2026',
+      'time': 'Trước 23:59',
+      'location': 'Nộp trên hệ thống Flipped Classroom',
+      'instructor': 'GV. Hoàng Văn C',
+      'description': 'Nộp báo cáo nghiên cứu công nghệ Front-end phục vụ cho dự án môn học.',
+      'status': 'Đã diễn ra',
+      'duration': '15',
+    },
+  ];
+
   Future<void> _navigateToCreateProject() async {
     final availableClasses = _classes.map((c) => c['code'] as String).toList();
     final result = await Navigator.push<Map<String, dynamic>>(
@@ -234,6 +289,34 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     }
   }
 
+  Future<void> _navigateToCreateEvent() async {
+    final classCodes = _classes.map((c) => c['code'] as String).toList();
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateEventScreen(
+          classNames: classCodes,
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _eventsList.insert(0, {
+          'id': DateTime.now().millisecondsSinceEpoch.toString(),
+          'title': result['title'] as String,
+          'classCode': result['classCode'] as String,
+          'date': result['date'] as String,
+          'duration': result['duration'] as String,
+          'description': result['description'] as String,
+          'status': result['status'] as String,
+          'time': 'Tự do',
+          'location': 'Trực tuyến / Trực tiếp',
+          'instructor': 'GV. Vũ Trường Giang',
+        });
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
@@ -241,7 +324,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       _buildClassesTab(),
       _buildActivitiesTab(),
       _buildProjectsTab(),
-      const NotificationScreen(showBackButton: false),
+      _buildEventsTab(),
       const ProfileScreen(showBackButton: false),
     ];
 
@@ -293,9 +376,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               label: 'Dự án',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Thông báo',
+              icon: Icon(Icons.event_note_outlined),
+              activeIcon: Icon(Icons.event_note),
+              label: 'Sự kiện',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
@@ -315,17 +398,65 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Dashboard',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Dashboard',
+                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Chào mừng giảng viên!',
+                      style: TextStyle(fontSize: 14, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Chào mừng giảng viên!',
-                  style: TextStyle(fontSize: 14, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.notifications_outlined,
+                        size: 28,
+                        color: Color(0xFF0F172A),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationScreen(showBackButton: true),
+                          ),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: const Text(
+                          '2',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1116,6 +1247,236 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildEventsTab() {
+    final filteredEvents = _eventsList.where((event) {
+      final query = _eventSearchQuery.toLowerCase();
+      final title = (event['title'] as String? ?? '').toLowerCase();
+      return title.contains(query);
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Danh sách sự kiện',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _navigateToCreateEvent,
+                icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                label: const Text(
+                  'Tạo mới',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7EC07E),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.01),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  _eventSearchQuery = value;
+                });
+              },
+              style: const TextStyle(color: Color(0xFF0F172A)),
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm sự kiện',
+                hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF334155), size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Events List
+        Expanded(
+          child: filteredEvents.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Không tìm thấy sự kiện nào',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                  ),
+                )
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  itemCount: filteredEvents.length,
+                  itemBuilder: (context, index) {
+                    final event = filteredEvents[index];
+                    final String status = event['status'] ?? 'Chưa diễn ra';
+
+                    // Get status styling dynamically
+                    Color statusColor;
+                    switch (status) {
+                      case 'Đang diễn ra':
+                        statusColor = Colors.green;
+                        break;
+                      case 'Đã diễn ra':
+                        statusColor = Colors.grey;
+                        break;
+                      case 'Chưa diễn ra':
+                      default:
+                        statusColor = Colors.orange;
+                        break;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.01),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TeacherEventDetailScreen(event: event),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Event Icon
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF7EC07E).withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.event_note,
+                                    color: Color(0xFF7EC07E),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+
+                                // Event Information
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Title & Status Badge Row
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              event['title'] ?? '',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          // Status badge
+                                          Text(
+                                            status,
+                                            style: TextStyle(
+                                              color: statusColor,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+
+                                      // Date & Class Code Row
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            event['date'] ?? '',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: const Color(0xFF0F172A).withValues(alpha: 0.4),
+                                            ),
+                                          ),
+                                          Text(
+                                            event['classCode'] ?? '',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }
