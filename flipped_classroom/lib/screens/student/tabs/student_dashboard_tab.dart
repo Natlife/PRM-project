@@ -5,6 +5,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/dashboard_service.dart';
 import '../student_activity_detail_screen.dart';
 import '../student_class_detail_screen.dart';
+import '../all_deadlines_screen.dart';
 
 class StudentDashboardTab extends StatefulWidget {
   final List<Map<String, dynamic>> myClasses;
@@ -219,26 +220,52 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Deadline sap toi',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
+                  Row(
+                    children: [
+                      const Text(
+                        'Deadline sap toi',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$pendingCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$pendingCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
+                  TextButton(
+                    onPressed: () async {
+                      final targetIndex = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AllDeadlinesScreen(),
+                        ),
+                      );
+                      if (targetIndex != null && targetIndex is int) {
+                        widget.onTabTapped(targetIndex);
+                      }
+                    },
+                    child: const Text(
+                      'Xem tat ca',
+                      style: TextStyle(
+                        color: Color(0xFF7EC07E),
                         fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -386,7 +413,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                     ),
                   );
                 },
-                childCount: upcomingActivities.length,
+                childCount: upcomingActivities.length > 3 ? 3 : upcomingActivities.length,
               ),
             ),
           SliverToBoxAdapter(

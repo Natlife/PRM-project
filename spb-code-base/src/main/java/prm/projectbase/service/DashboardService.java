@@ -84,6 +84,14 @@ public class DashboardService {
             }
         }
 
+        // Sort upcoming activities by due date ascending (closest deadline first)
+        upcomingActivities.sort((a, b) -> {
+            if (a.getDueAt() == null && b.getDueAt() == null) return 0;
+            if (a.getDueAt() == null) return 1;
+            if (b.getDueAt() == null) return -1;
+            return a.getDueAt().compareTo(b.getDueAt());
+        });
+
         long unreadNotifications = notificationRepository.countByRecipientIdAndReadAtIsNull(student.getId());
 
         List<ProjectMember> memberships = memberRepository.findByStudentId(student.getId());
@@ -103,6 +111,70 @@ public class DashboardService {
                 .upcomingActivities(upcomingActivities)
                 .activeGroups(activeGroups)
                 .build();
+    }
+
+    public List<ActivityListResponse> getStudentDeadlines(int page, int size) {
+        User student = userService.getCurrentUser();
+        log.info("Fetching student deadlines for user {}, page={}, size={}", student.getId(), page, size);
+
+        if (!"ROLE_STUDENT".equals(student.getRole().getName())) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        List<ClassroomEnrollment> enrollments = enrollmentRepository.findByStudentAndStatus(
+                student, ClassroomEnrollmentStatus.ACTIVE
+        );
+
+        List<Classroom> classrooms = enrollments.stream()
+                .map(ClassroomEnrollment::getClassroom)
+                .collect(Collectors.toList());
+
+        List<ActivityListResponse> upcomingActivities = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Classroom classroom : classrooms) {
+            List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroom.getId());
+            for (LearningActivity activity : activities) {
+                try {
+                    Optional<ActivitySubmission> submission = submissionRepository
+                            .findByActivityIdAndStudentId(activity.getId(), student.getId());
+
+                    boolean submitted = submission.isPresent() &&
+                            (submission.get().getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
+                                    submission.get().getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED ||
+                                    submission.get().getStatus() == SubmissionWorkflowStatus.GRADED);
+
+                    if (!submitted && activity.getDueAt() != null && activity.getDueAt().isAfter(now)) {
+                        upcomingActivities.add(ActivityListResponse.builder()
+                                .id(activity.getId())
+                                .title(activity.getTitle())
+                                .description(activity.getDescription())
+                                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
+                                .dueAt(activity.getDueAt())
+                                .maxScore(activity.getMaxScore())
+                                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
+                                .build());
+                    }
+                } catch (Exception ex) {
+                    log.error("Skipping malformed student activity {}", activity.getId(), ex);
+                }
+            }
+        }
+
+        // Sort upcoming activities by due date ascending
+        upcomingActivities.sort((a, b) -> {
+            if (a.getDueAt() == null && b.getDueAt() == null) return 0;
+            if (a.getDueAt() == null) return 1;
+            if (b.getDueAt() == null) return -1;
+            return a.getDueAt().compareTo(b.getDueAt());
+        });
+
+        int start = page * size;
+        if (start >= upcomingActivities.size()) {
+            return new ArrayList<>();
+        }
+        int end = Math.min(start + size, upcomingActivities.size());
+        return upcomingActivities.subList(start, end);
     }
 
     public TeacherDashboardResponse getTeacherDashboard() {

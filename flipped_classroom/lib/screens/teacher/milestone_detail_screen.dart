@@ -22,40 +22,9 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
     super.initState();
     _milestoneData = Map<String, dynamic>.from(widget.milestone);
     
-    // Setup some defaults if missing
-    if (_milestoneData['activities'] == null) {
-      _milestoneData['activities'] = [
-        {
-          'title': 'Code 3 màn hình chính',
-          'status': 'Đã hoàn thành',
-        },
-        {
-          'title': 'Thiết kế Mockup UI',
-          'status': 'Đã hoàn thành',
-        },
-      ];
-    }
-    
-    if (_milestoneData['comments'] == null) {
-      _milestoneData['comments'] = [
-        {
-          'sender': 'Giáo viên',
-          'text': 'Em làm bài tốt!',
-        },
-        {
-          'sender': 'Học viên',
-          'text': 'Em cảm ơn thầy!',
-        },
-      ];
-    }
-
-    if (_milestoneData['evidences'] == null) {
-      _milestoneData['evidences'] = [
-        {
-          'fileName': 'Ảnh màn hình.jpg',
-        },
-      ];
-    }
+    _milestoneData['activities'] ??= [];
+    _milestoneData['comments'] ??= [];
+    _milestoneData['evidences'] ??= [];
   }
 
   @override

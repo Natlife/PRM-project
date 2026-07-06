@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/project_service.dart';
@@ -27,6 +30,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
   late double _progress;
   late List<Map<String, dynamic>> _tasksList;
   late List<Map<String, dynamic>> _attachments;
+  late List<Map<String, dynamic>> _commentsList;
 
   @override
   void initState() {
@@ -39,6 +43,9 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
         ? List<Map<String, dynamic>>.from(widget.milestone['tasks'])
         : <Map<String, dynamic>>[];
     _attachments = List<Map<String, dynamic>>.from(widget.milestone['attachments'] ?? const []);
+    _commentsList = widget.milestone['comments'] != null
+        ? List<Map<String, dynamic>>.from(widget.milestone['comments'])
+        : <Map<String, dynamic>>[];
 
     final currentUser = AuthService().currentUser;
     final leader = widget.project['leader'] as Map<String, dynamic>?;
@@ -121,8 +128,19 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
       backendStatus = 'IN_PROGRESS';
     }
 
+    final descriptionPayload = jsonEncode({
+      'description': widget.milestone['description'] ?? '',
+      'tasks': _tasksList,
+      'comments': _commentsList,
+    });
+
     try {
-      await ProjectService().updateMilestoneProgress(milestoneId, percent, backendStatus);
+      await ProjectService().updateMilestoneProgress(
+        milestoneId,
+        percent,
+        backendStatus,
+        description: descriptionPayload,
+      );
     } catch (e) {
       debugPrint('Failed to update milestone progress: $e');
     }
@@ -168,13 +186,82 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     _recalculateProgress();
   }
 
-  void _addEvidence() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('UI upload milestone attachment chua duoc noi voi backend.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _addEvidence() async {
+    try {
+      final result = await FilePicker.pickFiles();
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+      final file = result.files.first;
+      final fileBytes = file.bytes;
+      final fileName = file.name;
+      
+      List<int>? bytes = fileBytes;
+      if (bytes == null && file.path != null) {
+        final fileIo = io.File(file.path!);
+        bytes = await fileIo.readAsBytes();
+      }
+
+      if (bytes == null) {
+        throw Exception('Không thể đọc file');
+      }
+
+      final milestoneId = (widget.milestone['id'] as num?)?.toInt() ?? 0;
+      if (milestoneId == 0) {
+        throw Exception('Mã mốc thời gian không hợp lệ');
+      }
+
+      bool showSpinner = false;
+      if (mounted) {
+        showSpinner = true;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      try {
+        final updatedList = await ProjectService().uploadMilestoneAttachment(
+          milestoneId,
+          bytes,
+          fileName,
+        );
+
+        if (showSpinner && mounted) {
+          Navigator.pop(context);
+          showSpinner = false;
+        }
+
+        setState(() {
+          _attachments = updatedList;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tải lên minh chứng thành công!'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFF7EC07E),
+            ),
+          );
+        }
+      } finally {
+        if (showSpinner && mounted) {
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tải file thất bại: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   void _showDeleteConfirmation(int index) {
@@ -213,14 +300,50 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     );
   }
 
-  void _sendReply() {
-    _replyController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Backend hien chua co API comment milestone cho student.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _sendReply() async {
+    final text = _replyController.text.trim();
+    if (text.isEmpty) return;
+
+    final milestoneId = (widget.milestone['id'] as num?)?.toInt() ?? 0;
+    if (milestoneId == 0) return;
+
+    final currentUser = AuthService().currentUser;
+    final senderName = currentUser?.fullName ?? currentUser?.username ?? 'Học viên';
+
+    final newComment = {
+      'sender': senderName,
+      'text': text,
+    };
+
+    setState(() {
+      _commentsList.add(newComment);
+      _replyController.clear();
+    });
+
+    final percent = (_progress * 100).toInt();
+    String backendStatus = 'NOT_STARTED';
+    if (percent == 100) {
+      backendStatus = 'COMPLETED';
+    } else if (percent > 0) {
+      backendStatus = 'IN_PROGRESS';
+    }
+
+    final descriptionPayload = jsonEncode({
+      'description': widget.milestone['description'] ?? '',
+      'tasks': _tasksList,
+      'comments': _commentsList,
+    });
+
+    try {
+      await ProjectService().updateMilestoneProgress(
+        milestoneId,
+        percent,
+        backendStatus,
+        description: descriptionPayload,
+      );
+    } catch (e) {
+      debugPrint('Failed to send comment: $e');
+    }
   }
 
   void _onBottomNavTapped(int index) {
@@ -231,8 +354,19 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
   Widget build(BuildContext context) {
     final statusColor = _statusColor(_status);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.pop(context, {
+          'status': _status,
+          'progress': _progress,
+          'tasks': _tasksList,
+          'attachments': _attachments,
+        });
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -408,9 +542,8 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       ),
                     ...List.generate(_attachments.length, (index) {
                       final attachment = _attachments[index];
-                      final fileName = attachment['fileName']?.toString().trim().isNotEmpty == true
-                          ? attachment['fileName'].toString()
-                          : 'tep_dinh_kem';
+                      final fileName = attachment['originalFileName']?.toString() ??
+                          (attachment['fileName']?.toString() ?? 'tep_dinh_kem');
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -466,10 +599,58 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Backend hien chua co API comment rieng cho milestone o man student.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
+                    if (_commentsList.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(
+                          'Chua co thao luan nao.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      )
+                    else
+                      ..._commentsList.map((comment) {
+                        final sender = comment['sender']?.toString() ?? '';
+                        final text = comment['text']?.toString() ?? '';
+                        final isMe = sender != 'Giáo viên';
+
+                        return Align(
+                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isMe ? const Color(0xFFE0F2FE) : const Color(0xFFFFFFFF),
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(14),
+                                topRight: const Radius.circular(14),
+                                bottomLeft: isMe ? const Radius.circular(14) : Radius.zero,
+                                bottomRight: isMe ? Radius.zero : const Radius.circular(14),
+                              ),
+                              border: Border.all(
+                                color: const Color(0xFF0F172A).withOpacity(0.05),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  sender,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: isMe ? Colors.blue.shade900 : Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  text,
+                                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -519,6 +700,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Ca nhan'),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

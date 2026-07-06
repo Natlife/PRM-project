@@ -149,6 +149,9 @@ public class ProjectMilestoneService {
 
         milestone.setProgressPercent(request.getProgressPercent());
         milestone.setStatus(MilestoneWorkflowStatus.valueOf(request.getStatus()));
+        if (request.getDescription() != null) {
+            milestone.setDescription(request.getDescription());
+        }
 
         ProjectMilestone saved = milestoneRepository.save(milestone);
 

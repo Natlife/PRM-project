@@ -168,6 +168,8 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                 'status': displayStatus,
                 'color': color,
                 'attachments': milestone['attachments'] ?? const [],
+                'tasks': milestone['tasks'] ?? const [],
+                'activities': milestone['activities'] ?? const [],
               };
             }).toList();
           }

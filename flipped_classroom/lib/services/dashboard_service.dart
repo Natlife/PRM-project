@@ -15,6 +15,14 @@ class DashboardService {
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
+  /// Fetch paginated deadlines/upcoming activities for students
+  Future<List<Map<String, dynamic>>> getStudentDeadlines(int page, int size) async {
+    final response = await _apiService.get('/student/dashboard/deadlines?page=$page&size=$size');
+    final responseBody = jsonDecode(response.body);
+    final list = List<dynamic>.from(responseBody['data'] ?? []);
+    return list.map((item) => Map<String, dynamic>.from(item)).toList();
+  }
+
   /// Fetch dashboard summary for teachers
   Future<Map<String, dynamic>> getTeacherDashboard() async {
     final response = await _apiService.get('/teacher/dashboard/summary');

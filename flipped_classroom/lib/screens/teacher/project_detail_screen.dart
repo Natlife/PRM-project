@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../services/project_service.dart';
 import 'edit_project_screen.dart';
 import 'create_milestone_screen.dart';
 import 'milestone_detail_screen.dart';
@@ -19,11 +21,120 @@ class ProjectDetailScreen extends StatefulWidget {
 
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   late Map<String, dynamic> _projectData;
+  bool _isLoadingMilestones = false;
 
   @override
   void initState() {
     super.initState();
     _projectData = _normalizeProjectData(widget.project);
+    _loadMilestones();
+  }
+
+  Future<void> _loadMilestones() async {
+    final groupId = (_projectData['id'] as num?)?.toInt() ?? 0;
+    if (groupId == 0) return;
+    setState(() {
+      _isLoadingMilestones = true;
+    });
+    try {
+      final list = await ProjectService().getGroupMilestones(groupId);
+      setState(() {
+        _projectData['milestones'] = list.map((m) {
+          final dueAt = m['dueAt']?.toString() ?? '';
+          String formattedDate = '';
+          if (dueAt.isNotEmpty) {
+            try {
+              final dt = DateTime.parse(dueAt);
+              formattedDate = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+            } catch (_) {
+              formattedDate = dueAt;
+            }
+          }
+          final statusRaw = m['status']?.toString() ?? 'NOT_STARTED';
+          String displayStatus = 'Chưa bắt đầu';
+          if (statusRaw == 'COMPLETED') {
+            displayStatus = 'Hoàn thành';
+          } else if (statusRaw == 'IN_PROGRESS') {
+            displayStatus = 'Đang thực hiện';
+          } else if (statusRaw == 'OVERDUE') {
+            displayStatus = 'Quá hạn';
+          }
+          return {
+            'id': m['id'],
+            'title': m['title'] ?? '',
+            'date': formattedDate,
+            'status': displayStatus,
+            'activities': m['activities'] ?? [],
+            'comments': m['comments'] ?? [],
+            'evidences': m['evidences'] ?? [],
+            'description': m['description'] ?? '',
+          };
+        }).toList();
+      });
+    } catch (e) {
+      debugPrint('Error loading milestones: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingMilestones = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveMilestoneUpdate(int milestoneId, Map<String, dynamic> data) async {
+    DateTime? dueDateTime;
+    final dateStr = data['date']?.toString() ?? '';
+    if (dateStr.isNotEmpty) {
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          dueDateTime = DateTime(year, month, day, 23, 59, 59);
+        }
+      }
+    }
+    dueDateTime ??= DateTime.now().add(const Duration(days: 7));
+    final dueAtIso = dueDateTime.toIso8601String();
+
+    final statusRaw = data['status']?.toString() ?? 'Chưa bắt đầu';
+    String backendStatus = 'NOT_STARTED';
+    if (statusRaw == 'Hoàn thành' || statusRaw == 'COMPLETED') {
+      backendStatus = 'COMPLETED';
+    } else if (statusRaw == 'Đang thực hiện' || statusRaw == 'IN_PROGRESS') {
+      backendStatus = 'IN_PROGRESS';
+    } else if (statusRaw == 'Quá hạn' || statusRaw == 'OVERDUE') {
+      backendStatus = 'OVERDUE';
+    }
+
+    final descriptionPayload = jsonEncode({
+      'description': data['description'] ?? '',
+      'tasks': data['activities'] ?? [],
+      'comments': data['comments'] ?? [],
+    });
+
+    final payload = {
+      'title': data['title'] ?? '',
+      'description': descriptionPayload,
+      'dueAt': dueAtIso,
+      'status': backendStatus,
+    };
+
+    try {
+      await ProjectService().updateMilestone(milestoneId, payload);
+      _loadMilestones();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể cập nhật mốc thời gian: $e')),
+        );
+      }
+    }
+  }
+
+  void _unusedLegacyInit() {
     if (_projectData['milestones'] == null) {
       _projectData['milestones'] = [
         {
@@ -36,9 +147,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   Map<String, dynamic> _normalizeProjectData(Map<String, dynamic> project) {
-    final members = project['members'] as List<dynamic>? ?? project['membersData'] as List<dynamic>? ?? [];
-    final membersList = project['membersList'] as List<dynamic>? ??
-        members
+    final rawMembers = project['members'];
+    final rawMembersData = project['membersData'];
+    final List<dynamic> members = (rawMembers is List)
+        ? rawMembers
+        : ((rawMembersData is List) ? rawMembersData : []);
+
+    final rawMembersList = project['membersList'];
+    final List<dynamic> membersList = (rawMembersList is List)
+        ? rawMembersList
+        : members
             .map((member) => member['fullName'] ?? member['userName'] ?? 'Thanh vien')
             .toList();
 
@@ -50,7 +168,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       'groupName': project['groupName'] ?? project['group'] ?? '',
       'membersList': membersList,
       'membersData': members,
-      'members': project['members'] ?? '${membersList.length} sinh vien',
+      'members': (project['members'] is String)
+          ? project['members']
+          : '${membersList.length} sinh vien',
       'leader': project['leader'] ?? project['leaderData']?['fullName'],
       'leaderData': project['leaderData'] ?? project['leader'],
       'milestones': project['milestones'] ?? [],
@@ -83,9 +203,52 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       ),
     );
     if (result != null) {
+      final groupId = (_projectData['id'] as num?)?.toInt() ?? 0;
+      if (groupId != 0) {
+        DateTime? dueDateTime;
+        final dateStr = result['date']?.toString() ?? '';
+        if (dateStr.isNotEmpty) {
+          final parts = dateStr.split('/');
+          if (parts.length == 3) {
+            final day = int.tryParse(parts[0]);
+            final month = int.tryParse(parts[1]);
+            final year = int.tryParse(parts[2]);
+            if (day != null && month != null && year != null) {
+              dueDateTime = DateTime(year, month, day, 23, 59, 59);
+            }
+          }
+        }
+        dueDateTime ??= DateTime.now().add(const Duration(days: 7));
+        final dueAtIso = dueDateTime.toIso8601String();
+
+        final descriptionPayload = jsonEncode({
+          'description': '',
+          'tasks': result['activities'] ?? [],
+          'comments': [],
+        });
+
+        final payload = {
+          'title': result['title'] ?? '',
+          'description': descriptionPayload,
+          'dueAt': dueAtIso,
+        };
+
+        try {
+          await ProjectService().createMilestone(groupId, payload);
+          _loadMilestones();
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Không thể tạo mốc thời gian: $e')),
+            );
+          }
+        }
+      }
+    }
+    if (false) {
       setState(() {
         final miles = List<Map<String, dynamic>>.from(_projectData['milestones'] ?? []);
-        miles.add(result);
+        miles.add(result!);
         _projectData['milestones'] = miles;
       });
     }
@@ -269,7 +432,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               ),
               const SizedBox(height: 14),
 
-              if (milestones.isEmpty)
+              if (_isLoadingMilestones)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+                  ),
+                )
+              else if (milestones.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(40.0),
@@ -302,9 +472,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                           ),
                         );
                         if (updatedMilestone != null) {
+                          final mId = (milestone['id'] as num?)?.toInt() ?? 0;
+                          if (mId != 0) {
+                            _saveMilestoneUpdate(mId, updatedMilestone);
+                          }
+                        }
+                        if (false) {
                           setState(() {
                             final miles = List<Map<String, dynamic>>.from(_projectData['milestones'] ?? []);
-                            miles[index] = updatedMilestone;
+                            miles[index] = updatedMilestone!;
                             _projectData['milestones'] = miles;
                           });
                         }

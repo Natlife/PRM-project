@@ -20,4 +20,6 @@ public class MilestoneProgressUpdateRequest {
 
     @NotNull(message = "Status is required")
     String status; 
+
+    String description;
 }
