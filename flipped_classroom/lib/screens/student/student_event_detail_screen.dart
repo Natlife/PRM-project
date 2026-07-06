@@ -23,7 +23,7 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
   void initState() {
     super.initState();
     _role = widget.event['role'] ?? 'Người thuyết trình';
-    _status = widget.event['status'] ?? 'Sắp diễn ra';
+    _status = widget.event['status'] ?? 'Chưa diễn ra';
   }
 
   void _showDeleteConfirmation(int index) {
@@ -97,7 +97,19 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor = widget.event['statusColor'] ?? Colors.amber[800];
+    Color getStatusColor(String status) {
+      switch (status) {
+        case 'Đang diễn ra':
+          return Colors.green;
+        case 'Đã diễn ra':
+          return Colors.grey;
+        case 'Chưa diễn ra':
+        default:
+          return Colors.orange;
+      }
+    }
+
+    final Color statusColor = getStatusColor(_status);
     final String presenterName = widget.event['presenterName'] ?? 'Nguyễn Minh Anh';
 
     return Scaffold(
@@ -117,6 +129,25 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
           ),
         ),
         actions: [
+          // Democase Toggle Status just for testing/presentation purposes
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                if (_status == 'Chưa diễn ra') {
+                  _status = 'Đang diễn ra';
+                } else if (_status == 'Đang diễn ra') {
+                  _status = 'Đã diễn ra';
+                } else {
+                  _status = 'Chưa diễn ra';
+                }
+              });
+            },
+            icon: const Icon(Icons.change_circle_outlined, size: 16, color: Colors.blue),
+            label: Text(
+              _status,
+              style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
+            ),
+          ),
           // Democase Toggle Role just for testing/presentation purposes
           TextButton.icon(
             onPressed: () {
@@ -226,10 +257,18 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
 
             const SizedBox(height: 24),
 
-            // Content dynamically based on Role
-            if (_role == 'Người thuyết trình') ...[
-              // Evidences list
-              if (_evidences.isNotEmpty)
+            // Evidences Section (Tài liệu minh chứng)
+            if (_role == 'Người thuyết trình' || (_role == 'Người phản biện' && _status != 'Chưa diễn ra')) ...[
+              if (_evidences.isNotEmpty) ...[
+                const Text(
+                  'Tài liệu minh chứng',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 ..._evidences.asMap().entries.map((entry) {
                   int index = entry.key;
                   String evidence = entry.value;
@@ -258,43 +297,48 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                             ),
                           ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                          onPressed: () => _showDeleteConfirmation(index), // Mở popup xóa
-                        ),
+                        if (_role == 'Người thuyết trình' && _status == 'Chưa diễn ra')
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            onPressed: () => _showDeleteConfirmation(index), // Mở popup xóa
+                          ),
                       ],
                     ),
                   );
                 }),
-
-              const SizedBox(height: 12),
+              ],
 
               // Upload Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _uploadDocument,
-                  icon: const Icon(Icons.upload_file, color: Color(0xFF7EC07E)),
-                  label: const Text(
-                    'Tải lên tài liệu',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7EC07E)),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    surfaceTintColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
+              if (_role == 'Người thuyết trình' && _status == 'Chưa diễn ra') ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _uploadDocument,
+                    icon: const Icon(Icons.upload_file, color: Color(0xFF7EC07E)),
+                    label: const Text(
+                      'Tải lên tài liệu',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7EC07E)),
                     ),
-                    elevation: 0,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      surfaceTintColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
                 ),
-              ),
+              ],
 
               const SizedBox(height: 16),
+            ],
 
-              // Enter Room Button
+            // Enter Room Button: Shown if status is 'Đang diễn ra'
+            if (_status == 'Đang diễn ra') ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -324,38 +368,11 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
+            ],
 
-              // Policy Info Note
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.blue.withOpacity(0.15)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Tài liệu khi giảng viên chưa bắt đầu sự kiện thì status là private chỉ bạn và giảng viên xem được còn khi bắt đầu sự kiện rồi thì tài liệu được public cho tất cả mọi người xem.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.blue[900],
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
-              // Review / Viewer mode
-              // Review Room / Replay Event button
+            // Replay Event Button: Shown if status is 'Đã diễn ra'
+            if (_status == 'Đã diễn ra') ...[
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -384,7 +401,36 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
+
+            // Policy Info Note
+            if (_role == 'Người thuyết trình' && _status == 'Chưa diễn ra')
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.blue.withOpacity(0.15)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tài liệu khi giảng viên chưa bắt đầu sự kiện thì status là private chỉ bạn và giảng viên xem được còn khi bắt đầu sự kiện rồi thì tài liệu được public cho tất cả mọi người xem.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue[900],
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

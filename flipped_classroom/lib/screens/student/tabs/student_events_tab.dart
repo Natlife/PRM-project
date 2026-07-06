@@ -24,8 +24,8 @@ class _StudentEventsTabState extends State<StudentEventsTab> {
       'location': 'Phòng 402, Tòa nhà Gamma',
       'instructor': 'GV. Vũ Trường Giang',
       'description': 'Thuyết trình và demo sản phẩm dự án STEM cuối kỳ môn Lập trình Mobile.',
-      'status': 'Sắp diễn ra',
-      'statusColor': Colors.amber[800],
+      'status': 'Chưa diễn ra',
+      'statusColor': Colors.orange,
     },
     {
       'id': '2',
@@ -36,8 +36,8 @@ class _StudentEventsTabState extends State<StudentEventsTab> {
       'location': 'Nộp trên hệ thống Flipped Classroom',
       'instructor': 'GV. Vũ Trường Giang',
       'description': 'Xem slide và chuẩn bị code ví dụ về Provider/Bloc.',
-      'status': 'Chưa làm',
-      'statusColor': Colors.redAccent,
+      'status': 'Chưa diễn ra',
+      'statusColor': Colors.orange,
     },
     {
       'id': '3',
@@ -60,8 +60,8 @@ class _StudentEventsTabState extends State<StudentEventsTab> {
       'location': 'Nộp trên hệ thống Flipped Classroom',
       'instructor': 'GV. Hoàng Văn C',
       'description': 'Nộp báo cáo nghiên cứu công nghệ Front-end phục vụ cho dự án môn học.',
-      'status': 'Hạn chót',
-      'statusColor': Colors.red,
+      'status': 'Đã diễn ra',
+      'statusColor': Colors.grey,
     },
   ];
 
