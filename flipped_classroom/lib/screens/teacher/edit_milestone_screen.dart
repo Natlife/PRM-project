@@ -33,14 +33,6 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
       _activitiesList.addAll(List<Map<String, dynamic>>.from(
         (m['activities'] as List).map((x) => Map<String, dynamic>.from(x))
       ));
-    } else {
-      // Mock some default activities if empty
-      _activitiesList.addAll([
-        {
-          'title': 'Code 3 màn hình chính',
-          'status': 'Đã hoàn thành',
-        },
-      ]);
     }
   }
 
@@ -54,6 +46,60 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    
+    DateTime initial = today;
+    final dateText = _deadlineController.text.trim();
+    if (dateText.isNotEmpty) {
+      final parts = dateText.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          initial = DateTime(year, month, day);
+        }
+      }
+    }
+    
+    final DateTime first = today.subtract(const Duration(days: 365));
+    final DateTime last = today.add(const Duration(days: 365));
+    if (initial.isBefore(first)) {
+      initial = first;
+    } else if (initial.isAfter(last)) {
+      initial = last;
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF7EC07E),
+              onPrimary: Colors.white,
+              surface: Color(0xFFFFFFFF),
+              onSurface: Color(0xFF0F172A),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _deadlineController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
+
+  Future<void> _selectDateLegacy(BuildContext context) async {
+    final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: now,
@@ -62,11 +108,11 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: const ColorScheme.light(
               primary: Color(0xFF7EC07E),
               onPrimary: Colors.white,
               surface: Color(0xFFFFFFFF),
-              onSurface: Colors.white,
+              onSurface: Color(0xFF0F172A),
             ),
           ),
           child: child!,
@@ -200,7 +246,7 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _selectedStatus,
+                value: _selectedStatus,
                 dropdownColor: const Color(0xFFFFFFFF),
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(

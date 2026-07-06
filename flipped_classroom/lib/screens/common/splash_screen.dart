@@ -67,9 +67,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFF8FAFC), // Slate 900
-              Color(0xFF1E1B4B), // Indigo 950
-              Color(0xFF311042), // Dark violet
+              Color(0xFFF8FAFC),
+              Color(0xFF1E1B4B),
+              Color(0xFF311042),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -78,7 +78,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         child: SafeArea(
           child: Stack(
             children: [
-              // Abstract light leaks/gradients in background
               Positioned(
                 top: -100,
                 right: -100,

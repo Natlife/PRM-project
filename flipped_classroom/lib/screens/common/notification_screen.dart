@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/notification_service.dart';
 
 enum NotificationType { assignment, grade, announcement, urgent }
 
@@ -29,58 +30,87 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      id: '1',
-      title: 'Hạn nộp bài tập chuẩn bị',
-      content: 'Bạn có bài tập môn PRM393 - Lập trình Mobile cần nộp trước 23:59 hôm nay.',
-      timeAgo: '10 phút trước',
-      type: NotificationType.urgent,
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'Điểm số mới được cập nhật',
-      content: 'Giảng viên đã công bố điểm đánh giá Milestone 1 cho nhóm của bạn.',
-      timeAgo: '2 giờ trước',
-      type: NotificationType.grade,
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'Nhận xét mới từ Giảng viên',
-      content: 'GV. Nguyễn Văn A đã bình luận góp ý về tài liệu dự án của nhóm.',
-      timeAgo: '1 ngày trước',
-      type: NotificationType.announcement,
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '4',
-      title: 'Thông báo lớp học Flipped',
-      content: 'Tài liệu chuẩn bị cho Bài 5: Flutter State Management đã được đăng tải.',
-      timeAgo: '3 ngày trước',
-      type: NotificationType.assignment,
-      isRead: true,
-    ),
-  ];
+  List<NotificationItem> _notifications = [];
+  bool _isLoading = true;
 
-  void _markAllAsRead() {
-    setState(() {
-      for (var item in _notifications) {
-        item.isRead = true;
-      }
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã đánh dấu tất cả thông báo là đã đọc.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
   }
 
-  void _toggleReadStatus(int index) {
-    setState(() {
-      _notifications[index].isRead = !_notifications[index].isRead;
-    });
+  Future<void> _loadNotifications() async {
+    try {
+      final list = await NotificationService().getNotifications();
+      setState(() {
+        _notifications = list.map((item) {
+          final isRead = item['readAt'] != null;
+          final typeStr = item['notificationType'] ?? '';
+          NotificationType type = NotificationType.announcement;
+          if (typeStr.toUpperCase() == 'ASSIGNMENT') {
+            type = NotificationType.assignment;
+          } else if (typeStr.toUpperCase() == 'GRADE') {
+            type = NotificationType.grade;
+          } else if (typeStr.toUpperCase() == 'URGENT') {
+            type = NotificationType.urgent;
+          }
+          final createdAt = item['createdAt'] != null
+              ? item['createdAt'].toString().split('T').join(' ')
+              : 'Vừa xong';
+          return NotificationItem(
+            id: item['id'].toString(),
+            title: item['title'] ?? 'Thông báo',
+            content: item['body'] ?? '',
+            timeAgo: createdAt,
+            type: type,
+            isRead: isRead,
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      await NotificationService().markAllAsRead();
+      setState(() {
+        for (var item in _notifications) {
+          item.isRead = true;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã đánh dấu tất cả thông báo là đã đọc.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _toggleReadStatus(int index) async {
+    final item = _notifications[index];
+    if (!item.isRead) {
+      try {
+        await NotificationService().markAsRead(int.parse(item.id));
+        setState(() {
+          item.isRead = true;
+        });
+      } catch (e) {
+        // Silently fail or show snackbar
+      }
+    }
   }
 
   void _deleteNotification(int index) {
@@ -149,133 +179,139 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
         ],
       ),
-      body: _notifications.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: _notifications.length,
-              itemBuilder: (context, index) {
-                final item = _notifications[index];
-                return Dismissible(
-                  key: Key(item.id),
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    color: Colors.redAccent.withOpacity(0.8),
-                    child: const Icon(Icons.delete, color: Color(0xFF0F172A)),
-                  ),
-                  direction: DismissDirection.endToStart,
-                  onDismissed: (_) => _deleteNotification(index),
-                  child: GestureDetector(
-                    onTap: () => _toggleReadStatus(index),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: item.isRead 
-                            ? const Color(0xFFFFFFFF).withOpacity(0.6) 
-                            : const Color(0xFFFFFFFF),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: item.isRead 
-                              ? const Color(0xFF0F172A).withOpacity(0.02)
-                              : const Color(0xFF7EC07E).withOpacity(0.2),
-                          width: 1.2,
-                        ),
-                        boxShadow: item.isRead 
-                            ? [] 
-                            : [
-                                BoxShadow(
-                                  color: const Color(0xFF7EC07E).withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                )
-                              ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Type Icon Indicator
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _getColorForType(item.type).withOpacity(0.12),
-                            ),
-                            child: Icon(
-                              _getIconForType(item.type),
-                              color: _getColorForType(item.type),
-                              size: 22,
-                            ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF7EC07E),
+              ),
+            )
+          : _notifications.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: _loadNotifications,
+                  color: const Color(0xFF7EC07E),
+                  child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      itemCount: _notifications.length,
+                      itemBuilder: (context, index) {
+                        final item = _notifications[index];
+                        return Dismissible(
+                          key: Key(item.id),
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: Colors.redAccent.withOpacity(0.8),
+                            child: const Icon(Icons.delete, color: Color(0xFF0F172A)),
                           ),
-                          const SizedBox(width: 14),
-                          
-                          // Text Content
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        item.title,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: item.isRead 
-                                              ? FontWeight.w500 
-                                              : FontWeight.bold,
-                                          color: item.isRead 
-                                              ? const Color(0xFF0F172A).withOpacity(0.7) 
-                                              : Colors.white,
-                                        ),
-                                      ),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) => _deleteNotification(index),
+                          child: GestureDetector(
+                            onTap: () => _toggleReadStatus(index),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: item.isRead 
+                                    ? const Color(0xFFFFFFFF).withOpacity(0.6) 
+                                    : const Color(0xFFFFFFFF),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: item.isRead 
+                                      ? const Color(0xFF0F172A).withOpacity(0.02)
+                                      : const Color(0xFF7EC07E).withOpacity(0.2),
+                                  width: 1.2,
+                                ),
+                                boxShadow: item.isRead 
+                                    ? [] 
+                                    : [
+                                        BoxShadow(
+                                          color: const Color(0xFF7EC07E).withOpacity(0.05),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        )
+                                      ],
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _getColorForType(item.type).withOpacity(0.12),
                                     ),
-                                    const SizedBox(width: 8),
-                                    // Unread indicator dot
-                                    if (!item.isRead)
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Color(0xFF7EC07E),
+                                    child: Icon(
+                                      _getIconForType(item.type),
+                                      color: _getColorForType(item.type),
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                item.title,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: item.isRead 
+                                                      ? FontWeight.w500 
+                                                      : FontWeight.bold,
+                                                  color: item.isRead 
+                                                      ? const Color(0xFF0F172A).withOpacity(0.7) 
+                                                      : const Color(0xFF0F172A),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            if (!item.isRead)
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: const BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Color(0xFF7EC07E),
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  item.content,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: item.isRead 
-                                        ? const Color(0xFF0F172A).withOpacity(0.4) 
-                                        : const Color(0xFF0F172A).withOpacity(0.7),
-                                    height: 1.3,
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          item.content,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: item.isRead 
+                                                ? const Color(0xFF0F172A).withOpacity(0.4) 
+                                                : const Color(0xFF0F172A).withOpacity(0.7),
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          item.timeAgo,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: const Color(0xFF0F172A).withOpacity(0.3),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  item.timeAgo,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: const Color(0xFF0F172A).withOpacity(0.3),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  ),
-                );
-              },
-            ),
+                ),
     );
   }
 

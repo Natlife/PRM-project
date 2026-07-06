@@ -88,6 +88,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
     final newClass = {
       'title': _subjectController.text.trim(),
       'code': '${_nameController.text.trim()} - ${_classCode.toUpperCase()}',
+      'description': _descController.text.trim(),
       'studentsCount': 0,
       'semester': _selectedSemester,
       'type': 'Chuyên ngành',

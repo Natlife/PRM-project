@@ -1,0 +1,99 @@
+# Flutter .gitignore
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Flutter build
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+pubspec.lock
+.pub_get
+.packages.json
+
+# iOS/macOS
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.moved-aside
+ios/**/*.pbxuser
+ios/**/*.perspectivev3
+ios/**/*sync/
+ios/**/.sconsign.dblite
+ios/**/.tags*
+ios/**/.vagrant/
+ios/**/DerivedData/
+ios/**/Icon?
+ios/**/Icon??
+ios/**/Icon???
+ios/**/Icon????
+ios/**/Icon?????
+ios/**/xcuserdata/
+ios/**/Flutter/Flutter.framework
+ios/**/Flutter/Flutter.podspec
+ios/**/.symlinks/
+ios/**/.generated.xcconfig
+ios/**/.env
+ios/**/Flutter/.last_build_id
+ios/**/Flutter/.buildlog
+macos/Flutter/Flutter-Release.xcconfig
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Android/Gradle
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/gradle.properties
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+**/android/*.jks
+**/android/*.keystore
+
+# Web
+web/flutter_service_worker.js
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# iOS/macOS/Android codegen
+**/generated_plugins.cmake
+**/flutter_gen/
+**/flutter_gen_web/
+
+# Covers IDE specific files and folders
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+.env.local
+
+# Python related (if using Python for backend)
+*.pyc
+__pycache__/
+*.egg-info/
+
+# Firebase related
+.firebase/
+.firebaserc
+**/service-account-key.json
+
+# Miscellaneous
+*.class
+*.log
+*.iml
+*.iws
+*.ipr

@@ -4,12 +4,14 @@ class EditActivityScreen extends StatefulWidget {
   final String activityTitle;
   final String description;
   final String deadline;
+  final String currentStatus;
 
   const EditActivityScreen({
     super.key,
     required this.activityTitle,
     required this.description,
     required this.deadline,
+    required this.currentStatus,
   });
 
   @override
@@ -21,6 +23,13 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   late TextEditingController _deadlineController;
+  late String _selectedStatus;
+
+  final List<Map<String, String>> _statusOptions = const [
+    {'value': 'DRAFT', 'label': 'Draft'},
+    {'value': 'PUBLISHED', 'label': 'Published'},
+    {'value': 'CLOSED', 'label': 'Closed'},
+  ];
 
   @override
   void initState() {
@@ -28,6 +37,7 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
     _titleController = TextEditingController(text: widget.activityTitle);
     _descController = TextEditingController(text: widget.description);
     _deadlineController = TextEditingController(text: widget.deadline);
+    _selectedStatus = widget.currentStatus.isNotEmpty ? widget.currentStatus : 'DRAFT';
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -36,8 +46,9 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
     
     DateTime initial = tomorrow;
     try {
-      if (widget.deadline.contains('/')) {
-        final parts = widget.deadline.split('/');
+      final sourceDeadline = _deadlineController.text;
+      if (sourceDeadline.contains('/')) {
+        final parts = sourceDeadline.split('/');
         final day = int.parse(parts[0]);
         final month = int.parse(parts[1]);
         final year = int.parse(parts[2]);
@@ -56,11 +67,11 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: const ColorScheme.light(
               primary: Color(0xFF7EC07E),
               onPrimary: Colors.white,
               surface: Color(0xFFFFFFFF),
-              onSurface: Colors.white,
+              onSurface: Color(0xFF0F172A),
             ),
           ),
           child: child!,
@@ -82,6 +93,7 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
       'title': _titleController.text.trim(),
       'description': _descController.text.trim(),
       'deadline': _deadlineController.text,
+      'status': _selectedStatus,
     };
 
     Navigator.of(context).pop(updatedActivity);
@@ -187,6 +199,40 @@ class _EditActivityScreenState extends State<EditActivityScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Trang thai *',
+                style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFFFF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedStatus,
+                    dropdownColor: const Color(0xFFFFFFFF),
+                    isExpanded: true,
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
+                    items: _statusOptions
+                        .map(
+                          (status) => DropdownMenuItem<String>(
+                            value: status['value'],
+                            child: Text(status['label']!),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedStatus = value);
+                      }
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
 

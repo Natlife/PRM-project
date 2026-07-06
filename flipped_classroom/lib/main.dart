@@ -19,11 +19,10 @@ class MyApp extends StatelessWidget {
       title: 'Flipped Classroom',
       debugShowCheckedModeBanner: false,
       
-      // Premium Sleek Dark Theme configuration
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC), // Slate 900
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         
         colorScheme: const ColorScheme.light(
           primary: Color(0xFF7EC07E),
@@ -32,8 +31,7 @@ class MyApp extends StatelessWidget {
           error: Colors.redAccent,
         ),
         
-        // Font customization
-        fontFamily: 'Roboto', // Default fallback, customizable
+        fontFamily: 'Roboto',
         
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF7EC07E),
@@ -95,10 +93,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       
-      // Initial Route starts at Splash
       initialRoute: '/',
       
-      // Page route mappings
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),

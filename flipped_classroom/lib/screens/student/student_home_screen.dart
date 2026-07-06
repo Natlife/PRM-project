@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import '../../services/classroom_service.dart';
 import '../common/profile_screen.dart';
 import '../common/notification_screen.dart';
 import 'student_classes_screen.dart';
@@ -16,39 +16,37 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
+  List<Map<String, dynamic>> _myClasses = [];
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _myClasses = [
-    {
-      'classCode': 'PRM',
-      'classCodeWithName': 'PRM - SE1904',
-      'className': 'Lập trình Thiết bị Di động',
-      'instructor': 'GV: Vũ Trường Giang',
-      'semester': 'SU26',
-      'studentCount': 30,
-      'nextSession': 'Thời gian: 28/05/2026',
-      'progress': 0.85,
-    },
-    {
-      'classCode': 'PRW301',
-      'classCodeWithName': 'PRW301 - SE1905',
-      'className': 'Thiết kế Web nâng cao',
-      'instructor': 'GV: Trần Thị B',
-      'semester': 'SU26',
-      'studentCount': 28,
-      'nextSession': 'Thời gian: 30/05/2026',
-      'progress': 0.50,
-    },
-    {
-      'classCode': 'FLC101',
-      'classCodeWithName': 'FLC101 - SE1906',
-      'className': 'Học thuyết Học tập Chủ động',
-      'instructor': 'GV: Hoàng Văn C',
-      'semester': 'SU26',
-      'studentCount': 35,
-      'nextSession': 'Thời gian: 02/06/2026',
-      'progress': 0.20,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadClassrooms();
+  }
+
+  Future<void> _loadClassrooms() async {
+    try {
+      final classes = await ClassroomService().getStudentClassrooms();
+      setState(() {
+        _myClasses = classes;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải danh sách lớp học: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -107,30 +105,29 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final code = controller.text.trim();
                 if (code.isNotEmpty) {
-                  setState(() {
-                    _myClasses.add({
-                      'classCode': code.toUpperCase(),
-                      'classCodeWithName': '${code.toUpperCase()} - SE1904',
-                      'className': 'Lớp học $code',
-                      'instructor': 'GV: Hướng Dẫn Viên',
-                      'semester': 'SU26',
-                      'studentCount': 30,
-                      'nextSession': 'Thời gian: Chưa xếp lịch',
-                      'progress': 0.0,
-                    });
-                    _selectedIndex = 1; // Direct to classes tab
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đã tham gia lớp học ${code.toUpperCase()} thành công!'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: const Color(0xFF7EC07E),
-                    ),
-                  );
+                  try {
+                    await ClassroomService().joinClassroom(code);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Đã tham gia lớp học ${code.toUpperCase()} thành công!'),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: const Color(0xFF7EC07E),
+                      ),
+                    );
+                    _loadClassrooms();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Lỗi khi tham gia lớp học: $e'),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -157,33 +154,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      StudentDashboardTab(
-        myClasses: _myClasses,
-        onJoinClassPressed: _showJoinClassDialog,
-        onTabTapped: _onItemTapped,
-      ),
-      StudentClassesScreen(
-        myClasses: _myClasses,
-        onJoinClassPressed: _showJoinClassDialog,
-        onTabTapped: _onItemTapped,
-      ),
-      StudentProjectsTab(
-        onTabTapped: _onItemTapped,
-      ),
-      StudentEventsTab(
-        onTabTapped: _onItemTapped,
-      ),
-      const ProfileScreen(showBackButton: false),
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: pages,
-        ),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+              )
+            : _buildCurrentPage(),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -233,6 +211,43 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return StudentDashboardTab(
+          key: const PageStorageKey('student-dashboard-tab'),
+          myClasses: _myClasses,
+          onJoinClassPressed: _showJoinClassDialog,
+          onTabTapped: _onItemTapped,
+        );
+      case 1:
+        return StudentClassesScreen(
+          key: const PageStorageKey('student-classes-tab'),
+          myClasses: _myClasses,
+          onJoinClassPressed: _showJoinClassDialog,
+          onTabTapped: _onItemTapped,
+        );
+      case 2:
+        return StudentProjectsTab(
+          key: const PageStorageKey('student-projects-tab'),
+          onTabTapped: _onItemTapped,
+        );
+      case 3:
+        return StudentEventsTab(
+          onTabTapped: _onItemTapped,
+        );
+      case 4:
+        return const ProfileScreen(showBackButton: false);
+      default:
+        return StudentDashboardTab(
+          key: const PageStorageKey('student-dashboard-tab-default'),
+          myClasses: _myClasses,
+          onJoinClassPressed: _showJoinClassDialog,
+          onTabTapped: _onItemTapped,
+        );
+    }
   }
 
 

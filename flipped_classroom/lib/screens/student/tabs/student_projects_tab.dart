@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../services/dashboard_service.dart';
+import '../../../services/project_service.dart';
 import '../student_project_detail_screen.dart';
 
 class StudentProjectsTab extends StatefulWidget {
@@ -14,71 +17,139 @@ class StudentProjectsTab extends StatefulWidget {
 }
 
 class _StudentProjectsTabState extends State<StudentProjectsTab> {
-  // Mock projects list matching the diagram's "Tất cả dự án" screen description
-  final List<Map<String, dynamic>> _projects = [
-    {
-      'title': 'Ứng dụng Flipped Classroom',
-      'projectName': 'Ứng dụng Flipped Classroom',
-      'classCodeWithName': 'PRM - SE1904',
-      'subject': 'Lập trình Thiết bị Di động',
-      'membersCount': 4,
-      'membersList': ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C', 'Phạm Văn D'],
-      'progress': 0.8,
-      'milestones': [
-        {
-          'title': 'Phân tích yêu cầu',
-          'dueDate': 'Hạn: 10/05/2026',
-          'status': 'Hoàn thành',
-          'color': Color(0xFF7EC07E),
-          'progress': 1.0,
-          'description': 'Lấy yêu cầu từ khách hàng, phân tích sơ đồ luồng dữ liệu (Data Flow Diagram) và thiết kế cơ sở dữ liệu Entity Relationship Diagram (ERD).'
-        },
-        {
-          'title': 'Thiết kế hệ thống',
-          'dueDate': 'Hạn: 30/05/2026',
-          'status': 'Đang thực hiện',
-          'color': Colors.amberAccent,
-          'progress': 0.6,
-          'description': 'Vẽ wireframe chi tiết các màn hình (Mobile & Web), chuẩn bị kiến trúc thư mục Flutter, viết tài liệu đặc tả chức năng (SRS).'
-        },
-        {
-          'title': 'Hoàn thiện MVP & Demo',
-          'dueDate': 'Hạn: 20/06/2026',
-          'status': 'Chưa bắt đầu',
-          'color': Colors.grey,
-          'progress': 0.0,
-          'description': 'Hoàn thành phát triển các tính năng cốt lõi (Authentication, class details, evidence upload), chạy demo thử nghiệm.'
+  List<Map<String, dynamic>> _projects = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProjects();
+  }
+
+  Future<void> _loadProjects() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final dashboardData = await DashboardService().getStudentDashboard();
+      final activeGroups = List<Map<String, dynamic>>.from(
+        dashboardData['activeGroups'] ?? const [],
+      );
+
+      final List<Map<String, dynamic>> loadedProjects = [];
+      for (final group in activeGroups) {
+        final groupId = (group['id'] as num?)?.toInt() ?? 0;
+        final classroomId = (group['classroomId'] as num?)?.toInt() ?? 0;
+        if (groupId == 0 || classroomId == 0) {
+          continue;
         }
-      ]
-    },
-    {
-      'title': 'Website Bán hàng Điện tử',
-      'projectName': 'Website Bán hàng Điện tử',
-      'classCodeWithName': 'PRW301 - SE1905',
-      'subject': 'Thiết kế Web nâng cao',
-      'membersCount': 3,
-      'membersList': ['Nguyễn Văn A', 'Phạm Minh E', 'Lâm Thùy F'],
-      'progress': 0.45,
-      'milestones': [
-        {
-          'title': 'Thiết kế Mockup & DB',
-          'dueDate': 'Hạn: 15/05/2026',
-          'status': 'Hoàn thành',
-          'color': Color(0xFF7EC07E),
-          'progress': 1.0,
-          'description': 'Thiết kế giao diện UI/UX trên Figma và tạo các bảng quan hệ cơ sở dữ liệu MySQL.'
-        },
-        {
-          'title': 'Xây dựng API backend',
-          'dueDate': 'Hạn: 10/06/2026',
-          'status': 'Đang thực hiện',
-          'color': Colors.amberAccent,
-          'progress': 0.3,
-          'description': 'Phát triển backend RESTful API sử dụng Node.js Express, kết nối cơ sở dữ liệu.'
+
+        final classCode = group['classroomCode']?.toString() ?? '';
+        final className = group['classroomName']?.toString() ?? '';
+        final groupName = group['groupName']?.toString() ?? '';
+        final projectName = group['projectName']?.toString() ?? '';
+        final memberCount = (group['memberCount'] as num?)?.toInt() ?? 0;
+
+        Map<String, dynamic> groupDetail = {};
+        List<Map<String, dynamic>> membersData = [];
+        List<String> membersList = [];
+        Map<String, dynamic>? leader;
+        String description = '';
+        String status = group['status']?.toString() ?? '';
+
+        try {
+          groupDetail = await ProjectService().getStudentProjectGroup(classroomId);
+          membersData = List<Map<String, dynamic>>.from(
+            groupDetail['members'] ?? const [],
+          );
+          membersList = membersData
+              .map(
+                (member) =>
+                    member['fullName']?.toString() ??
+                    member['userName']?.toString() ??
+                    '',
+              )
+              .where((name) => name.isNotEmpty)
+              .toList();
+          leader = groupDetail['leader'] as Map<String, dynamic>?;
+          description = groupDetail['description']?.toString() ?? '';
+          status = groupDetail['status']?.toString() ?? status;
+        } catch (e) {
+          debugPrint('Error getting student project group detail: $e');
         }
-      ]
+
+        List<Map<String, dynamic>> milestones = [];
+        try {
+          milestones = await ProjectService().getGroupMilestones(groupId);
+        } catch (e) {
+          debugPrint('Error getting group milestones: $e');
+        }
+
+        double progress = 0;
+        String projectDeadline = '';
+        if (milestones.isNotEmpty) {
+          final totalPercent = milestones.fold<int>(
+            0,
+            (sum, item) => sum + (((item['progressPercent'] as num?) ?? 0).toInt()),
+          );
+          progress = (totalPercent / milestones.length) / 100.0;
+
+          DateTime? latestDate;
+          for (final m in milestones) {
+            final dueAtStr = m['dueAt']?.toString() ?? m['dueDate']?.toString() ?? '';
+            if (dueAtStr.isNotEmpty) {
+              try {
+                final dt = DateTime.parse(dueAtStr);
+                if (latestDate == null || dt.isAfter(latestDate)) {
+                  latestDate = dt;
+                }
+              } catch (_) {}
+            }
+          }
+          if (latestDate != null) {
+            projectDeadline = '${latestDate.day.toString().padLeft(2, '0')}/${latestDate.month.toString().padLeft(2, '0')}/${latestDate.year}';
+          }
+        }
+
+        loadedProjects.add({
+          'id': groupId,
+          'title': projectName.isNotEmpty ? projectName : groupName,
+          'projectName': projectName,
+          'groupName': groupName,
+          'classCodeWithName': classCode.isNotEmpty && className.isNotEmpty
+              ? '$classCode - $className'
+              : classCode,
+          'subject': className,
+          'membersCount': memberCount,
+          'membersList': membersList,
+          'membersData': membersData,
+          'leader': leader,
+          'description': description,
+          'status': status,
+          'progress': progress,
+          'milestones': milestones,
+          'date': projectDeadline,
+        });
+      }
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _projects = loadedProjects;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading student projects: $e');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+      });
     }
-  ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,139 +164,268 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
           style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 18),
         ),
         centerTitle: true,
-        shape: Border(
-          bottom: BorderSide(
-            color: const Color(0xFF0F172A).withOpacity(0.06),
-            width: 1.2,
-          ),
-        ),
       ),
       body: SafeArea(
-        child: ListView.builder(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20.0),
-          itemCount: _projects.length,
-          itemBuilder: (context, index) {
-            final proj = _projects[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.05)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0F172A).withOpacity(0.01),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () async {
-                    final targetIndex = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentProjectDetailScreen(
-                          project: proj,
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadProjects,
+                color: const Color(0xFF7EC07E),
+                child: _projects.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
                         ),
-                      ),
-                    );
-                    if (targetIndex != null && targetIndex is int) {
-                      widget.onTabTapped(targetIndex);
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                          _buildEmptyState(),
+                        ],
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        itemCount: _projects.length,
+                        itemBuilder: (context, index) {
+                          final project = _projects[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Container(
                               decoration: BoxDecoration(
-                                color: const Color(0xFF7EC07E).withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.05)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF0F172A).withOpacity(0.01),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                proj['classCodeWithName'] ?? '',
-                                style: const TextStyle(
-                                  color: Color(0xFF7EC07E),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () async {
+                                  final targetIndex = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => StudentProjectDetailScreen(
+                                        project: project,
+                                      ),
+                                    ),
+                                  );
+                                  if (targetIndex != null && targetIndex is int) {
+                                    widget.onTabTapped(targetIndex);
+                                  } else {
+                                    _loadProjects();
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Wrap(
+                                              spacing: 8,
+                                              runSpacing: 8,
+                                              children: [
+                                                if ((project['classCodeWithName'] ?? '').toString().isNotEmpty)
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF7EC07E).withOpacity(0.12),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Text(
+                                                      project['classCodeWithName'] ?? '',
+                                                      style: const TextStyle(
+                                                        color: Color(0xFF7EC07E),
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                if ((project['status'] ?? '').toString().isNotEmpty)
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF0F172A).withOpacity(0.06),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Text(
+                                                      project['status'] ?? '',
+                                                      style: const TextStyle(
+                                                        color: Color(0xFF0F172A),
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            '${project['membersCount'] ?? 0} thành viên',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: const Color(0xFF0F172A).withOpacity(0.4),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        project['projectName']?.toString().isNotEmpty == true
+                                            ? project['projectName']
+                                            : (project['title'] ?? ''),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      if ((project['groupName'] ?? '').toString().isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          project['groupName'] ?? '',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: const Color(0xFF7EC07E).withOpacity(0.85),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                      if ((project['subject'] ?? '').toString().isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          project['subject'] ?? '',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: const Color(0xFF0F172A).withOpacity(0.5),
+                                          ),
+                                        ),
+                                      ],
+                                      if ((project['date'] ?? '').toString().isNotEmpty || project['leader'] != null) ...[
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            if ((project['date'] ?? '').toString().isNotEmpty)
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.calendar_today, size: 13, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Hạn nộp: ${project['date']}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: const Color(0xFF0F172A).withOpacity(0.5),
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            if (project['leader'] != null)
+                                              Text(
+                                                'Trưởng nhóm: ${project['leader']['fullName'] ?? project['leader']['userName'] ?? ''}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: const Color(0xFF0F172A).withOpacity(0.5),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Tiến độ chung:',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: const Color(0xFF0F172A).withOpacity(0.4),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${((project['progress'] as double? ?? 0) * 100).toInt()}%',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF7EC07E),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: LinearProgressIndicator(
+                                          value: project['progress'] as double? ?? 0,
+                                          minHeight: 6,
+                                          backgroundColor: const Color(0xFF0F172A).withOpacity(0.05),
+                                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7EC07E)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                            Text(
-                              '${proj['membersCount']} thành viên',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: const Color(0xFF0F172A).withOpacity(0.4),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          proj['projectName'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          proj['subject'] ?? '',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: const Color(0xFF0F172A).withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Tiến độ chung:',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: const Color(0xFF0F172A).withOpacity(0.4),
-                              ),
-                            ),
-                            Text(
-                              '${(proj['progress'] * 100).toInt()}%',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF7EC07E),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: LinearProgressIndicator(
-                            value: proj['progress'],
-                            minHeight: 6,
-                            backgroundColor: const Color(0xFF0F172A).withOpacity(0.05),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7EC07E)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                          );
+                        },
+                      ),
               ),
-            );
-          },
-        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF7EC07E).withOpacity(0.12),
+            ),
+            child: const Icon(
+              Icons.group_work_outlined,
+              size: 40,
+              color: Color(0xFF7EC07E),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Chưa có dự án nào',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Khi hệ thống phân nhóm dự án của bạn, dữ liệu sẽ hiển thị ở đây.',
+            style: TextStyle(
+              fontSize: 13,
+              color: const Color(0xFF0F172A).withOpacity(0.4),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

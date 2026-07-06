@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+
+import '../../services/auth_service.dart';
+import '../../services/project_service.dart';
 
 class StudentMilestoneDetailScreen extends StatefulWidget {
   final Map<String, dynamic> milestone;
@@ -15,47 +21,37 @@ class StudentMilestoneDetailScreen extends StatefulWidget {
 }
 
 class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScreen> {
-  // Role simulation state: true = Trưởng nhóm (Leader), false = Thành viên (Member)
-  bool _isLeader = true; 
+  final TextEditingController _replyController = TextEditingController();
 
+  bool _isLeader = false;
   late String _milestoneTitle;
   late String _dueDate;
   late String _status;
   late double _progress;
   late List<Map<String, dynamic>> _tasksList;
-  late List<String> _evidenceList;
-  late List<Map<String, String>> _comments;
-
-  final TextEditingController _replyController = TextEditingController();
+  late List<Map<String, dynamic>> _attachments;
+  late List<Map<String, dynamic>> _commentsList;
 
   @override
   void initState() {
     super.initState();
-    _milestoneTitle = widget.milestone['title'] ?? 'Thiết kế hệ thống';
-    _dueDate = widget.milestone['dueDate'] ?? 'Hạn: 30/5/2026';
-    _status = widget.milestone['status'] ?? 'Đang thực hiện';
-    _progress = widget.milestone['progress'] ?? 0.6;
-
-    // Subtasks for checklist
+    _milestoneTitle = widget.milestone['title']?.toString() ?? 'Chi tiet milestone';
+    _dueDate = _buildDueDate(widget.milestone['dueAt'] ?? widget.milestone['dueDate']);
+    _status = _normalizeStatus(widget.milestone['status']);
+    _progress = _normalizeProgress(widget.milestone['progressPercent'] ?? widget.milestone['progress']);
     _tasksList = widget.milestone['tasks'] != null
         ? List<Map<String, dynamic>>.from(widget.milestone['tasks'])
-        : [
-            {'title': 'Tạo database', 'isDone': true},
-            {'title': 'Xây dựng giao diện', 'isDone': false},
-          ];
+        : <Map<String, dynamic>>[];
+    _attachments = List<Map<String, dynamic>>.from(widget.milestone['attachments'] ?? const []);
+    _commentsList = widget.milestone['comments'] != null
+        ? List<Map<String, dynamic>>.from(widget.milestone['comments'])
+        : <Map<String, dynamic>>[];
 
-    // Evidence list
-    _evidenceList = widget.milestone['evidenceList'] != null
-        ? List<String>.from(widget.milestone['evidenceList'])
-        : ['srs_document.pdf', 'database_design.png'];
-
-    // Comments list
-    _comments = widget.milestone['comments'] != null
-        ? List<Map<String, String>>.from(widget.milestone['comments'])
-        : [
-            {'sender': 'Giáo viên', 'text': 'Sơ đồ database cần bổ sung thêm bảng log lịch sử hoạt động nhé.'},
-            {'sender': 'Sinh viên', 'text': 'Dạ vâng ạ, chúng em sẽ cập nhật thiết kế cơ sở dữ liệu.'},
-          ];
+    final currentUser = AuthService().currentUser;
+    final leader = widget.project['leader'] as Map<String, dynamic>?;
+    final leaderId = leader?['id']?.toString();
+    final leaderUsername = leader?['userName']?.toString();
+    _isLeader = leaderId == currentUser?.id || leaderUsername == currentUser?.username;
   }
 
   @override
@@ -64,32 +60,119 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     super.dispose();
   }
 
-  void _onBottomNavTapped(int index) {
-    // Return index to main navigation system
-    Navigator.pop(context, index);
+  String _buildDueDate(dynamic raw) {
+    if (raw == null) {
+      return 'Không có thời hạn';
+    }
+    final value = raw.toString();
+    if (value.contains('Hạn')) {
+      return value;
+    }
+    try {
+      final dt = DateTime.parse(value);
+      return 'Hạn: ${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    } catch (_) {
+      return value;
+    }
   }
 
-  // Calculate progress based on completed tasks
+  String _normalizeStatus(dynamic raw) {
+    final value = raw?.toString() ?? 'NOT_STARTED';
+    if (value == 'COMPLETED' || value == 'Hoàn thành') {
+      return 'Hoàn thành';
+    }
+    if (value == 'IN_PROGRESS' || value == 'Đang thực hiện') {
+      return 'Đang thực hiện';
+    }
+    if (value == 'OVERDUE' || value == 'Quá hạn') {
+      return 'Quá hạn';
+    }
+    return 'Chưa bắt đầu';
+  }
+
+  double _normalizeProgress(dynamic raw) {
+    if (raw == null) {
+      return 0;
+    }
+    if (raw is int) {
+      return raw / 100.0;
+    }
+    final value = (raw as num).toDouble();
+    return value > 1 ? value / 100.0 : value;
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Hoàn thành':
+        return const Color(0xFF7EC07E);
+      case 'Đang thực hiện':
+        return const Color(0xFFF59E0B);
+      case 'Quá hạn':
+        return Colors.redAccent;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _updateProgressOnBackend(double newProgress) async {
+    final milestoneId = (widget.milestone['id'] as num?)?.toInt() ?? 0;
+    if (milestoneId == 0) {
+      return;
+    }
+
+    final percent = (newProgress * 100).toInt();
+    String backendStatus = 'NOT_STARTED';
+    if (percent == 100) {
+      backendStatus = 'COMPLETED';
+    } else if (percent > 0) {
+      backendStatus = 'IN_PROGRESS';
+    }
+
+    final descriptionPayload = jsonEncode({
+      'description': widget.milestone['description'] ?? '',
+      'tasks': _tasksList,
+      'comments': _commentsList,
+    });
+
+    try {
+      await ProjectService().updateMilestoneProgress(
+        milestoneId,
+        percent,
+        backendStatus,
+        description: descriptionPayload,
+      );
+    } catch (e) {
+      debugPrint('Failed to update milestone progress: $e');
+    }
+  }
+
   void _recalculateProgress() {
-    if (_tasksList.isEmpty) return;
-    int completedCount = _tasksList.where((t) => t['isDone'] == true).length;
+    if (_tasksList.isEmpty) {
+      return;
+    }
+
+    final completedCount = _tasksList.where((task) => task['isDone'] == true).length;
+    final newProgress = completedCount / _tasksList.length;
+
     setState(() {
-      _progress = completedCount / _tasksList.length;
-      if (_progress == 1.0) {
+      _progress = newProgress;
+      if (newProgress == 1) {
         _status = 'Hoàn thành';
-      } else if (_progress == 0.0) {
+      } else if (newProgress == 0) {
         _status = 'Chưa bắt đầu';
       } else {
         _status = 'Đang thực hiện';
       }
     });
+
+    _updateProgressOnBackend(newProgress);
   }
 
-  void _toggleTask(int index, bool? val) {
+  void _toggleTask(int index, bool? value) {
     if (!_isLeader) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Chỉ trưởng nhóm được tick hoàn thành (thành viên chỉ xem và trao đổi)!'),
+          content: Text('Chỉ trưởng nhóm mới có thể cập nhật công việc mốc thời gian.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -98,42 +181,94 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     }
 
     setState(() {
-      _tasksList[index]['isDone'] = val ?? false;
-      _recalculateProgress();
+      _tasksList[index]['isDone'] = value ?? false;
     });
+    _recalculateProgress();
   }
 
-  void _addEvidence() {
-    if (!_isLeader) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Chỉ trưởng nhóm được tải evidence lên (thành viên chỉ xem và trao đổi)!'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
+  Future<void> _addEvidence() async {
+    try {
+      final result = await FilePicker.pickFiles();
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+      final file = result.files.first;
+      final fileBytes = file.bytes;
+      final fileName = file.name;
+      
+      List<int>? bytes = fileBytes;
+      if (bytes == null && file.path != null) {
+        final fileIo = io.File(file.path!);
+        bytes = await fileIo.readAsBytes();
+      }
+
+      if (bytes == null) {
+        throw Exception('Không thể đọc file');
+      }
+
+      final milestoneId = (widget.milestone['id'] as num?)?.toInt() ?? 0;
+      if (milestoneId == 0) {
+        throw Exception('Mã mốc thời gian không hợp lệ');
+      }
+
+      bool showSpinner = false;
+      if (mounted) {
+        showSpinner = true;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      try {
+        final updatedList = await ProjectService().uploadMilestoneAttachment(
+          milestoneId,
+          bytes,
+          fileName,
+        );
+
+        if (showSpinner && mounted) {
+          Navigator.pop(context);
+          showSpinner = false;
+        }
+
+        setState(() {
+          _attachments = updatedList;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tải lên minh chứng thành công!'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Color(0xFF7EC07E),
+            ),
+          );
+        }
+      } finally {
+        if (showSpinner && mounted) {
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tải file thất bại: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
-
-    setState(() {
-      final index = _evidenceList.length + 1;
-      _evidenceList.add('minh_chung_milestone_$index.png');
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã tải minh chứng lên thành công!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF7EC07E),
-      ),
-    );
   }
 
   void _showDeleteConfirmation(int index) {
     if (!_isLeader) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Chỉ trưởng nhóm được xóa evidence!'),
+          content: Text('Chỉ trưởng nhóm mới có thể xóa minh chứng.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -143,69 +278,95 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text(
-            'Bạn có chắc chắn muốn xóa?',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa minh chứng?'),
+        content: const Text('Minh chứng này sẽ chỉ bị xóa trên giao diện hiện tại.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog, do nothing (Hủy)
-              },
-              child: const Text(
-                'Hủy',
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _evidenceList.removeAt(index);
-                });
-                Navigator.pop(context); // Close dialog (Xác nhận)
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Đã xóa minh chứng.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('Xác nhận', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _attachments.removeAt(index);
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
     );
   }
 
-  void _sendReply() {
+  Future<void> _sendReply() async {
     final text = _replyController.text.trim();
     if (text.isEmpty) return;
 
+    final milestoneId = (widget.milestone['id'] as num?)?.toInt() ?? 0;
+    if (milestoneId == 0) return;
+
+    final currentUser = AuthService().currentUser;
+    final senderName = currentUser?.fullName ?? currentUser?.username ?? 'Học viên';
+
+    final newComment = {
+      'sender': senderName,
+      'text': text,
+    };
+
     setState(() {
-      _comments.add({
-        'sender': 'Sinh viên',
-        'text': text,
-      });
+      _commentsList.add(newComment);
       _replyController.clear();
     });
+
+    final percent = (_progress * 100).toInt();
+    String backendStatus = 'NOT_STARTED';
+    if (percent == 100) {
+      backendStatus = 'COMPLETED';
+    } else if (percent > 0) {
+      backendStatus = 'IN_PROGRESS';
+    }
+
+    final descriptionPayload = jsonEncode({
+      'description': widget.milestone['description'] ?? '',
+      'tasks': _tasksList,
+      'comments': _commentsList,
+    });
+
+    try {
+      await ProjectService().updateMilestoneProgress(
+        milestoneId,
+        percent,
+        backendStatus,
+        description: descriptionPayload,
+      );
+    } catch (e) {
+      debugPrint('Failed to send comment: $e');
+    }
+  }
+
+  void _onBottomNavTapped(int index) {
+    Navigator.pop(context, index);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = _status == 'Hoàn thành';
+    final statusColor = _statusColor(_status);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.pop(context, {
+          'status': _status,
+          'progress': _progress,
+          'tasks': _tasksList,
+          'attachments': _attachments,
+        });
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -213,104 +374,52 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 18),
           onPressed: () {
-            // Return updated details back to Project screen
             Navigator.pop(context, {
               'status': _status,
               'progress': _progress,
               'tasks': _tasksList,
-              'evidenceList': _evidenceList,
-              'comments': _comments,
+              'attachments': _attachments,
             });
           },
         ),
         title: const Text(
-          'Chi tiết milestone',
+          'Chi tiết mốc thời gian',
           style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 18),
         ),
         centerTitle: true,
-        shape: Border(
-          bottom: BorderSide(
-            color: const Color(0xFF0F172A).withOpacity(0.06),
-            width: 1.2,
-          ),
-        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Simulation bar for changing member/leader role
             Container(
               color: const Color(0xFFEFF6FF),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.psychology_outlined, color: Colors.blueAccent, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Mô phỏng vai trò:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade900,
-                        ),
+                  const Icon(Icons.info_outline, color: Colors.blueAccent, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _isLeader
+                          ? 'Bạn là trưởng nhóm và có thể cập nhật tiến độ mốc thời gian.'
+                          : 'Bạn là thành viên, chỉ xem tiến độ và tài liệu đã nộp.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade900,
                       ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Trưởng nhóm'),
-                        selected: _isLeader,
-                        onSelected: (selected) {
-                          if (selected) setState(() => _isLeader = true);
-                        },
-                        selectedColor: Colors.blueAccent,
-                        backgroundColor: Colors.white,
-                        labelStyle: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _isLeader ? Colors.white : Colors.blueAccent,
-                        ),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        side: const BorderSide(color: Colors.blueAccent, width: 1),
-                        showCheckmark: false,
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: const Text('Thành viên'),
-                        selected: !_isLeader,
-                        onSelected: (selected) {
-                          if (selected) setState(() => _isLeader = false);
-                        },
-                        selectedColor: Colors.blueAccent,
-                        backgroundColor: Colors.white,
-                        labelStyle: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: !_isLeader ? Colors.white : Colors.blueAccent,
-                        ),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        side: const BorderSide(color: Colors.blueAccent, width: 1),
-                        showCheckmark: false,
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Milestone title and status row
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
@@ -327,7 +436,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                _dueDate.startsWith('Hạn') ? _dueDate : 'Hạn chót: $_dueDate',
+                                _dueDate,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: const Color(0xFF0F172A).withOpacity(0.5),
@@ -341,21 +450,13 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: isCompleted
-                                ? const Color(0xFF7EC07E).withOpacity(0.15)
-                                : _status == 'Chưa bắt đầu'
-                                    ? Colors.grey.withOpacity(0.12)
-                                    : Colors.amberAccent.withOpacity(0.15),
+                            color: statusColor.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             _status,
                             style: TextStyle(
-                              color: isCompleted
-                                  ? const Color(0xFF7EC07E)
-                                  : _status == 'Chưa bắt đầu'
-                                      ? Colors.grey.shade700
-                                      : Colors.amber.shade800,
+                              color: statusColor,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -364,8 +465,6 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Progress indicator
                     Row(
                       children: [
                         Expanded(
@@ -375,9 +474,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                               value: _progress,
                               minHeight: 6,
                               backgroundColor: const Color(0xFF0F172A).withOpacity(0.05),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                isCompleted ? const Color(0xFF7EC07E) : const Color(0xFFF59E0B),
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                             ),
                           ),
                         ),
@@ -393,8 +490,6 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       ],
                     ),
                     const SizedBox(height: 24),
-
-                    // Task checklist block
                     const Text(
                       'Danh sách công việc',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -408,38 +503,47 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.05)),
                       ),
-                      child: Column(
-                        children: List.generate(_tasksList.length, (index) {
-                          final task = _tasksList[index];
-                          return CheckboxListTile(
-                            title: Text(
-                              task['title'] ?? '',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: const Color(0xFF0F172A),
-                                decoration: task['isDone'] ? TextDecoration.lineThrough : null,
-                              ),
+                      child: _tasksList.isEmpty
+                          ? const Text(
+                              'Chưa có công việc chi tiết cho mốc thời gian này.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            )
+                          : Column(
+                              children: List.generate(_tasksList.length, (index) {
+                                final task = _tasksList[index];
+                                return CheckboxListTile(
+                                  title: Text(
+                                    task['title']?.toString() ?? '',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: const Color(0xFF0F172A),
+                                      decoration: task['isDone'] == true ? TextDecoration.lineThrough : null,
+                                    ),
+                                  ),
+                                  value: task['isDone'] == true,
+                                  onChanged: (value) => _toggleTask(index, value),
+                                  activeColor: const Color(0xFF7EC07E),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                                  controlAffinity: ListTileControlAffinity.trailing,
+                                );
+                              }),
                             ),
-                            value: task['isDone'] ?? false,
-                            onChanged: (val) => _toggleTask(index, val),
-                            activeColor: const Color(0xFF7EC07E),
-                            checkColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                            controlAffinity: ListTileControlAffinity.trailing,
-                          );
-                        }),
-                      ),
                     ),
                     const SizedBox(height: 24),
-
-                    // Evidence upload block
                     const Text(
-                      'Minh chứng (Evidence)',
+                      'Minh chứng',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 10),
-                    ...List.generate(_evidenceList.length, (index) {
-                      final item = _evidenceList[index];
+                    if (_attachments.isEmpty)
+                      const Text(
+                        'Chưa có minh chứng nào.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                    ...List.generate(_attachments.length, (index) {
+                      final attachment = _attachments[index];
+                      final fileName = attachment['originalFileName']?.toString() ??
+                          (attachment['fileName']?.toString() ?? 'tep_dinh_kem');
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -449,17 +553,14 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                           border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.05)),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.file_present, color: Color(0xFF7EC07E), size: 20),
-                                const SizedBox(width: 10),
-                                Text(
-                                  item,
-                                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-                                ),
-                              ],
+                            const Icon(Icons.file_present, color: Color(0xFF7EC07E), size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                fileName,
+                                style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                              ),
                             ),
                             if (_isLeader)
                               GestureDetector(
@@ -482,7 +583,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       onPressed: _addEvidence,
                       icon: const Icon(Icons.upload_file, size: 18, color: Color(0xFF7EC07E)),
                       label: const Text(
-                        'Button upload evidence',
+                        'Tải minh chứng',
                         style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -490,56 +591,74 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                         elevation: 0,
                         side: const BorderSide(color: Color(0xFF7EC07E), width: 1.2),
                         minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     const SizedBox(height: 28),
-
-                    // Teacher discussion block
                     const Text(
-                      'Trao đổi với giảng viên',
+                      'Trao đổi',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 12),
-                    ..._comments.map((comment) {
-                      final isTeacher = comment['sender'] == 'Giáo viên';
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isTeacher ? const Color(0xFFF1F5F9) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isTeacher ? Colors.transparent : const Color(0xFF0F172A).withOpacity(0.05),
-                          ),
+                    if (_commentsList.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(
+                          'Chưa có thảo luận nào.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isTeacher ? 'Hiển thị cmt của giảng viên' : 'Hiển thị câu trả lời của sinh viên',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isTeacher ? const Color(0xFF475569) : const Color(0xFF7EC07E),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              comment['text'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF0F172A),
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 12),
+                      )
+                    else
+                      ..._commentsList.map((comment) {
+                        final sender = comment['sender']?.toString() ?? '';
+                        final text = comment['text']?.toString() ?? '';
+                        final isMe = sender != 'Giáo viên';
 
-                    // Reply Input field
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          alignment: isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: isMe
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF0F172A).withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Text(
+                                  text,
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: Text(
+                                  sender,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
@@ -552,10 +671,8 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                           Expanded(
                             child: TextField(
                               controller: _replyController,
-                              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
-                              decoration: InputDecoration(
-                                hintText: 'Nhập câu trả lời',
-                                hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3)),
+                              decoration: const InputDecoration(
+                                hintText: 'Nhập nội dung',
                                 border: InputBorder.none,
                               ),
                               onSubmitted: (_) => _sendReply(),
@@ -575,53 +692,22 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: const Color(0xFF0F172A).withOpacity(0.06),
-              width: 1.2,
-            ),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 2, // Active under Projects tab navigation flow
-          onTap: _onBottomNavTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFFFFFFFF),
-          selectedItemColor: const Color(0xFF7EC07E),
-          unselectedItemColor: const Color(0xFF0F172A).withOpacity(0.4),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Trang chủ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.school_outlined),
-              activeIcon: Icon(Icons.school),
-              label: 'Lớp học',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group_work_outlined),
-              activeIcon: Icon(Icons.group_work),
-              label: 'Dự án',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Thông báo',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Cá nhân',
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 2,
+        onTap: _onBottomNavTapped,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFFFFFFFF),
+        selectedItemColor: const Color(0xFF7EC07E),
+        unselectedItemColor: const Color(0xFF0F172A).withOpacity(0.4),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chủ'),
+          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lớp học'),
+          BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Dự án'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thông báo'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Cá nhân'),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
