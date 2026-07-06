@@ -103,6 +103,39 @@ class ApiService {
     return _handleResponse(response, 'POST (Multipart)', path);
   }
 
+  Future<http.Response> putMultipart(
+    String path,
+    Map<String, String> fields,
+    String fileKey,
+    List<int>? fileBytes,
+    String? fileName,
+  ) async {
+    final url = Uri.parse('$baseUrl$path');
+    final request = http.MultipartRequest('PUT', url);
+
+    final headers = _getHeaders();
+    headers.forEach((key, value) {
+      if (key != 'Content-Type') {
+        request.headers[key] = value;
+      }
+    });
+
+    request.fields.addAll(fields);
+
+    if (fileBytes != null && fileName != null) {
+      final multipartFile = http.MultipartFile.fromBytes(
+        fileKey,
+        fileBytes,
+        filename: fileName,
+      );
+      request.files.add(multipartFile);
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response, 'PUT (Multipart)', path);
+  }
+
   http.Response _handleResponse(
     http.Response response,
     String method,

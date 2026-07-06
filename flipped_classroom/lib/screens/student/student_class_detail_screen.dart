@@ -105,10 +105,10 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
           'title': activity['title'] ?? '',
           'type': (activity['activityType'] == 'PRE_CLASS' ||
                   activity['activityType'] == 'BEFORE_CLASS')
-              ? 'Truoc buoi hoc'
-              : 'Trong buoi hoc',
-          'deadline': 'Han: ${_formatDate(activity['dueAt'])}',
-          'status': isDone ? 'Da lam' : 'Chua lam',
+              ? 'Trước buổi học'
+              : 'Trong buổi học',
+          'deadline': 'Hạn: ${_formatDate(activity['dueAt'])}',
+          'status': isDone ? 'Đã làm' : 'Chưa làm',
           'description': activity['description'] ?? '',
           'maxScore': activity['maxScore'],
           'activityWorkflowStatus': activity['status']?.toString() ?? '',
@@ -132,7 +132,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
           'originalFileName': material['originalFileName'] ?? '',
           'type': type,
           'size': _formatBytes(material['sizeBytes']),
-          'date': 'Dang ngay: ${_formatDate(material['publishedAt'])}',
+          'date': 'Đăng ngày: ${_formatDate(material['publishedAt'])}',
           'fileUrl': material['fileUrl'] ?? '',
         };
       }).toList();
@@ -148,13 +148,13 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
             milestones = rawMilestones.map<Map<String, dynamic>>((milestone) {
               final status = milestone['status']?.toString() ?? 'NOT_STARTED';
               Color color = Colors.grey;
-              String displayStatus = 'Chua bat dau';
+              String displayStatus = 'Chưa bắt đầu';
               if (status == 'COMPLETED') {
                 color = Colors.greenAccent;
-                displayStatus = 'Hoan thanh';
+                displayStatus = 'Hoàn thành';
               } else if (status == 'IN_PROGRESS') {
                 color = Colors.amberAccent;
-                displayStatus = 'Dang thuc hien';
+                displayStatus = 'Đang thực hiện';
               }
 
               return {
@@ -162,7 +162,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                 'title': milestone['title'] ?? '',
                 'description': milestone['description'] ?? '',
                 'dueAt': milestone['dueAt'],
-                'dueDate': 'Han chot: ${_formatDate(milestone['dueAt'])}',
+                'dueDate': 'Hạn chót: ${_formatDate(milestone['dueAt'])}',
                 'progress': ((milestone['progressPercent'] ?? 0) as num).toDouble() / 100.0,
                 'progressPercent': milestone['progressPercent'] ?? 0,
                 'status': displayStatus,
@@ -180,7 +180,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
             final isLeader = member['id'] == leader?['id'];
             return {
               'name': member['fullName'] ?? member['userName'] ?? '',
-              'role': isLeader ? 'Truong nhom' : 'Thanh vien',
+              'role': isLeader ? 'Trưởng nhóm' : 'Thành viên',
             };
           }).toList();
 
@@ -251,11 +251,11 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
               child: Row(
                 children: [
-                  Expanded(child: _buildTabButton(0, 'hoat dong')),
+                  Expanded(child: _buildTabButton(0, 'Hoạt động')),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildTabButton(1, 'tai lieu')),
+                  Expanded(child: _buildTabButton(1, 'Tài liệu')),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildTabButton(2, 'du an')),
+                  Expanded(child: _buildTabButton(2, 'Dự án')),
                 ],
               ),
             ),
@@ -285,11 +285,11 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
         selectedItemColor: const Color(0xFF7EC07E),
         unselectedItemColor: const Color(0xFF0F172A).withOpacity(0.4),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chu'),
-          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lop hoc'),
-          BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Du an'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thong bao'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Ca nhan'),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chủ'),
+          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lớp học'),
+          BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Dự án'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thông báo'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Cá nhân'),
         ],
       ),
     );
@@ -326,9 +326,9 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
       child: Row(
         children: [
-          _buildSubFilterButton(0, 'Truoc buoi hoc'),
+          _buildSubFilterButton(0, 'Trước buổi học'),
           const SizedBox(width: 12),
-          _buildSubFilterButton(1, 'Trong buoi hoc'),
+          _buildSubFilterButton(1, 'Trong buổi học'),
         ],
       ),
     );
@@ -357,12 +357,12 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
   }
 
   Widget _buildActivitiesContent() {
-    final subFilterType = _activeSubFilter == 0 ? 'Truoc buoi hoc' : 'Trong buoi hoc';
+    final subFilterType = _activeSubFilter == 0 ? 'Trước buổi học' : 'Trong buổi học';
     final filteredList = _activities.where((activity) => activity['type'] == subFilterType).toList();
 
     if (filteredList.isEmpty) {
       return const Center(
-        child: Text('Khong co hoat dong nao!', style: TextStyle(color: Colors.grey)),
+        child: Text('Không có hoạt động nào!', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -371,7 +371,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
       itemCount: filteredList.length,
       itemBuilder: (context, index) {
         final activity = filteredList[index];
-        final isDone = activity['status'] == 'Da lam';
+        final isDone = activity['status'] == 'Đã làm';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Container(
@@ -420,7 +420,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            activity['status'] ?? 'Chua lam',
+                            activity['status'] ?? 'Chưa làm',
                             style: TextStyle(
                               color: isDone ? const Color(0xFF7EC07E) : Colors.redAccent,
                               fontSize: 11,
@@ -471,7 +471,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
   Widget _buildMaterialsContent() {
     if (_materials.isEmpty) {
       return const Center(
-        child: Text('Khong co tai lieu nao!', style: TextStyle(color: Colors.grey)),
+        child: Text('Không có tài liệu nào!', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -546,7 +546,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                 if (url.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Tai lieu khong co duong dan tai.'),
+                      content: Text('Tài liệu không có đường dẫn tải.'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -570,7 +570,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
         child: Padding(
           padding: EdgeInsets.all(32),
           child: Text(
-            'Ban chua tham gia nhom du an nao trong lop hoc nay.',
+            'Bạn chưa tham gia nhóm dự án nào trong lớp học này.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
           ),
@@ -643,7 +643,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Thanh vien:',
+                    'Thành viên:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -702,7 +702,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
           },
           icon: const Icon(Icons.rate_review, color: Colors.white, size: 18),
           label: const Text(
-            'Danh gia cheo nhom khac',
+            'Đánh giá chéo nhóm khác',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           style: ElevatedButton.styleFrom(
@@ -712,7 +712,7 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
         ),
         const SizedBox(height: 24),
         const Text(
-          'Moc danh gia du an',
+          'Mốc đánh giá dự án',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
         const SizedBox(height: 12),

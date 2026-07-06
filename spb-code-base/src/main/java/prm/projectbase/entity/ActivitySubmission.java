@@ -47,4 +47,7 @@ public class ActivitySubmission extends BaseEntity {
 
     @Column(name = "teacher_feedback", length = 4000)
     String teacherFeedback;
+
+    @Column(name = "content", columnDefinition = "TEXT")
+    String content;
 }

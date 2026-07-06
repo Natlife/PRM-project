@@ -64,7 +64,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
           child: Padding(
             padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 8),
             child: Text(
-              'Danh sach lop hoc',
+              'Danh sách lớp học',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
           ),
@@ -80,7 +80,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
                 });
               },
               decoration: InputDecoration(
-                hintText: 'Tim kiem lop hoc...',
+                hintText: 'Tìm kiếm lớp học...',
                 hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
                 prefixIcon: Icon(Icons.search, color: const Color(0xFF0F172A).withOpacity(0.4), size: 20),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -119,7 +119,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
               padding: EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: Text(
-                  'Khong tim thay lop hoc nao!',
+                  'Không tìm thấy lớp học nào!',
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
@@ -203,7 +203,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '${item['studentCount'] ?? 0} sinh vien',
+                                      '${item['studentCount'] ?? 0} sinh viên',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: const Color(0xFF0F172A).withOpacity(0.4),
@@ -232,7 +232,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
               onPressed: widget.onJoinClassPressed,
               icon: const Icon(Icons.qr_code, color: Color(0xFF7EC07E)),
               label: const Text(
-                'Quet ma tham gia lop hoc moi',
+                'Quét mã tham gia lớp học mới',
                 style: TextStyle(color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(

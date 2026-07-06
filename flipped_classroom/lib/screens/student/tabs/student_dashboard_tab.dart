@@ -69,7 +69,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
           'maxScore': activity['maxScore'],
           'activityWorkflowStatus': activity['status']?.toString() ?? '',
           'submissionStatus': submissionStatus,
-          'status': isDone ? 'Da lam' : 'Chua lam',
+          'status': isDone ? 'Đã làm' : 'Chưa làm',
           'submissionId': submission['id'],
           'submissionTime': submission['submittedAt']?.toString(),
           'attachmentCount': submission['attachmentCount'] ?? 0,
@@ -115,24 +115,24 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
   String _mapActivityType(dynamic value) {
     final type = value?.toString() ?? '';
     if (type == 'PRE_CLASS' || type == 'BEFORE_CLASS') {
-      return 'Truoc buoi hoc';
+      return 'Trước buổi học';
     }
-    return 'Trong buoi hoc';
+    return 'Trong buổi học';
   }
 
   String _mapActivityStatus(dynamic value) {
     final status = value?.toString() ?? '';
     if (status == 'SUBMITTED' || status == 'LATE_SUBMITTED' || status == 'GRADED') {
-      return 'Da lam';
+      return 'Đã làm';
     }
-    return 'Chua lam';
+    return 'Chưa làm';
   }
 
   String _formatDueAt(dynamic value) {
     if (value == null) {
-      return 'Khong co han';
+      return 'Không có hạn';
     }
-    return 'Han: ${value.toString().split('T').join(' ')}';
+    return 'Hạn: ${value.toString().split('T').join(' ')}';
   }
 
   @override
@@ -171,7 +171,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Xin chao, ${user?.fullName ?? "Sinh vien"}!',
+                        'Xin chào, ${user?.fullName ?? "Sinh viên"}!',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -180,7 +180,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Ban co $pendingCount deadline can xu ly',
+                        'Bạn có $pendingCount deadline cần xử lý',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.redAccent,
@@ -200,7 +200,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                 onPressed: widget.onJoinClassPressed,
                 icon: const Icon(Icons.add, color: Colors.white, size: 20),
                 label: const Text(
-                  'Tham gia lop hoc',
+                  'Tham gia lớp học',
                   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -223,7 +223,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                   Row(
                     children: [
                       const Text(
-                        'Deadline sap toi',
+                        'Deadline sắp tới',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -261,7 +261,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                       }
                     },
                     child: const Text(
-                      'Xem tat ca',
+                      'Xem tất cả',
                       style: TextStyle(
                         color: Color(0xFF7EC07E),
                         fontWeight: FontWeight.bold,
@@ -292,7 +292,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                     padding: EdgeInsets.all(16),
                     child: Center(
                       child: Text(
-                        'Khong co deadline nao sap toi',
+                        'Không có deadline nào sắp tới',
                         style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -423,7 +423,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Lop hoc cua ban',
+                    'Lớp học của bạn',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -433,7 +433,7 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
                   TextButton(
                     onPressed: () => widget.onTabTapped(1),
                     child: const Text(
-                      'Xem tat ca',
+                      'Xem tất cả',
                       style: TextStyle(
                         color: Color(0xFF7EC07E),
                         fontWeight: FontWeight.bold,

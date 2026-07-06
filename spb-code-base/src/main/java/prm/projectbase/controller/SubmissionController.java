@@ -28,7 +28,7 @@ public class SubmissionController {
     @PutMapping("/student/activities/{activityId}/submission")
     public ResponseEntity<BaseResponse<SubmissionDetailResponse>> updateSubmission(
             @PathVariable Long activityId,
-            @Valid @RequestBody SubmissionUpdateRequest request) {
+            @Valid @ModelAttribute SubmissionUpdateRequest request) {
         
         log.info("PUT /student/activities/{}/submission - Updating submission", activityId);
         

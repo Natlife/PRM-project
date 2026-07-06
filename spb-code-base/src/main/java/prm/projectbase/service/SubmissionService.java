@@ -78,6 +78,7 @@ public class SubmissionService {
         }
 
         submission.setStatus(SubmissionWorkflowStatus.DRAFT);
+        submission.setContent(request.getContent());
         
         ActivitySubmission saved = submissionRepository.save(submission);
         log.info("Submission {} saved", saved.getId());
@@ -132,7 +133,6 @@ public class SubmissionService {
         return toDetailResponse(saved);
     }
 
-    @Transactional(readOnly = true)
     public SubmissionDetailResponse getStudentSubmission(Long activityId) {
         log.info("Fetching student submission for activity {}", activityId);
         
@@ -146,12 +146,12 @@ public class SubmissionService {
                 .orElse(null);
         
         if (submission == null) {
-            
             submission = ActivitySubmission.builder()
                     .activity(activity)
                     .student(student)
                     .status(SubmissionWorkflowStatus.NOT_SUBMITTED)
                     .build();
+            submission = submissionRepository.save(submission);
         }
         
         return toDetailResponse(submission);
@@ -280,7 +280,9 @@ public class SubmissionService {
     }
 
     private SubmissionDetailResponse toDetailResponse(ActivitySubmission submission) {
-        List<SubmissionAttachment> attachments = attachmentRepository.findBySubmissionId(submission.getId());
+        List<SubmissionAttachment> attachments = submission.getId() != null
+                ? attachmentRepository.findBySubmissionId(submission.getId())
+                : new java.util.ArrayList<>();
         
         return SubmissionDetailResponse.builder()
                 .id(submission.getId())
@@ -291,8 +293,9 @@ public class SubmissionService {
                 .status(submission.getStatus().name())
                 .score(submission.getScore())
                 .teacherFeedback(submission.getTeacherFeedback())
+                .content(submission.getContent())
                 .attachmentCount((long) attachments.size())
-                .commentCount(commentRepository.countBySubmissionId(submission.getId()))
+                .commentCount(submission.getId() != null ? commentRepository.countBySubmissionId(submission.getId()) : 0L)
                 .createdAt(submission.getCreatedAt())
                 .updatedAt(submission.getUpdatedAt())
                 .build();
@@ -306,6 +309,7 @@ public class SubmissionService {
                 .status(submission.getStatus().name())
                 .submittedAt(submission.getSubmittedAt())
                 .score(submission.getScore())
+                .teacherFeedback(submission.getTeacherFeedback())
                 .build();
     }
     

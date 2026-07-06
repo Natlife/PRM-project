@@ -56,7 +56,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
 
         loadedGroups.add({
           'id': groupId,
-          'name': target['groupName'] ?? 'Nhom',
+          'name': target['groupName'] ?? 'Nhóm',
           'projectName': target['projectName'] ?? '',
           'memberCount': (target['memberCount'] as num?)?.toInt() ?? 0,
           'scoreCode': (review?['codeQualityScore'] as num?)?.toDouble() ?? 0.0,
@@ -84,7 +84,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Khong tai duoc danh sach danh gia cheo: $e'),
+          content: Text('Không tải được danh sách đánh giá chéo: $e'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -119,7 +119,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
               ),
             ),
             Text(
-              currentScore == 0.0 ? 'Chua cham' : '${currentScore.toStringAsFixed(1)} / 5.0',
+              currentScore == 0.0 ? 'Chưa chấm' : '${currentScore.toStringAsFixed(1)} / 5.0',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
@@ -162,7 +162,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
         group['scorePresentation'] == 0.0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui long danh gia du 4 tieu chi sao!'),
+          content: Text('Vui lòng đánh giá đủ 4 tiêu chí sao!'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -191,7 +191,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Da gui danh gia cheo cho ${group['name']} thanh cong!'),
+          content: Text('Đã gửi đánh giá chéo cho ${group['name']} thành công!'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF7EC07E),
         ),
@@ -202,7 +202,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gui danh gia that bai: $e'),
+          content: Text('Gửi đánh giá thất bại: $e'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -231,7 +231,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
           },
         ),
         title: Text(
-          _selectedGroupIndex != null ? 'Danh gia chi tiet' : 'Danh gia cheo - ${widget.classCode}',
+          _selectedGroupIndex != null ? 'Đánh giá chi tiết' : 'Đánh giá chéo - ${widget.classCode}',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
@@ -258,7 +258,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            'Hien tai khong co nhom nao de danh gia cheo.',
+            'Hiện tại không có nhóm nào để đánh giá chéo.',
             style: TextStyle(color: Color(0xFF64748B)),
             textAlign: TextAlign.center,
           ),
@@ -336,7 +336,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                                 ),
                                 if (isSubmitted)
                                   const Text(
-                                    'Da danh gia',
+                                    'Đã đánh giá',
                                     style: TextStyle(
                                       color: Color(0xFF7EC07E),
                                       fontSize: 11,
@@ -357,8 +357,8 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                             const SizedBox(height: 4),
                             Text(
                               memberCount > 0
-                                  ? 'So thanh vien: $memberCount'
-                                  : 'Backend khong tra chi tiet thanh vien o man nay',
+                                  ? 'Số thành viên: $memberCount'
+                                  : 'Backend không trả chi tiết thành viên ở màn này',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: const Color(0xFF0F172A).withOpacity(0.4),
@@ -419,7 +419,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Thanh vien:',
+                  'Thành viên:',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -429,8 +429,8 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                 const SizedBox(height: 4),
                 Text(
                   memberCount > 0
-                      ? '$memberCount thanh vien'
-                      : 'Backend khong tra chi tiet thanh vien cho nhom nay.',
+                      ? '$memberCount thành viên'
+                      : 'Backend không trả chi tiết thành viên cho nhóm này.',
                   style: TextStyle(
                     color: const Color(0xFF0F172A).withOpacity(0.6),
                     fontSize: 13,
@@ -441,7 +441,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'Cham diem va nhan xet',
+            'Chấm điểm và nhận xét',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -450,27 +450,27 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
           ),
           const SizedBox(height: 16),
           _buildStarRating(
-            'Chat luong ma nguon',
+            'Chất lượng mã nguồn',
             group['scoreCode'],
             isSubmitted ? (_) {} : (val) => setState(() => group['scoreCode'] = val),
           ),
           _buildStarRating(
-            'Giao dien va trai nghiem',
+            'Giao diện và trải nghiệm',
             group['scoreUI'],
             isSubmitted ? (_) {} : (val) => setState(() => group['scoreUI'] = val),
           ),
           _buildStarRating(
-            'Tinh nang ung dung',
+            'Tính năng ứng dụng',
             group['scoreFeature'],
             isSubmitted ? (_) {} : (val) => setState(() => group['scoreFeature'] = val),
           ),
           _buildStarRating(
-            'Thuyet trinh va slide',
+            'Thuyết trình và slide',
             group['scorePresentation'],
             isSubmitted ? (_) {} : (val) => setState(() => group['scorePresentation'] = val),
           ),
           const Text(
-            'Nhan xet chi tiet:',
+            'Nhận xét chi tiết:',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
@@ -491,7 +491,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
               maxLines: 4,
               style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
               decoration: const InputDecoration(
-                hintText: 'Nhap nhan xet chi tiet cho nhom...',
+                hintText: 'Nhập nhận xét chi tiết cho nhóm...',
                 border: InputBorder.none,
               ),
             ),
@@ -506,7 +506,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: const Text(
-                'Gui danh gia',
+                'Gửi đánh giá',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -525,7 +525,7 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
               ),
               child: const Center(
                 child: Text(
-                  'Ban da hoan thanh danh gia cheo cho nhom nay.',
+                  'Bạn đã hoàn thành đánh giá chéo cho nhóm này.',
                   style: TextStyle(
                     color: Color(0xFF7EC07E),
                     fontWeight: FontWeight.bold,

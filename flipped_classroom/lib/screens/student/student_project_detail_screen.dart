@@ -50,7 +50,7 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Chi tiet du an',
+          'Chi tiết dự án',
           style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 18),
         ),
         centerTitle: true,
@@ -110,6 +110,72 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                 ),
               ],
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Số lượng thành viên',
+                            style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            membersList.length.toString(),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Thành viên',
+                            style: TextStyle(fontSize: 10, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Hạn nộp',
+                            style: TextStyle(fontSize: 11, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            widget.project['date']?.toString().isNotEmpty == true
+                                ? widget.project['date'].toString()
+                                : 'Không có',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Hạn dự án',
+                            style: TextStyle(fontSize: 10, color: const Color(0xFF0F172A).withOpacity(0.3)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
@@ -122,7 +188,7 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Thanh vien (${membersList.length})',
+                      'Thành viên (${membersList.length})',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -132,7 +198,7 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
                     const SizedBox(height: 12),
                     if (membersList.isEmpty)
                       Text(
-                        'Chua co du lieu thanh vien tu backend.',
+                        'Chưa có dữ liệu thành viên.',
                         style: TextStyle(
                           fontSize: 13,
                           color: const Color(0xFF0F172A).withOpacity(0.5),
@@ -166,7 +232,7 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
               ),
               const SizedBox(height: 24),
               const Text(
-                'Milestone',
+                'Mốc thời gian',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -176,29 +242,29 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
               const SizedBox(height: 12),
               ..._milestones.map((milestone) {
                 final statusRaw = milestone['status']?.toString() ?? 'NOT_STARTED';
-                String displayStatus = 'Chua bat dau';
+                String displayStatus = 'Chưa bắt đầu';
                 Color statusColor = Colors.grey;
-                if (statusRaw == 'COMPLETED' || statusRaw == 'Hoan thanh') {
-                  displayStatus = 'Hoan thanh';
+                if (statusRaw == 'COMPLETED' || statusRaw == 'Hoàn thành') {
+                  displayStatus = 'Hoàn thành';
                   statusColor = const Color(0xFF7EC07E);
-                } else if (statusRaw == 'IN_PROGRESS' || statusRaw == 'Dang thuc hien') {
-                  displayStatus = 'Dang thuc hien';
+                } else if (statusRaw == 'IN_PROGRESS' || statusRaw == 'Đang thực hiện') {
+                  displayStatus = 'Đang thực hiện';
                   statusColor = Colors.amberAccent;
-                } else if (statusRaw == 'OVERDUE' || statusRaw == 'Qua han') {
-                  displayStatus = 'Qua han';
+                } else if (statusRaw == 'OVERDUE' || statusRaw == 'Quá hạn') {
+                  displayStatus = 'Quá hạn';
                   statusColor = Colors.redAccent;
                 }
 
                 final dueAtStr = milestone['dueAt']?.toString() ?? milestone['dueDate']?.toString() ?? '';
                 String formattedDue = '';
                 if (dueAtStr.isNotEmpty) {
-                  if (dueAtStr.contains('Han:')) {
+                  if (dueAtStr.contains('Hạn:')) {
                     formattedDue = dueAtStr;
                   } else {
                     try {
                       final dt = DateTime.parse(dueAtStr);
                       formattedDue =
-                          'Han: ${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+                          'Hạn: ${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
                     } catch (_) {
                       formattedDue = dueAtStr;
                     }
@@ -308,11 +374,11 @@ class _StudentProjectDetailScreenState extends State<StudentProjectDetailScreen>
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chu'),
-            BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lop hoc'),
-            BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Du an'),
-            BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thong bao'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Ca nhan'),
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chủ'),
+            BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lớp học'),
+            BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Dự án'),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thông báo'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Cá nhân'),
           ],
         ),
       ),

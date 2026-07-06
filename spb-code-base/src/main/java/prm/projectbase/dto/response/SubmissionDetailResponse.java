@@ -29,6 +29,8 @@ public class SubmissionDetailResponse {
     
     private String teacherFeedback;
     
+    private String content;
+    
     private Long attachmentCount;
     
     private Long commentCount;

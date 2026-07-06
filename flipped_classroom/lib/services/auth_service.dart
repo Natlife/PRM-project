@@ -12,6 +12,7 @@ class UserModel {
   UserRole role;
   String avatarUrl;
   String id; // Student ID or Teacher ID
+  int dbId; // Database ID
 
   UserModel({
     required this.username,
@@ -21,6 +22,7 @@ class UserModel {
     required this.role,
     this.avatarUrl = '',
     required this.id,
+    required this.dbId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class UserModel {
       role: role,
       avatarUrl: json['avatarUrl'] ?? '',
       id: json['institutionalId'] ?? (json['id']?.toString() ?? ''),
+      dbId: (json['id'] as num?)?.toInt() ?? 0,
     );
   }
 }

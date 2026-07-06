@@ -246,7 +246,7 @@ class _EditMilestoneScreenState extends State<EditMilestoneScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _selectedStatus,
+                value: _selectedStatus,
                 dropdownColor: const Color(0xFFFFFFFF),
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(

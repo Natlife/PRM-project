@@ -24,4 +24,6 @@ public class SubmissionListResponse {
     private LocalDateTime submittedAt;
     
     private BigDecimal score;
+    
+    private String teacherFeedback;
 }

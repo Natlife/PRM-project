@@ -62,15 +62,15 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
 
   String _buildDueDate(dynamic raw) {
     if (raw == null) {
-      return 'Khong co thoi han';
+      return 'Không có thời hạn';
     }
     final value = raw.toString();
-    if (value.contains('Han')) {
+    if (value.contains('Hạn')) {
       return value;
     }
     try {
       final dt = DateTime.parse(value);
-      return 'Han: ${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+      return 'Hạn: ${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
     } catch (_) {
       return value;
     }
@@ -78,16 +78,16 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
 
   String _normalizeStatus(dynamic raw) {
     final value = raw?.toString() ?? 'NOT_STARTED';
-    if (value == 'COMPLETED' || value == 'Hoan thanh') {
-      return 'Hoan thanh';
+    if (value == 'COMPLETED' || value == 'Hoàn thành') {
+      return 'Hoàn thành';
     }
-    if (value == 'IN_PROGRESS' || value == 'Dang thuc hien') {
-      return 'Dang thuc hien';
+    if (value == 'IN_PROGRESS' || value == 'Đang thực hiện') {
+      return 'Đang thực hiện';
     }
-    if (value == 'OVERDUE' || value == 'Qua han') {
-      return 'Qua han';
+    if (value == 'OVERDUE' || value == 'Quá hạn') {
+      return 'Quá hạn';
     }
-    return 'Chua bat dau';
+    return 'Chưa bắt đầu';
   }
 
   double _normalizeProgress(dynamic raw) {
@@ -103,11 +103,11 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'Hoan thanh':
+      case 'Hoàn thành':
         return const Color(0xFF7EC07E);
-      case 'Dang thuc hien':
+      case 'Đang thực hiện':
         return const Color(0xFFF59E0B);
-      case 'Qua han':
+      case 'Quá hạn':
         return Colors.redAccent;
       default:
         return Colors.grey;
@@ -157,11 +157,11 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     setState(() {
       _progress = newProgress;
       if (newProgress == 1) {
-        _status = 'Hoan thanh';
+        _status = 'Hoàn thành';
       } else if (newProgress == 0) {
-        _status = 'Chua bat dau';
+        _status = 'Chưa bắt đầu';
       } else {
-        _status = 'Dang thuc hien';
+        _status = 'Đang thực hiện';
       }
     });
 
@@ -172,7 +172,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     if (!_isLeader) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Chi truong nhom moi co the cap nhat task milestone.'),
+          content: Text('Chỉ trưởng nhóm mới có thể cập nhật công việc mốc thời gian.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -268,7 +268,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     if (!_isLeader) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Chi truong nhom moi co the xoa minh chung.'),
+          content: Text('Chỉ trưởng nhóm mới có thể xóa minh chứng.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -279,12 +279,12 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xoa minh chung?'),
-        content: const Text('Minh chung nay se chi bi xoa tren UI hien tai.'),
+        title: const Text('Xóa minh chứng?'),
+        content: const Text('Minh chứng này sẽ chỉ bị xóa trên giao diện hiện tại.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Huy'),
+            child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () {
@@ -293,7 +293,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
               });
               Navigator.pop(context);
             },
-            child: const Text('Xoa'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -383,7 +383,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
           },
         ),
         title: const Text(
-          'Chi tiet milestone',
+          'Chi tiết mốc thời gian',
           style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 18),
         ),
         centerTitle: true,
@@ -401,8 +401,8 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                   Expanded(
                     child: Text(
                       _isLeader
-                          ? 'Ban la truong nhom va co the cap nhat tien do milestone.'
-                          : 'Ban la thanh vien, chi xem tien do va tai lieu da nop.',
+                          ? 'Bạn là trưởng nhóm và có thể cập nhật tiến độ mốc thời gian.'
+                          : 'Bạn là thành viên, chỉ xem tiến độ và tài liệu đã nộp.',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -491,7 +491,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Danh sach cong viec',
+                      'Danh sách công việc',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 10),
@@ -505,7 +505,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       ),
                       child: _tasksList.isEmpty
                           ? const Text(
-                              'Chua co task chi tiet cho milestone nay.',
+                              'Chưa có công việc chi tiết cho mốc thời gian này.',
                               style: TextStyle(fontSize: 13, color: Colors.grey),
                             )
                           : Column(
@@ -531,13 +531,13 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Minh chung',
+                      'Minh chứng',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 10),
                     if (_attachments.isEmpty)
                       const Text(
-                        'Chua co minh chung nao tu backend.',
+                        'Chưa có minh chứng nào.',
                         style: TextStyle(fontSize: 13, color: Colors.grey),
                       ),
                     ...List.generate(_attachments.length, (index) {
@@ -583,7 +583,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       onPressed: _addEvidence,
                       icon: const Icon(Icons.upload_file, size: 18, color: Color(0xFF7EC07E)),
                       label: const Text(
-                        'Tai minh chung',
+                        'Tải minh chứng',
                         style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -595,7 +595,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                     ),
                     const SizedBox(height: 28),
                     const Text(
-                      'Trao doi',
+                      'Trao đổi',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                     const SizedBox(height: 12),
@@ -603,7 +603,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
-                          'Chua co thao luan nao.',
+                          'Chưa có thảo luận nào.',
                           style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                       )
@@ -613,41 +613,48 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                         final text = comment['text']?.toString() ?? '';
                         final isMe = sender != 'Giáo viên';
 
-                        return Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isMe ? const Color(0xFFE0F2FE) : const Color(0xFFFFFFFF),
-                              borderRadius: BorderRadius.only(
-                                topLeft: const Radius.circular(14),
-                                topRight: const Radius.circular(14),
-                                bottomLeft: isMe ? const Radius.circular(14) : Radius.zero,
-                                bottomRight: isMe ? Radius.zero : const Radius.circular(14),
-                              ),
-                              border: Border.all(
-                                color: const Color(0xFF0F172A).withOpacity(0.05),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  sender,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: isMe ? Colors.blue.shade900 : Colors.grey.shade600,
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          alignment: isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: isMe
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF0F172A).withOpacity(0.1),
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
+                                child: Text(
                                   text,
-                                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontSize: 13,
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: Text(
+                                  sender,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }),
@@ -665,7 +672,7 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
                             child: TextField(
                               controller: _replyController,
                               decoration: const InputDecoration(
-                                hintText: 'Nhap noi dung',
+                                hintText: 'Nhập nội dung',
                                 border: InputBorder.none,
                               ),
                               onSubmitted: (_) => _sendReply(),
@@ -693,11 +700,11 @@ class _StudentMilestoneDetailScreenState extends State<StudentMilestoneDetailScr
         selectedItemColor: const Color(0xFF7EC07E),
         unselectedItemColor: const Color(0xFF0F172A).withOpacity(0.4),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chu'),
-          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lop hoc'),
-          BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Du an'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thong bao'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Ca nhan'),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Trang chủ'),
+          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Lớp học'),
+          BottomNavigationBarItem(icon: Icon(Icons.group_work_outlined), label: 'Dự án'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_outlined), label: 'Thông báo'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Cá nhân'),
         ],
       ),
     ),

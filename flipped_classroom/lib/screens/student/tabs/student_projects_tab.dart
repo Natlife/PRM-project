@@ -87,12 +87,29 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
         }
 
         double progress = 0;
+        String projectDeadline = '';
         if (milestones.isNotEmpty) {
           final totalPercent = milestones.fold<int>(
             0,
             (sum, item) => sum + (((item['progressPercent'] as num?) ?? 0).toInt()),
           );
           progress = (totalPercent / milestones.length) / 100.0;
+
+          DateTime? latestDate;
+          for (final m in milestones) {
+            final dueAtStr = m['dueAt']?.toString() ?? m['dueDate']?.toString() ?? '';
+            if (dueAtStr.isNotEmpty) {
+              try {
+                final dt = DateTime.parse(dueAtStr);
+                if (latestDate == null || dt.isAfter(latestDate)) {
+                  latestDate = dt;
+                }
+              } catch (_) {}
+            }
+          }
+          if (latestDate != null) {
+            projectDeadline = '${latestDate.day.toString().padLeft(2, '0')}/${latestDate.month.toString().padLeft(2, '0')}/${latestDate.year}';
+          }
         }
 
         loadedProjects.add({
@@ -112,6 +129,7 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
           'status': status,
           'progress': progress,
           'milestones': milestones,
+          'date': projectDeadline,
         });
       }
 
@@ -142,7 +160,7 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: const Text(
-          'Tat ca du an',
+          'Tất cả dự án',
           style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 18),
         ),
         centerTitle: true,
@@ -255,7 +273,7 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
                                           ),
                                           const SizedBox(width: 12),
                                           Text(
-                                            '${project['membersCount'] ?? 0} thanh vien',
+                                            '${project['membersCount'] ?? 0} thành viên',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: const Color(0xFF0F172A).withOpacity(0.4),
@@ -296,12 +314,44 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
                                           ),
                                         ),
                                       ],
+                                      if ((project['date'] ?? '').toString().isNotEmpty || project['leader'] != null) ...[
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            if ((project['date'] ?? '').toString().isNotEmpty)
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.calendar_today, size: 13, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Hạn nộp: ${project['date']}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: const Color(0xFF0F172A).withOpacity(0.5),
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            if (project['leader'] != null)
+                                              Text(
+                                                'Trưởng nhóm: ${project['leader']['fullName'] ?? project['leader']['userName'] ?? ''}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: const Color(0xFF0F172A).withOpacity(0.5),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
                                       const SizedBox(height: 16),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            'Tien do chung:',
+                                            'Tiến độ chung:',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: const Color(0xFF0F172A).withOpacity(0.4),
@@ -359,7 +409,7 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Chua co du an nao',
+            'Chưa có dự án nào',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -368,7 +418,7 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Khi backend co nhom du an cua ban, du lieu se hien o day.',
+            'Khi hệ thống phân nhóm dự án của bạn, dữ liệu sẽ hiển thị ở đây.',
             style: TextStyle(
               fontSize: 13,
               color: const Color(0xFF0F172A).withOpacity(0.4),

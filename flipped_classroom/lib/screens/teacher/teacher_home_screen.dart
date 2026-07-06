@@ -226,6 +226,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             debugPrint('Error loading project group detail $groupId: $e');
           }
 
+          String projectDeadline = '';
           try {
             final milestoneItems = await ProjectService().getGroupMilestones(groupId);
             milestones = milestoneItems;
@@ -235,6 +236,22 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 (sum, item) => sum + (((item['progressPercent'] as num?) ?? 0).toInt()),
               );
               progress = (total / milestoneItems.length) / 100.0;
+
+              DateTime? latestDate;
+              for (final m in milestoneItems) {
+                final dueAtStr = m['dueAt']?.toString() ?? m['dueDate']?.toString() ?? '';
+                if (dueAtStr.isNotEmpty) {
+                  try {
+                    final dt = DateTime.parse(dueAtStr);
+                    if (latestDate == null || dt.isAfter(latestDate)) {
+                      latestDate = dt;
+                    }
+                  } catch (_) {}
+                }
+              }
+              if (latestDate != null) {
+                projectDeadline = '${latestDate.day.toString().padLeft(2, '0')}/${latestDate.month.toString().padLeft(2, '0')}/${latestDate.year}';
+              }
             }
           } catch (e) {
             debugPrint('Error loading milestones for group $groupId: $e');
@@ -243,20 +260,20 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           projects.add({
             'id': groupId,
             'classroomId': classroomId,
-            'title': group['projectName'] ?? group['groupName'] ?? 'Du an',
-            'projectName': group['projectName'] ?? group['groupName'] ?? 'Du an',
+            'title': group['projectName'] ?? group['groupName'] ?? 'Dự án',
+            'projectName': group['projectName'] ?? group['groupName'] ?? 'Dự án',
             'class': classroom['code'] ?? '',
             'className': classroom['title'] ?? classroom['className'] ?? '',
             'group': group['groupName'] ?? '',
             'groupName': group['groupName'] ?? '',
-            'members': '${group['memberCount'] ?? 0} sinh vien',
+            'members': '${group['memberCount'] ?? 0} sinh viên',
             'membersList': members
-                .map((member) => member['fullName'] ?? member['userName'] ?? 'Thanh vien')
+                .map((member) => member['fullName'] ?? member['userName'] ?? 'Thành viên')
                 .toList(),
             'membersData': members,
             'leader': leaderName,
             'leaderData': group['leader'],
-            'date': '',
+            'date': projectDeadline,
             'progress': progress,
             'milestones': milestones,
           });

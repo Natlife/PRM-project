@@ -38,7 +38,27 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     });
     try {
       final list = await ProjectService().getGroupMilestones(groupId);
+      String projectDeadline = '';
+      if (list.isNotEmpty) {
+        DateTime? latestDate;
+        for (final m in list) {
+          final dueAt = m['dueAt']?.toString() ?? '';
+          if (dueAt.isNotEmpty) {
+            try {
+              final dt = DateTime.parse(dueAt);
+              if (latestDate == null || dt.isAfter(latestDate)) {
+                latestDate = dt;
+              }
+            } catch (_) {}
+          }
+        }
+        if (latestDate != null) {
+          projectDeadline = '${latestDate.day.toString().padLeft(2, '0')}/${latestDate.month.toString().padLeft(2, '0')}/${latestDate.year}';
+        }
+      }
+
       setState(() {
+        _projectData['date'] = projectDeadline;
         _projectData['milestones'] = list.map((m) {
           final dueAt = m['dueAt']?.toString() ?? '';
           String formattedDate = '';
@@ -410,7 +430,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Milestone',
+                    'Mốc thời gian',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   ElevatedButton.icon(
@@ -424,7 +444,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     ),
                     icon: const Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
                     label: const Text(
-                      'thêm',
+                      'Thêm',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     ),
                   ),
@@ -444,7 +464,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   child: Padding(
                     padding: EdgeInsets.all(40.0),
                     child: Text(
-                      'Chưa có milestone nào',
+                      'Chưa có mốc thời gian nào',
                       style: TextStyle(color: Color(0xFF94A3B8)),
                     ),
                   ),

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../services/project_service.dart';
 import 'edit_milestone_screen.dart';
 
 class MilestoneDetailScreen extends StatefulWidget {
@@ -36,12 +38,143 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Hoàn thành':
+      case 'COMPLETED':
         return const Color(0xFF22C55E);
       case 'Đang thực hiện':
-        return const Color(0xFF7EC07E);
+      case 'IN_PROGRESS':
+        return const Color(0xFFF59E0B);
       default:
         return const Color(0xFF94A3B8);
     }
+  }
+
+  Future<void> _saveMilestoneChanges() async {
+    final milestoneId = (_milestoneData['id'] as num?)?.toInt() ?? 0;
+    if (milestoneId == 0) return;
+
+    DateTime? dueDateTime;
+    final dateStr = _milestoneData['date']?.toString() ?? '';
+    if (dateStr.isNotEmpty) {
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          dueDateTime = DateTime(year, month, day, 23, 59, 59);
+        }
+      }
+    }
+    dueDateTime ??= DateTime.now().add(const Duration(days: 7));
+    final dueAtIso = dueDateTime.toIso8601String();
+
+    final statusRaw = _milestoneData['status']?.toString() ?? 'Chưa bắt đầu';
+    String backendStatus = 'NOT_STARTED';
+    if (statusRaw == 'Hoàn thành' || statusRaw == 'COMPLETED') {
+      backendStatus = 'COMPLETED';
+    } else if (statusRaw == 'Đang thực hiện' || statusRaw == 'IN_PROGRESS') {
+      backendStatus = 'IN_PROGRESS';
+    } else if (statusRaw == 'Quá hạn' || statusRaw == 'OVERDUE') {
+      backendStatus = 'OVERDUE';
+    }
+
+    final descriptionPayload = jsonEncode({
+      'description': _milestoneData['description'] ?? '',
+      'tasks': _milestoneData['activities'] ?? [],
+      'comments': _milestoneData['comments'] ?? [],
+    });
+
+    final payload = {
+      'title': _milestoneData['title'] ?? '',
+      'description': descriptionPayload,
+      'dueAt': dueAtIso,
+      'status': backendStatus,
+    };
+
+    try {
+      await ProjectService().updateMilestone(milestoneId, payload);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể cập nhật mốc thời gian: $e')),
+        );
+      }
+    }
+  }
+
+  void _changeActivityStatus(int index) {
+    final List<dynamic> activities = List.from(_milestoneData['activities'] ?? []);
+    final act = Map<String, dynamic>.from(activities[index]);
+    final currentStatus = act['status'] ?? 'Chưa bắt đầu';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Cập nhật trạng thái hoạt động'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Chưa bắt đầu'),
+                leading: Radio<String>(
+                  value: 'Chưa bắt đầu',
+                  groupValue: currentStatus,
+                  onChanged: (val) {
+                    Navigator.pop(context, 'Chưa bắt đầu');
+                  },
+                ),
+                onTap: () => Navigator.pop(context, 'Chưa bắt đầu'),
+              ),
+              ListTile(
+                title: const Text('Đang thực hiện'),
+                leading: Radio<String>(
+                  value: 'Đang thực hiện',
+                  groupValue: currentStatus,
+                  onChanged: (val) {
+                    Navigator.pop(context, 'Đang thực hiện');
+                  },
+                ),
+                onTap: () => Navigator.pop(context, 'Đang thực hiện'),
+              ),
+              ListTile(
+                title: const Text('Hoàn thành'),
+                leading: Radio<String>(
+                  value: 'Hoàn thành',
+                  groupValue: currentStatus,
+                  onChanged: (val) {
+                    Navigator.pop(context, 'Hoàn thành');
+                  },
+                ),
+                onTap: () => Navigator.pop(context, 'Hoàn thành'),
+              ),
+            ],
+          ),
+        );
+      },
+    ).then((selectedStatus) {
+      if (selectedStatus != null && selectedStatus != currentStatus) {
+        setState(() {
+          act['status'] = selectedStatus;
+          act['isDone'] = selectedStatus == 'Hoàn thành';
+          activities[index] = act;
+          _milestoneData['activities'] = activities;
+
+          // Recalculate milestone progress based on completed activities
+          final completedCount = activities.where((a) => a['isDone'] == true || a['status'] == 'Hoàn thành').length;
+          final double newProgress = activities.isEmpty ? 0.0 : completedCount / activities.length;
+          
+          if (newProgress == 1.0) {
+            _milestoneData['status'] = 'Hoàn thành';
+          } else if (newProgress == 0.0) {
+            _milestoneData['status'] = 'Chưa bắt đầu';
+          } else {
+            _milestoneData['status'] = 'Đang thực hiện';
+          }
+        });
+        _saveMilestoneChanges();
+      }
+    });
   }
 
   Future<void> _navigateToEditMilestone() async {
@@ -55,6 +188,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
       setState(() {
         _milestoneData = result;
       });
+      _saveMilestoneChanges();
     }
   }
 
@@ -63,7 +197,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
     if (text.isEmpty) return;
     
     setState(() {
-      final list = List<Map<String, String>>.from(_milestoneData['comments'] ?? []);
+      final list = List<Map<String, dynamic>>.from(_milestoneData['comments'] ?? []);
       list.add({
         'sender': 'Giáo viên',
         'text': text,
@@ -71,13 +205,14 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
       _milestoneData['comments'] = list;
       _commentController.clear();
     });
+    _saveMilestoneChanges();
   }
 
   @override
   Widget build(BuildContext context) {
     final List<dynamic> activities = _milestoneData['activities'] ?? [];
     final List<dynamic> comments = _milestoneData['comments'] ?? [];
-    final List<dynamic> evidences = _milestoneData['evidences'] ?? [];
+    final List<dynamic> evidences = _milestoneData['attachments'] ?? _milestoneData['evidences'] ?? [];
     final String title = _milestoneData['title'] ?? 'Mốc thời gian';
     final String status = _milestoneData['status'] ?? 'Chưa bắt đầu';
     final String date = _milestoneData['date'] ?? '';
@@ -175,31 +310,41 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                       ),
                     )
                   else
-                    ...activities.map((act) {
+                    ...List.generate(activities.length, (index) {
+                      final act = activities[index];
                       final actTitle = act['title'] ?? '';
                       final actStatus = act['status'] ?? 'Chưa bắt đầu';
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFFFFF),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                actTitle,
-                                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.bold),
+                      return GestureDetector(
+                        onTap: () => _changeActivityStatus(index),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFFFF),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.04)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  actTitle,
+                                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
-                            Text(
-                              actStatus,
-                              style: TextStyle(color: _getStatusColor(actStatus), fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                              Row(
+                                children: [
+                                  Text(
+                                    actStatus,
+                                    style: TextStyle(color: _getStatusColor(actStatus), fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(Icons.edit, size: 14, color: _getStatusColor(actStatus)),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }),
@@ -207,7 +352,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
 
                   // Evidence
                   const Text(
-                    'Evidence',
+                    'Minh chứng',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 12),
@@ -220,7 +365,7 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                     )
                   else
                     ...evidences.map((ev) {
-                      final fName = ev['fileName'] ?? 'minh_chung.pdf';
+                      final fName = ev['originalFileName'] ?? ev['fileName'] ?? 'minh_chung.pdf';
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
@@ -284,24 +429,48 @@ class _MilestoneDetailScreenState extends State<MilestoneDetailScreen> {
                       final text = comment['text'] ?? '';
                       final isTeacher = sender == 'Giáo viên';
 
-                      return Align(
-                        alignment: isTeacher ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isTeacher ? const Color(0xFF7EC07E) : const Color(0xFFFFFFFF),
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(14),
-                              topRight: const Radius.circular(14),
-                              bottomLeft: isTeacher ? const Radius.circular(14) : Radius.zero,
-                              bottomRight: isTeacher ? Radius.zero : const Radius.circular(14),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        alignment: isTeacher
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: isTeacher
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFF0F172A).withOpacity(0.1),
+                                ),
+                              ),
+                              child: Text(
+                                text,
+                                style: const TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 13,
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            text,
-                            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
-                          ),
+                            const SizedBox(height: 4),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                sender,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }),

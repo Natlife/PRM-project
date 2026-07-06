@@ -124,4 +124,29 @@ class ActivityService {
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
+
+  /// Submit or update student activity submission (Draft mode)
+  Future<Map<String, dynamic>> submitStudentActivity(
+    int activityId, {
+    required String content,
+    List<int>? fileBytes,
+    String? fileName,
+  }) async {
+    final response = await _apiService.putMultipart(
+      '/student/activities/$activityId/submission',
+      {'content': content},
+      'attachmentFiles',
+      fileBytes,
+      fileName,
+    );
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  /// Finalize submission (sets status to SUBMITTED or LATE_SUBMITTED)
+  Future<Map<String, dynamic>> finalizeSubmission(int activityId) async {
+    final response = await _apiService.post('/student/activities/$activityId/submission/finalize');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
 }

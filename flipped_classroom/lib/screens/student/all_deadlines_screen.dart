@@ -76,7 +76,7 @@ class _AllDeadlinesScreenState extends State<AllDeadlinesScreen> {
           'maxScore': activity['maxScore'],
           'activityWorkflowStatus': activity['status']?.toString() ?? '',
           'submissionStatus': submissionStatus,
-          'status': isDone ? 'Da lam' : 'Chua lam',
+          'status': isDone ? 'Đã làm' : 'Chưa làm',
           'submissionId': submission['id'],
           'submissionTime': submission['submittedAt']?.toString(),
           'attachmentCount': submission['attachmentCount'] ?? 0,
@@ -110,24 +110,24 @@ class _AllDeadlinesScreenState extends State<AllDeadlinesScreen> {
   String _mapActivityType(dynamic value) {
     final type = value?.toString() ?? '';
     if (type == 'PRE_CLASS' || type == 'BEFORE_CLASS') {
-      return 'Truoc buoi hoc';
+      return 'Trước buổi học';
     }
-    return 'Trong buoi hoc';
+    return 'Trong buổi học';
   }
 
   String _mapActivityStatus(dynamic value) {
     final status = value?.toString() ?? '';
     if (status == 'SUBMITTED' || status == 'LATE_SUBMITTED' || status == 'GRADED') {
-      return 'Da lam';
+      return 'Đã làm';
     }
-    return 'Chua lam';
+    return 'Chưa làm';
   }
 
   String _formatDueAt(dynamic value) {
     if (value == null) {
-      return 'Khong co han';
+      return 'Không có hạn';
     }
-    return 'Han: ${value.toString().split('T').join(' ')}';
+    return 'Hạn: ${value.toString().split('T').join(' ')}';
   }
 
   Future<void> _refresh() async {
@@ -152,7 +152,7 @@ class _AllDeadlinesScreenState extends State<AllDeadlinesScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Tat ca deadline',
+          'Tất cả deadline',
           style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 18),
         ),
         centerTitle: true,
@@ -163,7 +163,7 @@ class _AllDeadlinesScreenState extends State<AllDeadlinesScreen> {
         child: _deadlines.isEmpty && !_isLoading
             ? const Center(
                 child: Text(
-                  'Khong co deadline nao',
+                  'Không có deadline nào',
                   style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
                 ),
               )

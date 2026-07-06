@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../services/activity_service.dart';
 import '../edit_activity_screen.dart';
@@ -65,7 +66,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Da doi trang thai activity sang $_status.'),
+          content: Text('Đã đổi trạng thái hoạt động sang $_status.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -75,7 +76,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Khong the doi trang thai activity: $e'),
+          content: Text('Không thể đổi trạng thái hoạt động: $e'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -129,12 +130,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           final isSubmitted = status != 'NOT_SUBMITTED' && status.isNotEmpty;
           return {
             'id': submission['id'],
-            'name': submission['studentName'] ?? 'Sinh vien',
+            'name': submission['studentName'] ?? 'Sinh viên',
             'code': 'ID: ${submission['studentId'] ?? ''}',
             'submitted': isSubmitted,
             'time': _formatDate(submission['submittedAt']),
             'score': submission['score'],
             'status': status,
+            'feedback': submission['teacherFeedback'],
           };
         }).toList();
         _isLoading = false;
@@ -152,7 +154,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final scoreController = TextEditingController(
       text: submission['score']?.toString() ?? '',
     );
-    final feedbackController = TextEditingController();
+    final feedbackController = TextEditingController(
+      text: submission['feedback']?.toString() ?? '',
+    );
 
     await showDialog<void>(
       context: context,
@@ -162,7 +166,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             return AlertDialog(
               backgroundColor: const Color(0xFFFFFFFF),
               title: Text(
-                'Cham diem: ${submission['name']}',
+                'Chấm điểm: ${submission['name']}',
                 style: const TextStyle(
                   color: Color(0xFF0F172A),
                   fontSize: 16,
@@ -175,9 +179,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   TextField(
                     controller: scoreController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    ],
                     style: const TextStyle(color: Color(0xFF0F172A)),
                     decoration: InputDecoration(
-                      hintText: 'Nhap diem',
+                      hintText: 'Nhập điểm',
                       hintStyle: TextStyle(
                         color: const Color(0xFF0F172A).withValues(alpha: 0.3),
                       ),
@@ -191,7 +198,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     maxLines: 3,
                     style: const TextStyle(color: Color(0xFF0F172A)),
                     decoration: InputDecoration(
-                      hintText: 'Nhan xet (khong bat buoc)',
+                      hintText: 'Nhận xét (không bắt buộc)',
                       hintStyle: TextStyle(
                         color: const Color(0xFF0F172A).withValues(alpha: 0.3),
                       ),
@@ -204,17 +211,28 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               actions: [
                 TextButton(
                   onPressed: _isSavingGrade ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Huy', style: TextStyle(color: Color(0xFF64748B))),
+                  child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
                 ),
                 ElevatedButton(
                   onPressed: _isSavingGrade
                       ? null
                       : () async {
-                          final score = double.tryParse(scoreController.text.trim());
-                          if (score == null) {
+                          final scoreText = scoreController.text.trim();
+                          final scoreRegExp = RegExp(r'^\d+(\.\d+)?$');
+                          if (!scoreRegExp.hasMatch(scoreText)) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Vui long nhap diem hop le.'),
+                                content: Text('Vui lòng nhập điểm hợp lệ (chỉ nhận số).'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+                          final score = double.tryParse(scoreText);
+                          if (score == null || score < 0 || score > 10) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Điểm phải là số từ 0 đến 10.'),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -237,11 +255,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             setState(() {
                               _submissionsList[index]['score'] = updated['score'] ?? score;
                               _submissionsList[index]['status'] = updated['status'] ?? 'GRADED';
+                              _submissionsList[index]['feedback'] = updated['teacherFeedback'] ?? feedbackController.text.trim();
                             });
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Da cap nhat diem thanh cong.'),
+                                content: Text('Đã cập nhật điểm thành công.'),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -251,7 +270,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Khong the cham diem: $e'),
+                                content: Text('Không thể chấm điểm: $e'),
                                 behavior: SnackBarBehavior.floating,
                                 backgroundColor: Colors.redAccent,
                               ),
@@ -313,7 +332,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Da cap nhat hoat dong thanh cong.'),
+          content: Text('Đã cập nhật hoạt động thành công.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -323,7 +342,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Khong the cap nhat hoat dong: $e'),
+          content: Text('Không thể cập nhật hoạt động: $e'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -369,7 +388,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   ),
                   const SizedBox(width: 14),
                   const Text(
-                    'Chi tiet hoat dong',
+                    'Chi tiết hoạt động',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -416,7 +435,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            'Lop nhan hoat dong: ${widget.className}',
+                                            'Lớp nhận hoạt động: ${widget.className}',
                                             style: const TextStyle(
                                               fontSize: 14,
                                               color: Color(0xFF7EC07E),
@@ -440,7 +459,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: const Text(
-                                  'Chinh sua',
+                                  'Chỉnh sửa',
                                   style: TextStyle(
                                     color: Color(0xFF0F172A),
                                     fontSize: 12,
@@ -466,7 +485,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Han nop: $_deadline',
+                                'Hạn nộp: $_deadline',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -478,7 +497,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 Row(
                                   children: [
                                     const Text(
-                                      'Trang thai: ',
+                                      'Trạng thái: ',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Color(0xFF64748B),
@@ -514,12 +533,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                     if (_status != 'DRAFT')
                                       OutlinedButton(
                                         onPressed: () => _changeStatus('DRAFT'),
-                                        child: const Text('Ve Draft'),
+                                        child: const Text('Về nháp'),
                                       ),
                                     if (_status != 'CLOSED')
                                       OutlinedButton(
                                         onPressed: () => _changeStatus('CLOSED'),
-                                        child: const Text('Dong activity'),
+                                        child: const Text('Đóng hoạt động'),
                                       ),
                                   ],
                                 ),
@@ -542,7 +561,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Mo ta hoat dong',
+                                'Mô tả hoạt động',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -552,7 +571,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               const SizedBox(height: 10),
                               Text(
                                 _description.isEmpty
-                                    ? 'Chua co mo ta cho hoat dong nay.'
+                                    ? 'Chưa có mô tả cho hoạt động này.'
                                     : _description,
                                 style: const TextStyle(
                                   fontSize: 13,
@@ -579,7 +598,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
-                                    'Tien do',
+                                    'Tiến độ',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
@@ -608,7 +627,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '$percentage% sinh vien da nop bai',
+                                '$percentage% sinh viên đã nộp bài',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: const Color(0xFF0F172A).withValues(alpha: 0.4),
@@ -619,7 +638,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         ),
                         const SizedBox(height: 22),
                         const Text(
-                          'Danh sach bai nop',
+                          'Danh sách bài nộp',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -632,7 +651,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             padding: EdgeInsets.symmetric(vertical: 20),
                             child: Center(
                               child: Text(
-                                'Chua co bai nop nao.',
+                                'Chưa có bài nộp nào.',
                                 style: TextStyle(color: Color(0xFF94A3B8)),
                               ),
                             ),
@@ -648,7 +667,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 if (!isSubmitted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Sinh vien chua nop bai.'),
+                                      content: Text('Sinh viên chưa nộp bài.'),
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
@@ -708,8 +727,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                           const SizedBox(height: 2),
                                           Text(
                                             isSubmitted
-                                                ? 'Nop luc: ${submission['time']}'
-                                                : 'Chua nop bai',
+                                                ? 'Nộp lúc: ${submission['time']}'
+                                                : 'Chưa nộp bài',
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: isSubmitted
@@ -757,7 +776,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                           ),
                                         ),
                                         child: Text(
-                                          hasScore ? 'Sua' : 'Cham',
+                                          hasScore ? 'Sửa' : 'Chấm',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,

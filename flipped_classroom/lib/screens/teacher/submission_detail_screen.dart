@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/activity_service.dart';
+import '../../services/auth_service.dart';
 
 class SubmissionDetailScreen extends StatefulWidget {
   final int? submissionId;
@@ -30,6 +31,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
   String? _score;
   String? _feedback;
   int _attachmentCount = 0;
+  String _submittedContent = '';
   List<Map<String, dynamic>> _commentsList = [];
 
   @override
@@ -78,6 +80,8 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         return;
       }
 
+      final currentUserDbId = AuthService().currentUser?.dbId;
+
       setState(() {
         _studentName = detail['studentName']?.toString() ?? _studentName;
         _submittedTime = _formatDateTime(detail['submittedAt']);
@@ -85,13 +89,17 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
         _score = detail['score']?.toString();
         _feedback = detail['teacherFeedback']?.toString();
         _attachmentCount = detail['attachmentCount'] as int? ?? 0;
+        _submittedContent = detail['content']?.toString() ?? '';
         _commentsList = comments
             .map<Map<String, dynamic>>(
-              (comment) => {
-                'author': comment['authorName'] ?? 'Nguoi dung',
-                'content': comment['content'] ?? '',
-                'time': _formatDateTime(comment['createdAt']),
-                'isMe': false,
+              (comment) {
+                final authorId = (comment['authorId'] as num?)?.toInt();
+                return {
+                  'author': comment['authorName'] ?? 'Người dùng',
+                  'content': comment['content'] ?? '',
+                  'time': _formatDateTime(comment['createdAt']),
+                  'isMe': currentUserDbId != null && authorId == currentUserDbId,
+                };
               },
             )
             .toList();
@@ -124,7 +132,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
 
       setState(() {
         _commentsList.add({
-          'author': created['authorName'] ?? 'Giao vien',
+          'author': created['authorName'] ?? 'Giáo viên',
           'content': created['content'] ?? text,
           'time': _formatDateTime(created['createdAt']),
           'isMe': true,
@@ -147,7 +155,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Khong the gui nhan xet: $e'),
+          content: Text('Không thể gửi nhận xét: $e'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.redAccent,
         ),
@@ -187,7 +195,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                   ),
                   const SizedBox(width: 14),
                   const Text(
-                    'Chi tiet bai nop',
+                    'Chi tiết bài nộp',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -231,8 +239,8 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 _submittedTime.isEmpty
-                                    ? 'Chua co thoi gian nop bai'
-                                    : 'Nop bai luc: $_submittedTime',
+                                    ? 'Chưa có thời gian nộp bài'
+                                    : 'Nộp bài lúc: $_submittedTime',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF94A3B8),
@@ -241,7 +249,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                               if (_status.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Trang thai: $_status',
+                                  'Trạng thái: $_status',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF64748B),
@@ -265,7 +273,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Tong quan bai nop',
+                                'Tổng quan bài nộp',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
@@ -274,7 +282,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'So tep dinh kem: $_attachmentCount',
+                                'Số tệp đính kèm: $_attachmentCount',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF334155),
@@ -282,16 +290,37 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Diem: ${_score ?? 'Chua cham'}',
+                                'Điểm: ${_score ?? 'Chưa chấm'}',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF334155),
                                 ),
                               ),
+                              if (_submittedContent.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                const Divider(),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Nội dung bài nộp:',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _submittedContent,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF334155),
+                                  ),
+                                ),
+                              ],
                               if (_feedback != null && _feedback!.isNotEmpty) ...[
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Nhan xet giao vien: $_feedback',
+                                  'Nhận xét giáo viên: $_feedback',
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF334155),
@@ -303,7 +332,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                         ),
                         const SizedBox(height: 22),
                         const Text(
-                          'Nhan xet',
+                          'Nhận xét',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -315,7 +344,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                           const Padding(
                             padding: EdgeInsets.only(bottom: 24),
                             child: Text(
-                              'Chua co nhan xet nao.',
+                              'Chưa có nhận xét nào.',
                               style: TextStyle(color: Color(0xFF94A3B8)),
                             ),
                           )
@@ -388,7 +417,7 @@ class _SubmissionDetailScreenState extends State<SubmissionDetailScreen> {
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Nhap nhan xet cua ban...',
+                        hintText: 'Nhập nhận xét của bạn...',
                         hintStyle: TextStyle(
                           color: const Color(0xFF0F172A).withValues(alpha: 0.3),
                         ),
