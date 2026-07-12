@@ -18,6 +18,7 @@ class ClassroomService {
 
     return {
       'id': item['id'],
+      'createdAt': item['createdAt'],
       'classCode': code,
       'classCodeWithName': '$code - $name',
       'className': name,
@@ -138,6 +139,12 @@ class ClassroomService {
   /// Get classroom details by ID (Student)
   Future<Map<String, dynamic>> getStudentClassroomDetail(int classroomId) async {
     final response = await _apiService.get('/student/classrooms/$classroomId');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
+
+  Future<Map<String, dynamic>> getStudentClassroomOverview(int classroomId) async {
+    final response = await _apiService.get('/student/classrooms/$classroomId/overview');
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }

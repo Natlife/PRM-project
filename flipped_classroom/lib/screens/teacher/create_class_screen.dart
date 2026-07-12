@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
+import '../../services/classroom_service.dart';
+
 class CreateClassScreen extends StatefulWidget {
   const CreateClassScreen({super.key});
 
@@ -13,42 +16,110 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _subjectController = TextEditingController();
-  
+
   String _selectedSemester = 'SU26';
   String _selectedDay = 'Thứ 2';
   String _selectedSlot = 'Slot 1 (7:30-9:50)';
-  
-  late String _classCode;
-  
+  bool _isSubmitting = false;
+
+  late String _classCodeSuffix;
+
   final List<String> _semesters = ['SU26', 'FA26', 'SP26', 'HK1 2026'];
   final List<String> _days = [
     'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'
   ];
-  final List<String> _slots = [
-    'Slot 1 (7:30-9:50)',
-    'Slot 2 (10:00-12:20)',
-    'Slot 3 (12:50-15:10)',
-    'Slot 4 (15:20-17:40)',
-    'Slot 5 (18:00-20:20)'
+  final List<Map<String, String>> _slots = const [
+    {
+      'label': 'Slot 1 (7:30-9:50)',
+      'startTime': '07:30:00',
+      'endTime': '09:50:00',
+    },
+    {
+      'label': 'Slot 2 (10:00-12:20)',
+      'startTime': '10:00:00',
+      'endTime': '12:20:00',
+    },
+    {
+      'label': 'Slot 3 (12:50-15:10)',
+      'startTime': '12:50:00',
+      'endTime': '15:10:00',
+    },
+    {
+      'label': 'Slot 4 (15:20-17:40)',
+      'startTime': '15:20:00',
+      'endTime': '17:40:00',
+    },
+    {
+      'label': 'Slot 5 (18:00-20:20)',
+      'startTime': '18:00:00',
+      'endTime': '20:20:00',
+    },
   ];
 
-  final List<Map<String, String>> _schedules = [];
+  final List<Map<String, dynamic>> _schedules = [];
 
   @override
   void initState() {
     super.initState();
-    _classCode = _generateRandomCode();
+    _classCodeSuffix = _generateRandomCode();
   }
 
   String _generateRandomCode() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final rand = Random();
     return List.generate(6, (index) => chars[rand.nextInt(chars.length)]).join();
   }
 
+  String _sanitizeClassToken(String value) {
+    final cleaned = value
+        .trim()
+        .toUpperCase()
+        .replaceAll(RegExp(r'[^A-Z0-9]+'), '-')
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '');
+    return cleaned;
+  }
+
+  String _buildBackendClassCode() {
+    final base = _sanitizeClassToken(_nameController.text);
+    if (base.isEmpty) {
+      return 'CLASS-$_classCodeSuffix';
+    }
+    return '$base-$_classCodeSuffix';
+  }
+
+  Map<String, String> _slotConfig(String slotLabel) {
+    return _slots.firstWhere(
+      (slot) => slot['label'] == slotLabel,
+      orElse: () => _slots.first,
+    );
+  }
+
+  String _buildDescription() {
+    final subject = _subjectController.text.trim();
+    final description = _descController.text.trim();
+    if (subject.isEmpty) {
+      return description;
+    }
+    if (description.isEmpty) {
+      return 'Môn học: $subject';
+    }
+    return 'Môn học: $subject\n\n$description';
+  }
+
+  ButtonStyle _primaryButtonStyle(Color backgroundColor) {
+    return ElevatedButton.styleFrom(
+      backgroundColor: backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    );
+  }
+
   void _addSchedule() {
     final exists = _schedules.any(
-      (s) => s['day'] == _selectedDay && s['slot'] == _selectedSlot
+      (s) => s['day'] == _selectedDay && s['slotLabel'] == _selectedSlot
     );
     if (exists) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,10 +130,15 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
       );
       return;
     }
+    final slot = _slotConfig(_selectedSlot);
     setState(() {
       _schedules.add({
         'day': _selectedDay,
-        'slot': _selectedSlot,
+        'dayOfWeek': _days.indexOf(_selectedDay),
+        'slotLabel': _selectedSlot,
+        'startTime': slot['startTime'],
+        'endTime': slot['endTime'],
+        'roomName': '',
       });
     });
   }
@@ -73,8 +149,8 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
     });
   }
 
-  void _submitForm() {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate() || _isSubmitting) return;
     if (_schedules.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -85,17 +161,53 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
       return;
     }
 
-    final newClass = {
-      'title': _subjectController.text.trim(),
-      'code': '${_nameController.text.trim()} - ${_classCode.toUpperCase()}',
-      'description': _descController.text.trim(),
-      'studentsCount': 0,
-      'semester': _selectedSemester,
-      'type': 'Chuyên ngành',
-      'schedules': _schedules.map((s) => '${s['day']}: ${s['slot']}').toList(),
-    };
+    setState(() => _isSubmitting = true);
 
-    Navigator.of(context).pop(newClass);
+    try {
+      final created = await ClassroomService().createClassroom(
+        code: _buildBackendClassCode(),
+        name: _nameController.text.trim(),
+        description: _buildDescription(),
+        semesterCode: _selectedSemester,
+        schedules: _schedules
+            .map(
+              (schedule) => {
+                'dayOfWeek': schedule['dayOfWeek'],
+                'slotLabel': schedule['slotLabel'],
+                'startTime': schedule['startTime'],
+                'endTime': schedule['endTime'],
+                'roomName': schedule['roomName'],
+              },
+            )
+            .toList(),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tạo lớp học thành công!'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF22C55E),
+        ),
+      );
+      Navigator.of(context).pop(created);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Lỗi tạo lớp học: ${e is ApiException ? e.message : e.toString()}',
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
@@ -276,8 +388,8 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                     style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
                     items: _slots.map((slot) {
                       return DropdownMenuItem(
-                        value: slot,
-                        child: Text(slot),
+                        value: slot['label'],
+                        child: Text(slot['label']!),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -309,7 +421,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${s['day']} - ${s['slot']}',
+                          '${s['day']} - ${s['slotLabel']}',
                           style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
                         ),
                         GestureDetector(
@@ -367,7 +479,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _classCode,
+                      _buildBackendClassCode(),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -379,7 +491,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                       icon: const Icon(Icons.refresh, color: Color(0xFF7EC07E), size: 20),
                       onPressed: () {
                         setState(() {
-                          _classCode = _generateRandomCode();
+                          _classCodeSuffix = _generateRandomCode();
                         });
                       },
                     ),
@@ -393,13 +505,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEC4899),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
+                      style: _primaryButtonStyle(const Color(0xFFEC4899)),
                       child: const Text(
                         'Hủy',
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -409,18 +515,21 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7EC07E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text(
-                        'Tạo lớp',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
+                      onPressed: _isSubmitting ? null : _submitForm,
+                      style: _primaryButtonStyle(const Color(0xFF7EC07E)),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Tạo lớp',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
                     ),
                   ),
                 ],

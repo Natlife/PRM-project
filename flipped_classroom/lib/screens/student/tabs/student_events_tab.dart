@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../services/event_service.dart';
 import '../student_event_detail_screen.dart';
 
 class StudentEventsTab extends StatefulWidget {
@@ -14,73 +16,98 @@ class StudentEventsTab extends StatefulWidget {
 }
 
 class _StudentEventsTabState extends State<StudentEventsTab> {
-  final List<Map<String, dynamic>> _events = [
-    {
-      'id': '1',
-      'title': 'Thuyết trình Dự án STEM',
-      'classCode': 'PRM - SE1904',
-      'date': '25/6/2026',
-      'time': '09:00 - 11:30',
-      'location': 'Phòng 402, Tòa nhà Gamma',
-      'instructor': 'GV. Vũ Trường Giang',
-      'description': 'Thuyết trình và demo sản phẩm dự án STEM cuối kỳ môn Lập trình Mobile.',
-      'status': 'Chưa diễn ra',
-      'statusColor': Colors.orange,
-    },
-    {
-      'id': '2',
-      'title': 'Bài tập chuẩn bị bài 5: Flutter State Management',
-      'classCode': 'PRM - SE1904',
-      'date': '28/6/2026',
-      'time': 'Trước 23:59',
-      'location': 'Nộp trên hệ thống Flipped Classroom',
-      'instructor': 'GV. Vũ Trường Giang',
-      'description': 'Xem slide và chuẩn bị code ví dụ về Provider/Bloc.',
-      'status': 'Chưa diễn ra',
-      'statusColor': Colors.orange,
-    },
-    {
-      'id': '3',
-      'title': 'Báo cáo tiến độ Milestone 2',
-      'classCode': 'PRW301 - SE1905',
-      'date': '02/07/2026',
-      'time': '10:00 - 12:20',
-      'location': 'Phòng 205, Tòa nhà Alpha',
-      'instructor': 'GV. Trần Thị B',
-      'description': 'Báo cáo tiến độ hoàn thiện UI/UX và API của dự án Web.',
-      'status': 'Đang diễn ra',
-      'statusColor': Colors.green,
-    },
-    {
-      'id': '4',
-      'title': 'Hạn nộp báo cáo nghiên cứu công nghệ',
-      'classCode': 'FLC101 - SE1906',
-      'date': '04/07/2026',
-      'time': 'Trước 23:59',
-      'location': 'Nộp trên hệ thống Flipped Classroom',
-      'instructor': 'GV. Hoàng Văn C',
-      'description': 'Nộp báo cáo nghiên cứu công nghệ Front-end phục vụ cho dự án môn học.',
-      'status': 'Đã diễn ra',
-      'statusColor': Colors.grey,
-    },
-  ];
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _events = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
 
+  Future<void> _loadEvents() async {
+    setState(() => _isLoading = true);
+    try {
+      final events = await EventService().getStudentEvents();
+      if (!mounted) return;
+      setState(() {
+        _events = events;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi tải sự kiện: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
+  String _formatDate(dynamic raw) {
+    if (raw == null) return '';
+    final value = raw.toString().split('T').first;
+    final parts = value.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return value;
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'LIVE':
+        return 'Đang diễn ra';
+      case 'COMPLETED':
+        return 'Đã hoàn thành';
+      case 'CANCELLED':
+        return 'Đã hủy';
+      case 'SCHEDULED':
+      default:
+        return 'Chưa diễn ra';
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'LIVE':
+        return Colors.green;
+      case 'COMPLETED':
+        return Colors.grey;
+      case 'CANCELLED':
+        return Colors.redAccent;
+      case 'SCHEDULED':
+      default:
+        return Colors.orange;
+    }
+  }
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'PRESENTER':
+        return 'Thuyết trình';
+      case 'REVIEWER':
+        return 'Phản biện';
+      default:
+        return 'Khán giả';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: RefreshIndicator(
+          onRefresh: _loadEvents,
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(20),
                   children: [
                     const Text(
                       'Tất cả sự kiện',
@@ -90,117 +117,86 @@ class _StudentEventsTabState extends State<StudentEventsTab> {
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
-                      'Xem và quản lý các sự kiện lớp học, lịch báo cáo và nộp bài',
+                      'Xem lịch review, defense và trạng thái tham gia của bạn',
                       style: TextStyle(
-                        fontSize: 14,
-                        color: const Color(0xFF0F172A).withOpacity(0.5),
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.55),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Event List
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final event = _events[index];
-                    final Color statusColor = event['statusColor'] as Color;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.06)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A).withOpacity(0.01),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                    const SizedBox(height: 20),
+                    if (_events.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 60),
+                          child: Text(
+                            'Chưa có sự kiện nào',
+                            style: TextStyle(color: Color(0xFF94A3B8)),
+                          ),
                         ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => StudentEventDetailScreen(event: event),
+                      )
+                    else
+                      ..._events.map((event) {
+                        final status = event['status']?.toString() ?? 'SCHEDULED';
+                        final role = event['myRole']?.toString() ?? 'AUDIENCE';
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            title: Text(
+                              event['title'] ?? '',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
                               ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${event['classroomCode'] ?? ''} • ${_formatDate(event['startAt'])}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text('Vai trò: ${_roleLabel(role)}'),
+                                ],
+                              ),
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Event name
                                 Text(
-                                  event['title'],
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                
-                                // Class & Course Name
-                                Text(
-                                  event['classCode'],
+                                  _statusLabel(status),
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    color: const Color(0xFF0F172A).withOpacity(0.6),
-                                    fontWeight: FontWeight.w500,
+                                    color: _statusColor(status),
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-
-                                // Date of Event
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      event['date'],
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: const Color(0xFF0F172A).withOpacity(0.4),
-                                      ),
-                                    ),
-                                    
-                                    // Status Badge / Text
-                                    Text(
-                                      event['status'],
-                                      style: TextStyle(
-                                        color: statusColor,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StudentEventDetailScreen(
+                                    eventId: (event['id'] as num?)?.toInt() ?? 0,
+                                  ),
+                                ),
+                              );
+                              if (result != null) {
+                                await _loadEvents();
+                              }
+                            },
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                  childCount: _events.length,
+                        );
+                      }),
+                  ],
                 ),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 30),
-            ),
-          ],
         ),
       ),
     );

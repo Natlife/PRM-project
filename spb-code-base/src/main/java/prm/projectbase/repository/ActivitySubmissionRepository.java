@@ -25,6 +25,12 @@ public interface ActivitySubmissionRepository extends JpaRepository<ActivitySubm
     @Query("SELECT s FROM ActivitySubmission s WHERE s.student.id = :studentId AND s.activity.classroom.id = :classroomId")
     List<ActivitySubmission> findByStudentInClassroom(@Param("studentId") Long studentId, @Param("classroomId") Long classroomId);
 
+    @Query("SELECT s FROM ActivitySubmission s WHERE s.student.id = :studentId AND s.activity.id IN :activityIds")
+    List<ActivitySubmission> findByStudentIdAndActivityIdIn(@Param("studentId") Long studentId, @Param("activityIds") List<Long> activityIds);
+
+    @Query("SELECT s FROM ActivitySubmission s WHERE s.activity.id IN :activityIds")
+    List<ActivitySubmission> findByActivityIdIn(@Param("activityIds") List<Long> activityIds);
+
     Long countByActivityId(Long activityId);
 
     @Query("SELECT COUNT(s) FROM ActivitySubmission s WHERE s.activity.id = :activityId AND s.status = 'GRADED'")

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../services/activity_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/dashboard_service.dart';
 import '../student_activity_detail_screen.dart';
@@ -43,15 +42,9 @@ class _StudentDashboardTabState extends State<StudentDashboardTab> {
       final List<Map<String, dynamic>> normalizedUpcomingActivities = [];
 
       for (final activity in rawUpcomingActivities) {
-        Map<String, dynamic> submission = {};
-        final activityId = (activity['id'] as num?)?.toInt();
-        if (activityId != null) {
-          try {
-            submission = await ActivityService().getStudentSubmission(activityId);
-          } catch (e) {
-            debugPrint('Error loading submission for dashboard activity $activityId: $e');
-          }
-        }
+        final submission = Map<String, dynamic>.from(
+          activity['submissionSummary'] ?? const {},
+        );
 
         final submissionStatus = submission['status']?.toString() ?? 'NOT_SUBMITTED';
         final isDone = submissionStatus == 'SUBMITTED' ||

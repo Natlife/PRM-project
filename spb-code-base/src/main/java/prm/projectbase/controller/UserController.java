@@ -43,11 +43,23 @@ public class UserController {
         return BaseResponse.success(response, "Get user by ID successfully");
     }
 
+    @GetMapping("/me")
+    public BaseResponse<UserResponse> getCurrentUserProfile() {
+        UserResponse response = userService.getCurrentUserProfile();
+        return BaseResponse.success(response, "Get current user profile successfully");
+    }
+
     @PutMapping("/{id}")
     @AuthFilter(permission = "ADMIN") 
     public BaseResponse<UserResponse> updateUser(@PathVariable Long id, @RequestBody @Valid UserUpdateRequest request) {
         UserResponse response = userService.updateUser(id, request);
         return BaseResponse.success(response, "User updated successfully");
+    }
+
+    @PutMapping("/me")
+    public BaseResponse<UserResponse> updateCurrentUserProfile(@RequestBody @Valid UserUpdateRequest request) {
+        UserResponse response = userService.updateCurrentUserProfile(request);
+        return BaseResponse.success(response, "Update current user profile successfully");
     }
 
     @DeleteMapping("/{id}")

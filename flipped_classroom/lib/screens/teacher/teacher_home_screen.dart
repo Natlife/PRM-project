@@ -1,19 +1,18 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import '../common/profile_screen.dart';
-import '../common/notification_screen.dart';
-import 'teacher_event_detail_screen.dart';
-import 'class_detail_screen.dart';
-import 'create_class_screen.dart';
-import 'create_activity_screen.dart';
-import 'components/activity_detail_screen.dart';
-import 'create_project_screen.dart';
-import 'project_detail_screen.dart';
-import 'create_event_screen.dart';
+
 import '../../services/classroom_service.dart';
 import '../../services/dashboard_service.dart';
-import '../../services/activity_service.dart';
-import '../../services/project_service.dart';
+import '../../services/event_service.dart';
+import '../common/notification_screen.dart';
+import '../common/profile_screen.dart';
+import 'class_detail_screen.dart';
+import 'components/activity_detail_screen.dart';
+import 'create_activity_screen.dart';
+import 'create_class_screen.dart';
+import 'create_event_screen.dart';
+import 'create_project_screen.dart';
+import 'project_detail_screen.dart';
+import 'teacher_event_detail_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -24,556 +23,328 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
-  String _classSearchQuery = '';
-  String _activitySearchQuery = '';
-  String _projectSearchQuery = '';
+  bool _isLoading = true;
 
   List<Map<String, dynamic>> _classes = [];
-  bool _isLoadingClasses = true;
-  bool _isLoadingActivities = false;
-  bool _isLoadingProjects = false;
-  bool _hasLoadedActivities = false;
-  bool _hasLoadedProjects = false;
+  List<Map<String, dynamic>> _activities = [];
+  List<Map<String, dynamic>> _projects = [];
+  List<Map<String, dynamic>> _events = [];
+
   int _totalStudents = 0;
   int _pendingGrading = 0;
   int _activeGroups = 0;
-  List<Map<String, dynamic>> _activitiesList = [];
-  List<Map<String, dynamic>> _projectsList = [];
 
   @override
   void initState() {
     super.initState();
-    _loadClasses();
+    _loadData();
   }
 
-  Future<void> _loadClasses() async {
-    setState(() => _isLoadingClasses = true);
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
     try {
-      final results = await Future.wait([
-        ClassroomService().getTeacherClassrooms(),
-        DashboardService().getTeacherDashboard(),
-      ]);
-
-      final loadedClasses = results[0] as List<Map<String, dynamic>>;
-      final summary = results[1] as Map<String, dynamic>;
-
+      final dashboard = await DashboardService().getTeacherDashboardOverview();
+      final events = await EventService().getTeacherEvents();
+      final classrooms = _sortNewestFirst(
+        List<Map<String, dynamic>>.from(dashboard['classrooms'] ?? const []),
+        ['createdAt', 'updatedAt', 'id'],
+      );
+      final projects = _mapProjects(
+        List<Map<String, dynamic>>.from(dashboard['projects'] ?? const []),
+      );
+      final sortedEvents = _sortNewestFirst(
+        List<Map<String, dynamic>>.from(events),
+        ['startAt', 'createdAt', 'id'],
+      );
       if (!mounted) return;
       setState(() {
-        _classes = loadedClasses;
-        _totalStudents = summary['totalStudentsCount'] ?? 0;
-        _pendingGrading = summary['pendingGradingCount'] ?? 0;
-        _activeGroups = summary['activeGroupsCount'] ?? 0;
-        _isLoadingClasses = false;
-        _hasLoadedActivities = false;
-        _hasLoadedProjects = false;
-        _activitiesList = [];
-        _projectsList = [];
+        _classes = classrooms;
+        _activities = _mapActivities(
+          List<Map<String, dynamic>>.from(dashboard['activities'] ?? const []),
+        );
+        _projects = projects;
+        _events = sortedEvents;
+        _totalStudents = dashboard['totalStudentsCount'] ?? 0;
+        _pendingGrading = dashboard['pendingGradingCount'] ?? 0;
+        _activeGroups = dashboard['activeGroupsCount'] ?? 0;
+        _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading dashboard data: $e');
       try {
-        final loadedClasses = await ClassroomService().getTeacherClassrooms();
-
+        final classes = _sortNewestFirst(
+          await ClassroomService().getTeacherClassrooms(),
+          ['createdAt', 'updatedAt', 'id'],
+        );
         if (!mounted) return;
-
         setState(() {
-          _classes = loadedClasses;
-          _totalStudents = loadedClasses.fold<int>(
+          _classes = classes;
+          _activities = [];
+          _projects = [];
+          _events = [];
+          _totalStudents = classes.fold<int>(
             0,
-            (sum, item) => sum + ((item['studentsCount'] as int?) ?? 0),
+            (sum, item) => sum + ((item['studentCount'] as int?) ?? 0),
           );
           _pendingGrading = 0;
           _activeGroups = 0;
-          _isLoadingClasses = false;
-          _hasLoadedActivities = false;
-          _hasLoadedProjects = false;
-          _activitiesList = [];
-          _projectsList = [];
+          _isLoading = false;
         });
-      } catch (innerError) {
-        debugPrint('Error loading teacher classrooms: $innerError');
+      } catch (inner) {
         if (!mounted) return;
-
-        setState(() {
-          _isLoadingClasses = false;
-        });
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải dữ liệu giảng viên: $inner'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
+      debugPrint('Teacher dashboard overview failed: $e');
     }
   }
 
-  Future<void> _ensureActivitiesLoaded({bool force = false}) async {
-    if (_isLoadingActivities || _isLoadingClasses) {
-      return;
-    }
-    if (!force && _hasLoadedActivities) {
-      return;
-    }
-
-    setState(() => _isLoadingActivities = true);
-    try {
-      final loadedActivities = await _loadTeacherActivities(_classes);
-      if (!mounted) return;
-      setState(() {
-        _activitiesList = loadedActivities;
-        _hasLoadedActivities = true;
-        _isLoadingActivities = false;
-      });
-    } catch (e) {
-      debugPrint('Error loading teacher activities: $e');
-      if (!mounted) return;
-      setState(() {
-        _isLoadingActivities = false;
-      });
-    }
+  List<Map<String, dynamic>> _mapActivities(List<Map<String, dynamic>> raw) {
+    return raw.map((activity) {
+      final pending =
+          (activity['submissionSummary']?['commentCount'] as num?)?.toInt() ??
+          0;
+      return {
+        'id': activity['id'],
+        'title': activity['title'] ?? '',
+        'className':
+            activity['classroomName'] ?? activity['classroomCode'] ?? '',
+        'date': _formatDate(activity['dueAt']),
+        'status': activity['status']?.toString() ?? '',
+        'description': activity['description'] ?? '',
+        'submissions': pending > 0
+            ? '$pending bài chờ chấm'
+            : (activity['activityType'] ?? 'Activity'),
+      };
+    }).toList();
   }
 
-  Future<void> _ensureProjectsLoaded({bool force = false}) async {
-    if (_isLoadingProjects || _isLoadingClasses) {
-      return;
-    }
-    if (!force && _hasLoadedProjects) {
-      return;
-    }
+  List<Map<String, dynamic>> _mapProjects(List<Map<String, dynamic>> raw) {
+    final mapped = raw.map((project) {
+      final members = List<Map<String, dynamic>>.from(
+        project['members'] ?? const [],
+      );
+      return {
+        'id': project['id'],
+        'createdAt': project['createdAt'],
+        'latestMilestoneDueAt': project['latestMilestoneDueAt'],
+        'title': project['projectName'] ?? project['groupName'] ?? '',
+        'projectName': project['projectName'] ?? project['groupName'] ?? '',
+        'group': project['groupName'] ?? '',
+        'groupName': project['groupName'] ?? '',
+        'class': project['classroomCode'] ?? '',
+        'className': project['classroomName'] ?? '',
+        'date': _formatDate(project['latestMilestoneDueAt']),
+        'leader': project['leader']?['fullName'],
+        'members': '${project['memberCount'] ?? members.length} sinh viên',
+        'membersList': members
+            .map((member) => member['fullName'] ?? member['userName'] ?? '')
+            .toList(),
+        'membersData': members,
+        'progress':
+            ((project['progressPercent'] ?? 0) as num).toDouble() / 100.0,
+        'milestones': project['milestones'] ?? const [],
+      };
+    }).toList();
 
-    setState(() => _isLoadingProjects = true);
-    try {
-      final loadedProjects = await _loadTeacherProjects(_classes);
-      if (!mounted) return;
-      setState(() {
-        _projectsList = loadedProjects;
-        _hasLoadedProjects = true;
-        _isLoadingProjects = false;
-      });
-    } catch (e) {
-      debugPrint('Error loading teacher projects: $e');
-      if (!mounted) return;
-      setState(() {
-        _isLoadingProjects = false;
-      });
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _loadTeacherActivities(
-    List<Map<String, dynamic>> classrooms,
-  ) async {
-    final List<Map<String, dynamic>> activities = [];
-
-    for (final classroom in classrooms) {
-      final classroomId = classroom['id'] as int?;
-      if (classroomId == null) continue;
-
-      try {
-        final items = await ActivityService().getTeacherActivities(classroomId);
-        for (final activity in items) {
-          final dueAt = activity['dueAt']?.toString() ?? '';
-          final date = dueAt.isNotEmpty
-              ? () {
-                  final rawDate = dueAt.split('T').first;
-                  final parts = rawDate.split('-');
-                  return parts.length == 3
-                      ? '${parts[2]}/${parts[1]}/${parts[0]}'
-                      : rawDate;
-                }()
-              : '';
-          final status = (activity['status'] ?? '').toString();
-
-          activities.add({
-            'id': activity['id'],
-            'classroomId': classroomId,
-            'title': activity['title'] ?? 'Hoat dong',
-            'className': classroom['className'] ?? classroom['title'] ?? classroom['code'] ?? '',
-            'status': status,
-            'statusColor': status == 'PUBLISHED'
-                ? const Color(0xFF7EC07E)
-                : Colors.amberAccent,
-            'submissions': activity['activityType'] ?? 'Activity',
-            'date': date,
-            'description': activity['description'] ?? '',
-          });
-        }
-      } catch (e) {
-        debugPrint('Error loading activities for classroom $classroomId: $e');
-      }
-    }
-
-    activities.sort((a, b) => (b['date'] ?? '').compareTo(a['date'] ?? ''));
-    return activities;
-  }
-
-  Future<List<Map<String, dynamic>>> _loadTeacherProjects(
-    List<Map<String, dynamic>> classrooms,
-  ) async {
-    final List<Map<String, dynamic>> projects = [];
-
-    for (final classroom in classrooms) {
-      final classroomId = classroom['id'] as int?;
-      if (classroomId == null) continue;
-
-      try {
-        final groups = await ProjectService().getClassroomProjectGroups(classroomId);
-        for (final group in groups) {
-          final groupId = (group['id'] as num?)?.toInt();
-          if (groupId == null) continue;
-
-          List<Map<String, dynamic>> milestones = [];
-          List<dynamic> members = [];
-          String? leaderName;
-          double progress = 0.0;
-
-          try {
-            final detail = await ProjectService().getTeacherProjectGroupDetail(groupId);
-            members = detail['members'] as List<dynamic>? ?? [];
-            leaderName = detail['leader']?['fullName']?.toString();
-          } catch (e) {
-            debugPrint('Error loading project group detail $groupId: $e');
-          }
-
-          String projectDeadline = '';
-          try {
-            final milestoneItems = await ProjectService().getGroupMilestones(groupId);
-            milestones = milestoneItems;
-            if (milestoneItems.isNotEmpty) {
-              final total = milestoneItems.fold<int>(
-                0,
-                (sum, item) => sum + (((item['progressPercent'] as num?) ?? 0).toInt()),
-              );
-              progress = (total / milestoneItems.length) / 100.0;
-
-              DateTime? latestDate;
-              for (final m in milestoneItems) {
-                final dueAtStr = m['dueAt']?.toString() ?? m['dueDate']?.toString() ?? '';
-                if (dueAtStr.isNotEmpty) {
-                  try {
-                    final dt = DateTime.parse(dueAtStr);
-                    if (latestDate == null || dt.isAfter(latestDate)) {
-                      latestDate = dt;
-                    }
-                  } catch (_) {}
-                }
-              }
-              if (latestDate != null) {
-                projectDeadline = '${latestDate.day.toString().padLeft(2, '0')}/${latestDate.month.toString().padLeft(2, '0')}/${latestDate.year}';
-              }
-            }
-          } catch (e) {
-            debugPrint('Error loading milestones for group $groupId: $e');
-          }
-
-          projects.add({
-            'id': groupId,
-            'classroomId': classroomId,
-            'title': group['projectName'] ?? group['groupName'] ?? 'Dự án',
-            'projectName': group['projectName'] ?? group['groupName'] ?? 'Dự án',
-            'class': classroom['code'] ?? '',
-            'className': classroom['title'] ?? classroom['className'] ?? '',
-            'group': group['groupName'] ?? '',
-            'groupName': group['groupName'] ?? '',
-            'members': '${group['memberCount'] ?? 0} sinh viên',
-            'membersList': members
-                .map((member) => member['fullName'] ?? member['userName'] ?? 'Thành viên')
-                .toList(),
-            'membersData': members,
-            'leader': leaderName,
-            'leaderData': group['leader'],
-            'date': projectDeadline,
-            'progress': progress,
-            'milestones': milestones,
-          });
-        }
-      } catch (e) {
-        debugPrint('Error loading projects for classroom $classroomId: $e');
-      }
-    }
-
-    return projects;
-  }
-
-  String _eventSearchQuery = '';
-
-  final List<Map<String, dynamic>> _eventsList = [
-    {
-      'id': '1',
-      'title': 'Thuyết trình Dự án STEM',
-      'classCode': 'PRM393 - SE1904',
-      'date': '25/06/2026',
-      'time': '09:00 - 11:30',
-      'location': 'Phòng 402, Tòa nhà Gamma',
-      'instructor': 'GV. Vũ Trường Giang',
-      'description': 'Thuyết trình và demo sản phẩm dự án STEM cuối kỳ môn Lập trình Mobile.',
-      'status': 'Chưa diễn ra',
-      'duration': '15',
-    },
-    {
-      'id': '2',
-      'title': 'Bài tập chuẩn bị bài 5: Flutter State Management',
-      'classCode': 'PRM393 - SE1904',
-      'date': '28/06/2026',
-      'time': 'Trước 23:59',
-      'location': 'Nộp trên hệ thống Flipped Classroom',
-      'instructor': 'GV. Vũ Trường Giang',
-      'description': 'Xem slide và chuẩn bị code ví dụ về Provider/Bloc.',
-      'status': 'Chưa diễn ra',
-      'duration': '15',
-    },
-    {
-      'id': '3',
-      'title': 'Báo cáo tiến độ Milestone 2',
-      'classCode': 'PRW301 - SE1902',
-      'date': '02/07/2026',
-      'time': '10:00 - 12:20',
-      'location': 'Phòng 205, Tòa nhà Alpha',
-      'instructor': 'GV. Trần Thị B',
-      'description': 'Báo cáo tiến độ hoàn thiện UI/UX và API của dự án Web.',
-      'status': 'Đang diễn ra',
-      'duration': '20',
-    },
-    {
-      'id': '4',
-      'title': 'Hạn nộp báo cáo nghiên cứu công nghệ',
-      'classCode': 'FLC102 - SE1901',
-      'date': '04/07/2026',
-      'time': 'Trước 23:59',
-      'location': 'Nộp trên hệ thống Flipped Classroom',
-      'instructor': 'GV. Hoàng Văn C',
-      'description': 'Nộp báo cáo nghiên cứu công nghệ Front-end phục vụ cho dự án môn học.',
-      'status': 'Đã diễn ra',
-      'duration': '15',
-    },
-  ];
-
-  Future<void> _navigateToCreateProject() async {
-    final result = await Navigator.push<Map<String, dynamic>>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateProjectScreen(
-          availableClassrooms: _classes,
-        ),
-      ),
+    return _sortNewestFirst(
+      mapped,
+      ['createdAt', 'latestMilestoneDueAt', 'id'],
     );
-    if (result != null) {
-      await _ensureProjectsLoaded(force: true);
-    }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
+  DateTime? _parseSortDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    final raw = value.toString().trim();
+    if (raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  List<Map<String, dynamic>> _sortNewestFirst(
+    List<Map<String, dynamic>> items,
+    List<String> candidateKeys,
+  ) {
+    final sorted = List<Map<String, dynamic>>.from(items);
+    sorted.sort((a, b) {
+      for (final key in candidateKeys) {
+        final aDate = _parseSortDate(a[key]);
+        final bDate = _parseSortDate(b[key]);
+        if (aDate != null || bDate != null) {
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          final compare = bDate.compareTo(aDate);
+          if (compare != 0) return compare;
+        }
+      }
+
+      final aId = (a['id'] as num?)?.toInt() ?? -1;
+      final bId = (b['id'] as num?)?.toInt() ?? -1;
+      return bId.compareTo(aId);
     });
+    return sorted;
+  }
 
-    if (index == 2) {
-      _ensureActivitiesLoaded();
-    } else if (index == 3) {
-      _ensureProjectsLoaded();
+  String _formatDate(dynamic raw) {
+    if (raw == null) return '';
+    final value = raw.toString().split('T').first;
+    final parts = value.split('-');
+    if (parts.length == 3) {
+      return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return value;
+  }
+
+  String _eventStatusLabel(String status) {
+    switch (status) {
+      case 'LIVE':
+        return 'Đang diễn ra';
+      case 'COMPLETED':
+        return 'Đã hoàn thành';
+      case 'CANCELLED':
+        return 'Đã hủy';
+      case 'SCHEDULED':
+      default:
+        return 'Chưa diễn ra';
     }
   }
 
-  Future<void> _navigateToCreateActivity() async {
-    final result = await Navigator.push<Map<String, dynamic>>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateActivityScreen(availableClassrooms: _classes),
+  Color _eventStatusColor(String status) {
+    switch (status) {
+      case 'LIVE':
+        return Colors.green;
+      case 'COMPLETED':
+        return Colors.grey;
+      case 'CANCELLED':
+        return Colors.redAccent;
+      case 'SCHEDULED':
+      default:
+        return Colors.orange;
+    }
+  }
+
+  ButtonStyle _toolbarButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF7EC07E),
+      foregroundColor: const Color(0xFF0F172A),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
     );
-    if (result != null) {
-      await _ensureActivitiesLoaded(force: true);
-    }
   }
 
-  Future<void> _navigateToCreateClass() async {
+  Future<void> _openCreateClass() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(builder: (context) => const CreateClassScreen()),
     );
     if (result != null) {
-      final List<dynamic> schedulesRaw = result['schedules'] as List<dynamic>? ?? [];
-      final List<Map<String, dynamic>> schedulesRequest = [];
-      for (var s in schedulesRaw) {
-        if (s is String) {
-          // Split only at the FIRST ': ' to avoid splitting on times like '7:30'
-          final sepIdx = s.indexOf(': ');
-          if (sepIdx != -1) {
-            final dayStr = s.substring(0, sepIdx).trim();
-            final slotStr = s.substring(sepIdx + 2).trim();
-            
-            int dayOfWeek = 0;
-            if (dayStr == 'Thứ 2') dayOfWeek = 0;
-            else if (dayStr == 'Thứ 3') dayOfWeek = 1;
-            else if (dayStr == 'Thứ 4') dayOfWeek = 2;
-            else if (dayStr == 'Thứ 5') dayOfWeek = 3;
-            else if (dayStr == 'Thứ 6') dayOfWeek = 4;
-            else if (dayStr == 'Thứ 7') dayOfWeek = 5;
-            else if (dayStr == 'Chủ nhật') dayOfWeek = 6;
-            
-            String slotLabel = 'Slot 1';
-            String startTime = '07:30:00';
-            String endTime = '09:50:00';
-            
-            if (slotStr.contains('Slot 1')) {
-              slotLabel = 'Slot 1';
-              startTime = '07:30:00';
-              endTime = '09:50:00';
-            } else if (slotStr.contains('Slot 2')) {
-              slotLabel = 'Slot 2';
-              startTime = '10:00:00';
-              endTime = '12:20:00';
-            } else if (slotStr.contains('Slot 3')) {
-              slotLabel = 'Slot 3';
-              startTime = '12:50:00';
-              endTime = '15:10:00';
-            } else if (slotStr.contains('Slot 4')) {
-              slotLabel = 'Slot 4';
-              startTime = '15:20:00';
-              endTime = '17:40:00';
-            } else if (slotStr.contains('Slot 5')) {
-              slotLabel = 'Slot 5';
-              startTime = '18:00:00';
-              endTime = '20:20:00';
-            }
-            
-            schedulesRequest.add({
-              'dayOfWeek': dayOfWeek,
-              'slotLabel': slotLabel,
-              'startTime': startTime,
-              'endTime': endTime,
-              'roomName': 'Phòng học trực tuyến',
-            });
-          }
-        }
-      }
-
-      final String titleRaw = result['title'] as String? ?? 'Lớp học';
-      final String codeRaw = result['code'] as String? ?? 'SE1904-PRM393';
-      
-      final cleanCode = codeRaw
-          .toUpperCase()
-          .replaceAll(' - ', '-')
-          .replaceAll(' ', '-')
-          .replaceAll(RegExp(r'[^A-Z0-9-]'), '-');
-
-      try {
-        await ClassroomService().createClassroom(
-          code: cleanCode,
-          name: titleRaw,
-          description: result['description'] as String? ?? '',
-          semesterCode: result['semester'] as String? ?? 'SU26',
-          schedules: schedulesRequest,
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tạo lớp học thành công!'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Color(0xFF7EC07E),
-          ),
-        );
-        _loadClasses();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi tạo lớp học: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      await _loadData();
     }
   }
 
-  Future<void> _navigateToCreateEvent() async {
-    final classCodes = _classes.map((c) => c['code'] as String).toList();
+  Future<void> _openCreateActivity() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateEventScreen(
-          classNames: classCodes,
-        ),
+        builder: (context) =>
+            CreateActivityScreen(availableClassrooms: _classes),
       ),
     );
     if (result != null) {
-      setState(() {
-        _eventsList.insert(0, {
-          'id': DateTime.now().millisecondsSinceEpoch.toString(),
-          'title': result['title'] as String,
-          'classCode': result['classCode'] as String,
-          'date': result['date'] as String,
-          'duration': result['duration'] as String,
-          'description': result['description'] as String,
-          'status': result['status'] as String,
-          'time': 'Tự do',
-          'location': 'Trực tuyến / Trực tiếp',
-          'instructor': 'GV. Vũ Trường Giang',
-        });
-      });
+      await _loadData();
+    }
+  }
+
+  Future<void> _openCreateProject() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CreateProjectScreen(availableClassrooms: _classes),
+      ),
+    );
+    if (result != null) {
+      await _loadData();
+    }
+  }
+
+  Future<void> _openCreateEvent() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateEventScreen(classrooms: _classes),
+      ),
+    );
+    if (result == null) return;
+    try {
+      await EventService().createTeacherEvent(result);
+      await _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi tạo sự kiện: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      _buildDashboardTab(),
-      _buildClassesTab(),
-      _buildActivitiesTab(),
-      _buildProjectsTab(),
-      _buildEventsTab(),
-      const ProfileScreen(showBackButton: false),
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: _buildCurrentPage(),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+              )
+            : _buildCurrentPage(),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: const Color(0xFF0F172A).withOpacity(0.06),
-              width: 1.2,
-            ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF7EC07E),
+        unselectedItemColor: const Color(0xFF64748B),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Trang chủ',
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFFFFFFFF),
-          selectedItemColor: const Color(0xFF7EC07E),
-          unselectedItemColor: const Color(0xFF0F172A).withOpacity(0.4),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Trang chủ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.school_outlined),
-              activeIcon: Icon(Icons.school),
-              label: 'Lớp học',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined),
-              activeIcon: Icon(Icons.assignment),
-              label: 'Hoạt động',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work_outline),
-              activeIcon: Icon(Icons.work),
-              label: 'Dự án',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.event_note_outlined),
-              activeIcon: Icon(Icons.event_note),
-              label: 'Sự kiện',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Cá nhân',
-            ),
-          ],
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school_outlined),
+            activeIcon: Icon(Icons.school),
+            label: 'Lớp học',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_outlined),
+            activeIcon: Icon(Icons.assignment),
+            label: 'Hoạt động',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.group_work_outlined),
+            activeIcon: Icon(Icons.group_work),
+            label: 'Dự án',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.event_note_outlined),
+            activeIcon: Icon(Icons.event_note),
+            label: 'Sự kiện',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Cá nhân',
+          ),
+        ],
       ),
     );
   }
@@ -581,1161 +352,480 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Widget _buildCurrentPage() {
     switch (_selectedIndex) {
       case 0:
-        return _buildDashboardTab();
+        return _buildDashboard();
       case 1:
-        return _buildClassesTab();
+        return _buildClasses();
       case 2:
-        return _buildActivitiesTab();
+        return _buildActivities();
       case 3:
-        return _buildProjectsTab();
+        return _buildProjects();
       case 4:
-        return _buildEventsTab();
+        return _buildEvents();
       case 5:
         return const ProfileScreen(showBackButton: false);
       default:
-        return _buildDashboardTab();
+        return _buildDashboard();
     }
   }
 
-  Widget _buildDashboardTab() {
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 20.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Dashboard',
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Chào mừng giảng viên!',
-                      style: TextStyle(fontSize: 14, color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
-                    ),
-                  ],
-                ),
-                Stack(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.notifications_outlined,
-                        size: 28,
-                        color: Color(0xFF0F172A),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationScreen(showBackButton: true),
-                          ),
-                        );
-                      },
-                    ),
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.redAccent,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: const Text(
-                          '2',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard('${_classes.length}', 'Lớp học', const Color(0xFF7EC07E)),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _buildStatCard('$_totalStudents', 'Sinh viên', const Color(0xFF7EC07E)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard('$_activeGroups', 'Nhóm dự án', const Color(0xFF7EC07E)),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _buildStatCard('$_pendingGrading', 'Cần chấm điểm', const Color(0xFF7EC07E)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 28.0, bottom: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Lớp học sắp diễn ra',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                GestureDetector(
-                  onTap: () => _onItemTapped(1),
-                  child: const Text(
-                    'Xem tất cả',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        _isLoadingClasses
-            ? const SliverToBoxAdapter(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
-                  ),
-                ),
-              )
-            : SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final upcomingClasses = _classes.take(3).toList();
-                      if (upcomingClasses.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            'Không có lớp học nào sắp diễn ra',
-                            style: TextStyle(color: Color(0xFF94A3B8)),
-                          ),
-                        );
-                      }
-
-                final item = upcomingClasses[index];
-                return GestureDetector(
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ClassDetailScreen(
-                          classroomId: item['id'] as int?,
-                          className: item['title'],
-                          classCode: item['code'],
-                          studentsCount: item['studentsCount'],
-                        ),
-                      ),
-                    );
-                    if (result != null) {
-                      if (result is Map) {
-                        setState(() {
-                          item['title'] = result['className'];
-                          item['code'] = result['classCode'];
-                        });
-                      } else if (result is int) {
-                        _onItemTapped(result);
-                      }
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFFFF),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item['title'],
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                              ),
-                            ),
-                            Text(
-                              item['date'] ?? 'Hôm nay',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF7EC07E), fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${item['studentsCount']} sinh viên',
-                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.4)),
-                            ),
-                            Text(
-                              item['time'] ?? 'Slot 1',
-                              style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.4)),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              childCount: min(3, _classes.length),
-            ),
-          ),
-        ),
-
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.only(left: 20.0, top: 28.0, bottom: 12.0),
+  Widget _buildHeader(String title, {VoidCallback? onRefresh}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+      child: Row(
+        children: [
+          Expanded(
             child: Text(
-              'Tác vụ nhanh',
-              style: TextStyle(
-                fontSize: 18,
+              title,
+              style: const TextStyle(
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0F172A),
               ),
             ),
           ),
-        ),
-        
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              _buildQuickActionRow(
-                icon: Icons.add_circle_outline,
-                title: 'Tạo lớp học mới',
-                subtitle: 'Khởi tạo lớp học mới và phân nhóm sinh viên',
-                color: const Color(0xFF7EC07E),
-                onTap: _navigateToCreateClass,
-              ),
-              const SizedBox(height: 10),
-              _buildQuickActionRow(
-                icon: Icons.assignment_turned_in_outlined,
-                title: 'Chấm điểm hoạt động',
-                subtitle: 'Đánh giá các milestone và bài tập của sinh viên',
-                color: const Color(0xFF7EC07E),
-                onTap: () => _onItemTapped(2),
-              ),
-              const SizedBox(height: 30),
-            ]),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const NotificationScreen(showBackButton: true),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_outlined),
           ),
-        ),
-      ],
+          if (onRefresh != null)
+            IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh)),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatCard(String value, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
-      ),
-      child: Column(
+  Widget _buildDashboard() {
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView(
         children: [
-          Text(
-            value,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: const Color(0xFF0F172A).withOpacity(0.5)),
+          _buildHeader('Dashboard', onRefresh: _loadData),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard('${_classes.length}', 'Lớp học'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard('$_totalStudents', 'Sinh viên'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard('$_activeGroups', 'Nhóm dự án'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard('$_pendingGrading', 'Chờ chấm'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildQuickAction(
+                  title: 'Tạo lớp học',
+                  subtitle: 'Khởi tạo lớp mới với lịch học và mã tham gia',
+                  onTap: _openCreateClass,
+                ),
+                const SizedBox(height: 12),
+                _buildQuickAction(
+                  title: 'Tạo hoạt động',
+                  subtitle: 'Giao bài, quiz hoặc nhiệm vụ học tập mới',
+                  onTap: _openCreateActivity,
+                ),
+                const SizedBox(height: 12),
+                _buildQuickAction(
+                  title: 'Tạo sự kiện phản biện',
+                  subtitle: 'Tạo lịch review, defense hoặc demo cho lớp',
+                  onTap: _openCreateEvent,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildClassesTab() {
-    final filteredClasses = _classes.where((item) {
-      final query = _classSearchQuery.toLowerCase();
-      final titleMatch = item['title'].toString().toLowerCase().contains(query);
-      final semMatch = item['semester'].toString().toLowerCase().contains(query);
-      return titleMatch || semMatch;
-    }).toList();
-
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Quản lý lớp học',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                ElevatedButton(
-                  onPressed: _navigateToCreateClass,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7EC07E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    minimumSize: Size.zero,
-                  ),
-                  child: const Text(
-                    'Tạo lớp',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                ),
-              ],
+  Widget _buildClasses() {
+    return Column(
+      children: [
+        _buildHeader('Lớp học', onRefresh: _loadData),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: _openCreateClass,
+              icon: const Icon(Icons.add),
+              label: const Text('Tạo lớp'),
+              style: _toolbarButtonStyle(),
             ),
           ),
         ),
-        
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 16.0),
-            child: TextField(
-              onChanged: (val) {
-                setState(() {
-                  _classSearchQuery = val;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm lớp học',
-                hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: const Color(0xFF0F172A).withOpacity(0.4), size: 20),
-                fillColor: const Color(0xFFFFFFFF),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        _isLoadingClasses
-            ? const SliverToBoxAdapter(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
-                  ),
-                ),
-              )
-            : SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (filteredClasses.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40.0),
-                      child: Text(
-                        'Không tìm thấy lớp học nào',
-                        style: TextStyle(color: Color(0xFF64748B)),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: _classes.length,
+            itemBuilder: (context, index) {
+              final item = _classes[index];
+              return _buildSimpleCard(
+                title: item['name'] ?? item['className'] ?? item['code'] ?? '',
+                subtitle:
+                    '${item['code'] ?? ''} • ${item['studentCount'] ?? item['studentsCount'] ?? 0} sinh viên',
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ClassDetailScreen(
+                        classroomId: (item['id'] as num?)?.toInt(),
+                        className: item['name'] ?? item['className'] ?? '',
+                        classCode: item['code'] ?? '',
+                        studentsCount:
+                            (item['studentCount'] as num?)?.toInt() ??
+                            (item['studentsCount'] as num?)?.toInt() ??
+                            0,
                       ),
                     ),
                   );
-                }
-                
-                final item = filteredClasses[index];
-                final String displayTitle = item['title'];
-                final String displayCode = item['code'];
-                final String displaySemester = item['semester'];
-                final String displayType = item['type'];
-                final int displayCount = item['studentsCount'];
-                final Color displayColor = item['color'] ?? const Color(0xFF7EC07E);
-                
-                final String shorthand = displayTitle.split(' ').first;
+                  if (result != null) {
+                    await _loadData();
+                  }
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
-                return GestureDetector(
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ClassDetailScreen(
-                          classroomId: item['id'] as int?,
-                          className: displayTitle,
-                          classCode: displayCode,
-                          studentsCount: displayCount,
+  Widget _buildActivities() {
+    return Column(
+      children: [
+        _buildHeader('Hoạt động', onRefresh: _loadData),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: _openCreateActivity,
+              icon: const Icon(Icons.add),
+              label: const Text('Tạo hoạt động'),
+              style: _toolbarButtonStyle(),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: _activities.length,
+            itemBuilder: (context, index) {
+              final item = _activities[index];
+              return _buildSimpleCard(
+                title: item['title'] ?? '',
+                subtitle:
+                    '${item['className'] ?? ''} • ${item['date'] ?? ''} • ${item['submissions'] ?? ''}',
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ActivityDetailScreen(
+                        activityId: (item['id'] as num?)?.toInt(),
+                        activityTitle: item['title'] ?? '',
+                        deadline: item['date'] ?? '',
+                        submissions: item['submissions'] ?? '',
+                        description: item['description'] ?? '',
+                        className: item['className'] ?? '',
+                      ),
+                    ),
+                  );
+                  if (result != null) {
+                    await _loadData();
+                  }
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProjects() {
+    return Column(
+      children: [
+        _buildHeader('Dự án', onRefresh: _loadData),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: _openCreateProject,
+              icon: const Icon(Icons.add),
+              label: const Text('Tạo dự án'),
+              style: _toolbarButtonStyle(),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: _projects.length,
+            itemBuilder: (context, index) {
+              final item = _projects[index];
+              return _buildSimpleCard(
+                title: item['title'] ?? '',
+                subtitle:
+                    '${item['group'] ?? ''} • ${item['class'] ?? ''} • ${item['members'] ?? ''}',
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProjectDetailScreen(
+                        project: item,
+                        availableClasses: _classes
+                            .map(
+                              (classroom) =>
+                                  classroom['code']?.toString() ?? '',
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  );
+                  if (result != null) {
+                    await _loadData();
+                  }
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEvents() {
+    return Column(
+      children: [
+        _buildHeader('Sự kiện', onRefresh: _loadData),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: _openCreateEvent,
+              icon: const Icon(Icons.add),
+              label: const Text('Tạo sự kiện'),
+              style: _toolbarButtonStyle(),
+            ),
+          ),
+        ),
+        Expanded(
+          child: _events.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Chưa có sự kiện nào',
+                    style: TextStyle(color: Color(0xFF94A3B8)),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: _events.length,
+                  itemBuilder: (context, index) {
+                    final event = _events[index];
+                    final status = event['status']?.toString() ?? 'SCHEDULED';
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: InkWell(
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TeacherEventDetailScreen(
+                                eventId: (event['id'] as num?)?.toInt() ?? 0,
+                              ),
+                            ),
+                          );
+                          if (result != null) {
+                            await _loadData();
+                          }
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    event['title'] ?? '',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  _eventStatusLabel(status),
+                                  style: TextStyle(
+                                    color: _eventStatusColor(status),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${event['classroomCode'] ?? ''} • ${_formatDate(event['startAt'])}',
+                              style: TextStyle(
+                                color: const Color(
+                                  0xFF0F172A,
+                                ).withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
-                    if (result != null) {
-                      if (result is Map) {
-                        setState(() {
-                          item['title'] = result['className'];
-                          item['code'] = result['classCode'];
-                        });
-                      } else if (result is int) {
-                        _onItemTapped(result);
-                      }
-                    }
                   },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFFFF),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: displayColor.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: displayColor.withOpacity(0.3)),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                shorthand,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: displayColor,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    displayTitle,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    displayType,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: const Color(0xFF0F172A).withOpacity(0.4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '$displayCount sinh viên',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: const Color(0xFF0F172A).withOpacity(0.5),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A).withOpacity(0.06),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
-                              ),
-                              child: Text(
-                                displaySemester,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              childCount: filteredClasses.isEmpty ? 1 : filteredClasses.length,
-            ),
-          ),
-        ),
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 20),
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildActivitiesTab() {
-    final filteredActivities = _activitiesList.where((act) {
-      final query = _activitySearchQuery.trim().toLowerCase();
-      if (query.isEmpty) return true;
-      final title = (act['title'] as String).toLowerCase();
-      final className = (act['className'] as String).toLowerCase();
-      return title.contains(query) || className.contains(query);
-    }).toList();
-
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Quản lý hoạt động',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-            ),
-            ElevatedButton(
-              onPressed: _navigateToCreateActivity,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7EC07E),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              child: const Text(
-                'Tạo mới',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        TextField(
-          onChanged: (val) => setState(() => _activitySearchQuery = val),
-          style: const TextStyle(color: Color(0xFF0F172A)),
-          decoration: InputDecoration(
-            hintText: 'Tìm kiếm hoạt động',
-            hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
-            suffixIcon: const Icon(Icons.search, color: Color(0xFF7EC07E), size: 20),
-            fillColor: const Color(0xFFFFFFFF),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+  Widget _buildStatCard(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
             ),
           ),
-        ),
-        const SizedBox(height: 18),
-        if (_isLoadingActivities)
-          const Padding(
-            padding: EdgeInsets.only(top: 40),
-            child: Center(
-              child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
-            ),
-          )
-        else
-        if (filteredActivities.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.only(top: 40.0),
-              child: Text(
-                'Không tìm thấy hoạt động nào',
-                style: TextStyle(color: Color(0xFF94A3B8)),
-              ),
-            ),
-          )
-        else
-          ...filteredActivities.map((act) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: _buildActivityItem(act),
-            );
-          }),
-      ],
-    );
-  }
-
-  Widget _buildProjectsTab() {
-    final filteredProjects = _projectsList.where((proj) {
-      final query = _projectSearchQuery.trim().toLowerCase();
-      if (query.isEmpty) return true;
-      final title = (proj['title'] as String).toLowerCase();
-      final classCode = (proj['class'] as String).toLowerCase();
-      final group = (proj['group'] as String).toLowerCase();
-      return title.contains(query) || classCode.contains(query) || group.contains(query);
-    }).toList();
-
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Quản lý Dự án',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-            ),
-            ElevatedButton(
-              onPressed: _navigateToCreateProject,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7EC07E),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              child: const Text(
-                'Thêm dự án',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        TextField(
-          onChanged: (val) => setState(() => _projectSearchQuery = val),
-          style: const TextStyle(color: Color(0xFF0F172A)),
-          decoration: InputDecoration(
-            hintText: 'Tìm kiếm dự án',
-            hintStyle: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.3), fontSize: 14),
-            suffixIcon: const Icon(Icons.search, color: Color(0xFF7EC07E), size: 20),
-            fillColor: const Color(0xFFFFFFFF),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.55),
             ),
           ),
-        ),
-        const SizedBox(height: 18),
-        if (_isLoadingProjects)
-          const Padding(
-            padding: EdgeInsets.only(top: 40),
-            child: Center(
-              child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
-            ),
-          )
-        else
-        if (filteredProjects.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.only(top: 40.0),
-              child: Text(
-                'Không tìm thấy dự án nào',
-                style: TextStyle(color: Color(0xFF94A3B8)),
-              ),
-            ),
-          )
-        else
-          ...filteredProjects.map((proj) => _buildProjectItem(proj)),
-      ],
-    );
-  }
-
-  Widget _buildProjectItem(Map<String, dynamic> proj) {
-    final String title = proj['title'] ?? '';
-    final String group = proj['group'] ?? proj['groupName'] ?? '';
-    final String date = proj['date'] ?? '';
-    final String classCode = proj['class'] ?? '';
-    final String members = proj['members'] ?? '0 sinh viên';
-
-    return GestureDetector(
-      onTap: () async {
-        final availableClasses = _classes.map((c) => c['code'] as String).toList();
-        final result = await Navigator.push<Map<String, dynamic>>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProjectDetailScreen(
-              project: proj,
-              availableClasses: availableClasses,
-            ),
-          ),
-        );
-        if (result != null) {
-          setState(() {
-            proj['title'] = result['title'];
-            proj['group'] = result['group'];
-            proj['groupName'] = result['groupName'];
-            proj['class'] = result['class'];
-            proj['className'] = result['class'];
-            proj['date'] = result['date'];
-            proj['members'] = result['members'];
-            proj['membersList'] = result['membersList'];
-            proj['leader'] = result['leader'];
-            proj['progress'] = result['progress'];
-            proj['milestones'] = result['milestones'];
-          });
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7EC07E).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    classCode,
-                    style: const TextStyle(color: Color(0xFF7EC07E), fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  group,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
-                ),
-                Text(
-                  members,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
-                ),
-                Text(
-                  date,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
-                ),
-              ],
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildActivityItem(Map<String, dynamic> activity) {
-    final String title = activity['title'] ?? '';
-    final String className = activity['className'] ?? '';
-    final String submissions = activity['submissions'] ?? '';
-    final String deadline = activity['date'] ?? '25/06/2026';
-    final String description = activity['description'] ?? 'Hoàn thiện đầy đủ các yêu cầu của bài tập thực hành';
-
-    return GestureDetector(
-      onTap: () async {
-        final result = await Navigator.push<Map<String, dynamic>>(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ActivityDetailScreen(
-              activityId: activity['id'] as int?,
-              activityTitle: title,
-              deadline: deadline,
-              submissions: submissions,
-              description: description,
-              className: className,
-            ),
-          ),
-        );
-        if (result != null) {
-          setState(() {
-            activity['title'] = result['title'];
-            activity['date'] = result['deadline'];
-            activity['description'] = result['description'];
-            activity['status'] = 'Đang mở (Hạn chót: ${result['deadline']})';
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7EC07E).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.assignment, color: Color(0xFF7EC07E), size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  submissions,
-                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F172A).withOpacity(0.5)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7EC07E).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF7EC07E).withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    className,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF7EC07E)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionRow({
-    required IconData icon,
+  Widget _buildQuickAction({
     required String title,
     required String subtitle,
-    required Color color,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Ink(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                shape: BoxShape.circle,
+                color: const Color(0xFF7EC07E).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: const Icon(Icons.chevron_right, color: Color(0xFF7EC07E)),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(color: const Color(0xFF0F172A).withOpacity(0.4), fontSize: 11),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.55),
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: const Color(0xFF0F172A).withOpacity(0.3)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEventsTab() {
-    final filteredEvents = _eventsList.where((event) {
-      final query = _eventSearchQuery.toLowerCase();
-      final title = (event['title'] as String? ?? '').toLowerCase();
-      return title.contains(query);
-    }).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Danh sách sự kiện',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _navigateToCreateEvent,
-                icon: const Icon(Icons.add, size: 16, color: Colors.white),
-                label: const Text(
-                  'Tạo mới',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7EC07E),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildSimpleCard({
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListTile(
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
           ),
         ),
-
-        // Search Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.01),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TextField(
-              onChanged: (value) {
-                setState(() {
-                  _eventSearchQuery = value;
-                });
-              },
-              style: const TextStyle(color: Color(0xFF0F172A)),
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm sự kiện',
-                hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF334155), size: 20),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: InputBorder.none,
-              ),
-            ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.6),
           ),
         ),
-
-        const SizedBox(height: 12),
-
-        // Events List
-        Expanded(
-          child: filteredEvents.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Không tìm thấy sự kiện nào',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                  ),
-                )
-              : ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  itemCount: filteredEvents.length,
-                  itemBuilder: (context, index) {
-                    final event = filteredEvents[index];
-                    final String status = event['status'] ?? 'Chưa diễn ra';
-
-                    // Get status styling dynamically
-                    Color statusColor;
-                    switch (status) {
-                      case 'Đang diễn ra':
-                        statusColor = Colors.green;
-                        break;
-                      case 'Đã diễn ra':
-                        statusColor = Colors.grey;
-                        break;
-                      case 'Chưa diễn ra':
-                      default:
-                        statusColor = Colors.orange;
-                        break;
-                    }
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF0F172A).withValues(alpha: 0.06)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.01),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TeacherEventDetailScreen(event: event),
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Event Icon
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF7EC07E).withValues(alpha: 0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.event_note,
-                                    color: Color(0xFF7EC07E),
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-
-                                // Event Information
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Title & Status Badge Row
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              event['title'] ?? '',
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          // Status badge
-                                          Text(
-                                            status,
-                                            style: TextStyle(
-                                              color: statusColor,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-
-                                      // Date & Class Code Row
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            event['date'] ?? '',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: const Color(0xFF0F172A).withValues(alpha: 0.4),
-                                            ),
-                                          ),
-                                          Text(
-                                            event['classCode'] ?? '',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: const Color(0xFF0F172A).withValues(alpha: 0.6),
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
     );
   }
 }

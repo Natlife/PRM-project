@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ProjectMilestoneRepository extends JpaRepository<ProjectMilestone, Long> {
     List<ProjectMilestone> findByProjectGroupId(Long projectGroupId);
+    List<ProjectMilestone> findByProjectGroupIdIn(List<Long> projectGroupIds);
 }

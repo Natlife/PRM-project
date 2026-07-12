@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
     List<ProjectMember> findByProjectGroupId(Long projectGroupId);
+    List<ProjectMember> findByProjectGroupIdIn(List<Long> projectGroupIds);
     List<ProjectMember> findByStudentId(Long studentId);
     Optional<ProjectMember> findByProjectGroupIdAndStudentId(Long projectGroupId, Long studentId);
     Optional<ProjectMember> findByStudentIdAndProjectGroupClassroomIdAndActiveTrue(Long studentId, Long classroomId);

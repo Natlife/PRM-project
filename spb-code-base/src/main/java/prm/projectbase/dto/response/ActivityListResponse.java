@@ -26,4 +26,12 @@ public class ActivityListResponse {
     private BigDecimal maxScore;
     
     private String status;
+
+    private Long classroomId;
+
+    private String classroomCode;
+
+    private String classroomName;
+
+    private SubmissionSummaryResponse submissionSummary;
 }

@@ -29,4 +29,10 @@ class DashboardService {
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
+
+  Future<Map<String, dynamic>> getTeacherDashboardOverview() async {
+    final response = await _apiService.get('/teacher/dashboard/overview');
+    final responseBody = jsonDecode(response.body);
+    return Map<String, dynamic>.from(responseBody['data'] ?? {});
+  }
 }

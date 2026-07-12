@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../services/activity_service.dart';
-import '../../services/material_service.dart';
-import '../../services/project_service.dart';
+import '../../services/classroom_service.dart';
 import 'student_activity_detail_screen.dart';
 import 'student_milestone_detail_screen.dart';
 import 'student_peer_review_screen.dart';
@@ -81,19 +79,17 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final rawActivities = await ActivityService().getStudentActivities(widget.classroomId!);
+      final overview =
+          await ClassroomService().getStudentClassroomOverview(widget.classroomId!);
+      final rawActivities = List<Map<String, dynamic>>.from(
+        overview['activities'] ?? const [],
+      );
       final List<Map<String, dynamic>> loadedActivities = [];
 
       for (final activity in rawActivities) {
-        Map<String, dynamic> submission = {};
-        try {
-          final activityId = (activity['id'] as num?)?.toInt();
-          if (activityId != null) {
-            submission = await ActivityService().getStudentSubmission(activityId);
-          }
-        } catch (e) {
-          debugPrint('Error loading student submission for activity ${activity['id']}: $e');
-        }
+        final submission = Map<String, dynamic>.from(
+          activity['submissionSummary'] ?? const {},
+        );
 
         final submissionStatus = submission['status']?.toString() ?? 'NOT_SUBMITTED';
         final isDone = submissionStatus == 'SUBMITTED' ||
@@ -122,7 +118,9 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
         });
       }
 
-      final rawMaterials = await MaterialService().getClassroomMaterials(widget.classroomId!);
+      final rawMaterials = List<Map<String, dynamic>>.from(
+        overview['materials'] ?? const [],
+      );
       final loadedMaterials = rawMaterials.map<Map<String, dynamic>>((material) {
         final type = material['materialType'] == 'VIDEO' ? 'video' : 'file';
         return {
@@ -138,14 +136,15 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
       }).toList();
 
       Map<String, dynamic> loadedProject = {};
-      try {
-        final projectGroup = await ProjectService().getStudentProjectGroup(widget.classroomId!);
-        if (projectGroup.isNotEmpty) {
-          final groupId = (projectGroup['id'] as num?)?.toInt();
-          List<Map<String, dynamic>> milestones = [];
-          if (groupId != null) {
-            final rawMilestones = await ProjectService().getGroupMilestones(groupId);
-            milestones = rawMilestones.map<Map<String, dynamic>>((milestone) {
+      final projectGroup = Map<String, dynamic>.from(
+        overview['projectGroup'] ?? const {},
+      );
+      if (projectGroup.isNotEmpty) {
+        final groupId = (projectGroup['id'] as num?)?.toInt();
+        final rawMilestones = List<Map<String, dynamic>>.from(
+          projectGroup['milestones'] ?? const [],
+        );
+        final milestones = rawMilestones.map<Map<String, dynamic>>((milestone) {
               final status = milestone['status']?.toString() ?? 'NOT_STARTED';
               Color color = Colors.grey;
               String displayStatus = 'Chưa bắt đầu';
@@ -172,8 +171,6 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
                 'activities': milestone['activities'] ?? const [],
               };
             }).toList();
-          }
-
           final rawMembers = List<Map<String, dynamic>>.from(projectGroup['members'] ?? const []);
           final leader = projectGroup['leader'] as Map<String, dynamic>?;
           final members = rawMembers.map<Map<String, dynamic>>((member) {
@@ -193,9 +190,6 @@ class _StudentClassDetailScreenState extends State<StudentClassDetailScreen> {
             'membersData': rawMembers,
             'milestones': milestones,
           };
-        }
-      } catch (e) {
-        debugPrint('No project group found for student: $e');
       }
 
       if (!mounted) {

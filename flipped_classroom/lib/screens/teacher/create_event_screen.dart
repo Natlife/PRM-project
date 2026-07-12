@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  final List<String> classNames;
+  final List<Map<String, dynamic>> classrooms;
 
   const CreateEventScreen({
     super.key,
-    required this.classNames,
+    required this.classrooms,
   });
 
   @override
@@ -14,65 +14,104 @@ class CreateEventScreen extends StatefulWidget {
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedClass;
-  final _eventNameController = TextEditingController();
-  final _startTimeController = TextEditingController();
-  final _durationController = TextEditingController();
-  final _descController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _sessionDurationController = TextEditingController(text: '20');
+
+  int? _selectedClassroomId;
+  DateTime? _selectedStartAt;
+  DateTime? _selectedEndAt;
 
   @override
   void initState() {
     super.initState();
-    if (widget.classNames.isNotEmpty) {
-      _selectedClass = widget.classNames.first;
+    if (widget.classrooms.isNotEmpty) {
+      _selectedClassroomId = (widget.classrooms.first['id'] as num?)?.toInt();
     }
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime now = DateTime.now();
-    final DateTime tomorrow = now.add(const Duration(days: 1));
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _sessionDurationController.dispose();
+    super.dispose();
+  }
 
-    final DateTime? picked = await showDatePicker(
+  Future<void> _pickDateTime({required bool isStart}) async {
+    final now = DateTime.now();
+    final initial = isStart
+        ? (_selectedStartAt ?? now.add(const Duration(days: 1)))
+        : (_selectedEndAt ?? (_selectedStartAt ?? now).add(const Duration(hours: 2)));
+
+    final date = await showDatePicker(
       context: context,
-      initialDate: tomorrow,
-      firstDate: tomorrow,
+      initialDate: initial,
+      firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF7EC07E),
-              onPrimary: Colors.white,
-              surface: Color(0xFFFFFFFF),
-              onSurface: Color(0xFF0F172A),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
+    if (date == null || !mounted) return;
 
-    if (picked != null) {
-      setState(() {
-        _startTimeController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-      });
-    }
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null || !mounted) return;
+
+    final picked = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    setState(() {
+      if (isStart) {
+        _selectedStartAt = picked;
+        if (_selectedEndAt == null || !_selectedEndAt!.isAfter(picked)) {
+          _selectedEndAt = picked.add(const Duration(hours: 2));
+        }
+      } else {
+        _selectedEndAt = picked;
+      }
+    });
   }
 
-  void _submitForm() {
+  String _formatDateTime(DateTime? value) {
+    if (value == null) return 'Chọn thời gian';
+    return '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year} '
+        '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedClassroomId == null || _selectedStartAt == null || _selectedEndAt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn lớp học và thời gian đầy đủ'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+    if (!_selectedEndAt!.isAfter(_selectedStartAt!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thời gian kết thúc phải sau thời gian bắt đầu'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
-    final newEvent = {
-      'title': _eventNameController.text.trim(),
-      'classCode': _selectedClass,
-      'date': _startTimeController.text,
-      'duration': _durationController.text.trim(),
-      'description': _descController.text.trim(),
-      'status': 'Chưa diễn ra',
-    };
-
-    Navigator.of(context).pop(newEvent);
+    Navigator.pop<Map<String, dynamic>>(context, {
+      'classroomId': _selectedClassroomId,
+      'title': _titleController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'startAt': _selectedStartAt!.toIso8601String(),
+      'endAt': _selectedEndAt!.toIso8601String(),
+      'sessionDurationMinutes': int.tryParse(_sessionDurationController.text.trim()) ?? 20,
+    });
   }
 
   @override
@@ -80,236 +119,96 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A)),
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Tạo sự kiện mới',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Event Name
-                const Text(
-                  'Tên sự kiện *',
-                  style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _eventNameController,
-                  style: const TextStyle(color: Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Ví dụ: review lần 1,...',
-                    hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                    fillColor: const Color(0xFFFFFFFF),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
-                    ),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
-                      return 'Tên sự kiện là bắt buộc';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Start Time
-                const Text(
-                  'Thời gian bắt đầu *',
-                  style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _startTimeController,
-                  readOnly: true,
-                  onTap: () => _selectDate(context),
-                  style: const TextStyle(color: Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'dd/mm/yyyy',
-                    hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                    suffixIcon: const Icon(Icons.calendar_today, color: Color(0xFF334155), size: 18),
-                    fillColor: const Color(0xFFFFFFFF),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
-                    ),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) {
-                      return 'Thời gian bắt đầu là bắt buộc';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Choose Class
-                const Text(
-                  'Chọn lớp *',
-                  style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedClass,
-                  dropdownColor: const Color(0xFFFFFFFF),
-                  style: const TextStyle(color: Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    fillColor: const Color(0xFFFFFFFF),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
-                    ),
-                  ),
-                  items: widget.classNames.map((code) {
-                    return DropdownMenuItem<String>(
-                      value: code,
-                      child: Text(code),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedClass = val),
-                  validator: (val) {
-                    if (val == null) {
-                      return 'Vui lòng chọn lớp học';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Duration per session
-                const Text(
-                  'Thời lượng mỗi phiên (phút) *',
-                  style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _durationController,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Ví dụ: 15, 30,...',
-                    hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                    fillColor: const Color(0xFFFFFFFF),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
-                    ),
-                  ),
-                  validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
-                      return 'Thời lượng mỗi phiên là bắt buộc';
-                    }
-                    if (int.tryParse(val.trim()) == null) {
-                      return 'Vui lòng nhập một số hợp lệ';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-
-                // Description
-                const Text(
-                  'Mô tả',
-                  style: TextStyle(color: Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _descController,
-                  maxLines: 4,
-                  style: const TextStyle(color: Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Nhập mô tả sự kiện...',
-                    hintStyle: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.3)),
-                    fillColor: const Color(0xFFFFFFFF),
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF7EC07E), width: 1.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF9E2C2C), // Burgundy/Red accent for Cancel
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text(
-                          'Hủy',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            DropdownButtonFormField<int>(
+              initialValue: _selectedClassroomId,
+              decoration: const InputDecoration(labelText: 'Lớp học'),
+              items: widget.classrooms
+                  .map(
+                    (classroom) => DropdownMenuItem<int>(
+                      value: (classroom['id'] as num?)?.toInt(),
+                      child: Text(
+                        classroom['code']?.toString() ??
+                            classroom['className']?.toString() ??
+                            '',
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7EC07E), // Green accent for Save
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text(
-                          'Lưu',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _selectedClassroomId = value),
             ),
-          ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Tên sự kiện'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Tên sự kiện là bắt buộc';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              maxLines: 4,
+              decoration: const InputDecoration(labelText: 'Mô tả'),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Bắt đầu'),
+              subtitle: Text(_formatDateTime(_selectedStartAt)),
+              trailing: const Icon(Icons.calendar_month),
+              onTap: () => _pickDateTime(isStart: true),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Kết thúc'),
+              subtitle: Text(_formatDateTime(_selectedEndAt)),
+              trailing: const Icon(Icons.schedule),
+              onTap: () => _pickDateTime(isStart: false),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _sessionDurationController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Thời lượng mỗi phiên (phút)',
+              ),
+              validator: (value) {
+                final minutes = int.tryParse(value?.trim() ?? '');
+                if (minutes == null || minutes <= 0) {
+                  return 'Nhập thời lượng hợp lệ';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _submit,
+              child: const Text('Tạo sự kiện'),
+            ),
+          ],
         ),
       ),
     );

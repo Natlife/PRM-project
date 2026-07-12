@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../services/event_service.dart';
 
 class StudentEventReviewScreen extends StatefulWidget {
-  final Map<String, dynamic> event;
+  final int eventId;
+  final int assignmentId;
 
   const StudentEventReviewScreen({
     super.key,
-    required this.event,
+    required this.eventId,
+    required this.assignmentId,
   });
 
   @override
@@ -13,25 +18,51 @@ class StudentEventReviewScreen extends StatefulWidget {
 }
 
 class _StudentEventReviewScreenState extends State<StudentEventReviewScreen> {
-  final List<Map<String, String>> _questions = [
-    {
-      'author': 'Lê Hoàng Cường',
-      'content': 'Bạn có thể đổi button thành màu xanh được không?',
-    },
-    {
-      'author': 'GV. Vũ Trường Giang',
-      'content': 'Cơ chế đồng bộ dữ liệu ngoại tuyến (offline sync) hoạt động như thế nào trong thiết kế hiện tại?',
-    },
-    {
-      'author': 'Nguyễn Minh Anh',
-      'content': 'Thời gian phản hồi trung bình của API khi tải danh sách lớp học là bao nhiêu?',
-    },
-  ];
+  bool _isLoading = true;
+  Map<String, dynamic> _detail = {};
 
-  bool _isPlayingVideo = false;
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _isLoading = true);
+    try {
+      final detail = await EventService().getStudentEventDetail(widget.eventId);
+      if (!mounted) return;
+      setState(() {
+        _detail = detail;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi tải bản ghi sự kiện: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final assignments = List<Map<String, dynamic>>.from(
+      _detail['assignments'] ?? const [],
+    );
+    final assignment = assignments.cast<Map<String, dynamic>?>().firstWhere(
+          (item) => ((item?['id'] as num?)?.toInt() ?? 0) == widget.assignmentId,
+          orElse: () => Map<String, dynamic>.from(_detail['myAssignment'] ?? const {}),
+        ) ??
+        <String, dynamic>{};
+    final questions = List<Map<String, dynamic>>.from(
+      assignment['questions'] ?? const [],
+    );
+    final recording = assignment['recording'] as Map<String, dynamic>?;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -49,189 +80,92 @@ class _StudentEventReviewScreenState extends State<StudentEventReviewScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Event General Info Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.06)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.event['title'] ?? 'Thuyết trình Dự án STEM',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.event['classCode'] ?? 'PRM - SE1904',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: const Color(0xFF0F172A).withOpacity(0.6),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Ngày thực hiện: ${widget.event['date'] ?? "25/6/2026"}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: const Color(0xFF0F172A).withOpacity(0.4),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Section Title: Câu hỏi
-            const Text(
-              'Câu hỏi đã đặt',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Questions list
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _questions.length,
-              itemBuilder: (context, index) {
-                final question = _questions[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.06)),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 12,
-                            backgroundColor: Color(0xFF7EC07E),
-                            child: Icon(Icons.person, size: 14, color: Colors.white),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            question['author'] ?? '',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
                       Text(
-                        question['content'] ?? '',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: const Color(0xFF0F172A).withOpacity(0.8),
-                          height: 1.4,
+                        _detail['title'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Text(_detail['classroomCode'] ?? ''),
+                      if (recording != null) ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final url = recording['fileUrl']?.toString() ?? '';
+                            if (url.isEmpty) return;
+                            await launchUrl(
+                              Uri.parse(url),
+                              mode: LaunchMode.externalApplication,
+                            );
+                          },
+                          icon: const Icon(Icons.play_circle_outline),
+                          label: Text(
+                            recording['originalFileName'] ?? 'Mở bản ghi',
+                          ),
+                        ),
+                      ] else
+                        const Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Text('Giảng viên chưa tải bản ghi cho phiên này'),
+                        ),
                     ],
                   ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Simulated Video Player
-            if (_isPlayingVideo)
-              Container(
-                width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Simulated loading/playing screen
-                    const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7EC07E)),
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          'Đang phát bản ghi hình thuyết trình...',
-                          style: TextStyle(color: Colors.white, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () {
-                          setState(() {
-                            _isPlayingVideo = false;
-                          });
-                        },
+                const SizedBox(height: 20),
+                const Text(
+                  'Câu hỏi đã đặt',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (questions.isEmpty)
+                  const Text('Không có câu hỏi nào được lưu')
+                else
+                  ...questions.map(
+                    (question) => Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            question['authorName'] ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(question['content'] ?? ''),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              )
-            else
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _isPlayingVideo = true;
-                    });
-                  },
-                  icon: const Icon(Icons.videocam_outlined),
-                  label: const Text(
-                    'Xem lại bản ghi hình',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7EC07E),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+              ],
+            ),
     );
   }
 }

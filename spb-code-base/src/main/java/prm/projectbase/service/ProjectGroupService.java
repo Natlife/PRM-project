@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import prm.projectbase.dto.request.ProjectGroupCreateRequest;
 import prm.projectbase.dto.request.ProjectGroupUpdateRequest;
+import prm.projectbase.dto.response.MilestoneAttachmentResponse;
+import prm.projectbase.dto.response.ProjectMilestoneResponse;
 import prm.projectbase.dto.response.ProjectGroupDetailResponse;
 import prm.projectbase.dto.response.ProjectGroupListResponse;
 import prm.projectbase.dto.response.UserResponse;
@@ -17,6 +19,7 @@ import prm.projectbase.exception.AppException;
 import prm.projectbase.exception.ErrorCode;
 import prm.projectbase.repository.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +37,8 @@ public class ProjectGroupService {
     private final UserRepository userRepository;
     private final ClassroomEnrollmentRepository enrollmentRepository;
     private final UserService userService;
+    private final ProjectMilestoneRepository milestoneRepository;
+    private final MilestoneAttachmentRepository attachmentRepository;
 
     public ProjectGroupDetailResponse createProjectGroup(Long classroomId, ProjectGroupCreateRequest request) {
         log.info("Creating project group {} in classroom {}", request.getGroupName(), classroomId);
@@ -258,6 +263,23 @@ public class ProjectGroupService {
     }
 
     private ProjectGroupDetailResponse toDetailResponse(ProjectGroup group, List<ProjectMember> members) {
+        List<ProjectMilestoneResponse> milestones = milestoneRepository.findByProjectGroupId(group.getId()).stream()
+                .map(this::toMilestoneResponse)
+                .toList();
+        double progressPercent = milestones.isEmpty()
+                ? 0.0
+                : milestones.stream()
+                        .map(ProjectMilestoneResponse::getProgressPercent)
+                        .filter(java.util.Objects::nonNull)
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .orElse(0.0);
+        LocalDateTime latestMilestoneDueAt = milestones.stream()
+                .map(ProjectMilestoneResponse::getDueAt)
+                .filter(java.util.Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
         UserResponse leaderResponse = null;
         if (group.getLeader() != null) {
             leaderResponse = toUserResponse(group.getLeader());
@@ -275,7 +297,13 @@ public class ProjectGroupService {
                 .description(group.getDescription())
                 .leader(leaderResponse)
                 .status(group.getStatus().name())
+                .classroomCode(group.getClassroom().getCode())
+                .classroomName(group.getClassroom().getName())
+                .memberCount(members.size())
+                .progressPercent(progressPercent)
+                .latestMilestoneDueAt(latestMilestoneDueAt)
                 .members(memberResponses)
+                .milestones(milestones)
                 .build();
     }
 
@@ -305,6 +333,32 @@ public class ProjectGroupService {
                 .avatarUrl(user.getAvatarUrl())
                 .institutionalId(user.getInstitutionalId())
                 .active(user.isActive())
+                .build();
+    }
+
+    private ProjectMilestoneResponse toMilestoneResponse(ProjectMilestone milestone) {
+        List<MilestoneAttachmentResponse> attachments = attachmentRepository.findByMilestoneId(milestone.getId())
+                .stream()
+                .map(attachment -> MilestoneAttachmentResponse.builder()
+                        .id(attachment.getId())
+                        .storageKey(attachment.getStorageKey())
+                        .originalFileName(attachment.getOriginalFileName())
+                        .contentType(attachment.getContentType())
+                        .sizeBytes(attachment.getSizeBytes())
+                        .uploadedById(attachment.getUploadedBy().getId())
+                        .uploadedByName(attachment.getUploadedBy().getFullName())
+                        .build())
+                .toList();
+
+        return ProjectMilestoneResponse.builder()
+                .id(milestone.getId())
+                .groupId(milestone.getProjectGroup().getId())
+                .title(milestone.getTitle())
+                .description(milestone.getDescription())
+                .dueAt(milestone.getDueAt())
+                .progressPercent(milestone.getProgressPercent())
+                .status(milestone.getStatus().name())
+                .attachments(attachments)
                 .build();
     }
 }

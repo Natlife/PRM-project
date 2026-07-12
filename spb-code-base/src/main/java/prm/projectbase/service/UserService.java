@@ -133,6 +133,17 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public UserResponse getCurrentUserProfile() {
+        return mapToUserResponse(getCurrentUser());
+    }
+
+    @Transactional
+    public UserResponse updateCurrentUserProfile(UserUpdateRequest request) {
+        User currentUser = getCurrentUser();
+        return updateUser(currentUser.getId(), request);
+    }
+
+    @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::mapToUserResponse)

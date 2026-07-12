@@ -22,6 +22,12 @@ public interface LearningActivityRepository extends JpaRepository<LearningActivi
     @Query("SELECT a FROM LearningActivity a WHERE a.classroom.id = :classroomId AND a.status != 'DRAFT' ORDER BY a.dueAt ASC")
     List<LearningActivity> findPublishedInClassroom(@Param("classroomId") Long classroomId);
 
+    @Query("SELECT a FROM LearningActivity a WHERE a.classroom.id IN :classroomIds AND a.status != 'DRAFT' ORDER BY a.dueAt ASC")
+    List<LearningActivity> findPublishedInClassroomIds(@Param("classroomIds") List<Long> classroomIds);
+
+    @Query("SELECT a FROM LearningActivity a WHERE a.classroom.id IN :classroomIds ORDER BY a.dueAt ASC")
+    List<LearningActivity> findByClassroomIdInOrderByDueAtAsc(@Param("classroomIds") List<Long> classroomIds);
+
     @Query("SELECT a FROM LearningActivity a WHERE a.classroom.id = :classroomId AND a.dueAt >= :afterDate ORDER BY a.dueAt ASC")
     List<LearningActivity> findUpcomingActivities(@Param("classroomId") Long classroomId, @Param("afterDate") LocalDateTime afterDate);
 
