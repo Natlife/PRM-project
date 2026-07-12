@@ -39,27 +39,14 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1400),
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.88,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutBack,
-      ),
+    _scaleAnimation = Tween<double>(begin: 0.88, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
     );
 
-    _opacityAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(
+    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(
-          0,
-          0.7,
-          curve: Curves.easeOut,
-        ),
+        curve: const Interval(0, 0.7, curve: Curves.easeOut),
       ),
     );
 
@@ -225,9 +212,7 @@ class _SplashScreenState extends State<SplashScreen>
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _primaryColor,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
           ),
         ),
         SizedBox(height: 14),
@@ -280,9 +265,7 @@ class _SplashScreenState extends State<SplashScreen>
               left: 24,
               right: 24,
               bottom: 16,
-              child: Center(
-                child: _buildVersionLabel(),
-              ),
+              child: Center(child: _buildVersionLabel()),
             ),
           ],
         ),

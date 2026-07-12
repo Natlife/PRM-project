@@ -13,10 +13,21 @@ class StudentPeerReviewScreen extends StatefulWidget {
   });
 
   @override
-  State<StudentPeerReviewScreen> createState() => _StudentPeerReviewScreenState();
+  State<StudentPeerReviewScreen> createState() =>
+      _StudentPeerReviewScreenState();
 }
 
 class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
+  static const Color _primaryColor = Color(0xFF22A06B);
+  static const Color _primaryDarkColor = Color(0xFF167A52);
+  static const Color _backgroundColor = Color(0xFFF5F7F6);
+  static const Color _surfaceColor = Colors.white;
+  static const Color _textPrimaryColor = Color(0xFF17211B);
+  static const Color _textSecondaryColor = Color(0xFF66736B);
+  static const Color _borderColor = Color(0xFFE2E8E4);
+  static const Color _errorColor = Color(0xFFDC3D43);
+  static const Color _starColor = Color(0xFFF59E0B);
+
   final TextEditingController _commentController = TextEditingController();
 
   List<Map<String, dynamic>> _peerGroups = [];
@@ -41,18 +52,25 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
     });
 
     try {
-      final targets = await PeerReviewService().getPeerReviewTargets(widget.classroomId);
-      final submittedReviews = await PeerReviewService().getMyPeerReviews(widget.classroomId);
+      final targets = await PeerReviewService().getPeerReviewTargets(
+        widget.classroomId,
+      );
 
-      final reviewByGroupId = <int, Map<String, dynamic>>{
+      final submittedReviews = await PeerReviewService().getMyPeerReviews(
+        widget.classroomId,
+      );
+
+      final Map<int, Map<String, dynamic>> reviewByGroupId = {
         for (final review in submittedReviews)
           ((review['reviewedGroupId'] as num).toInt()): review,
       };
 
       final List<Map<String, dynamic>> loadedGroups = [];
+
       for (final target in targets) {
-        final groupId = (target['id'] as num).toInt();
-        final review = reviewByGroupId[groupId];
+        final int groupId = (target['id'] as num).toInt();
+
+        final Map<String, dynamic>? review = reviewByGroupId[groupId];
 
         loadedGroups.add({
           'id': groupId,
@@ -62,7 +80,8 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
           'scoreCode': (review?['codeQualityScore'] as num?)?.toDouble() ?? 0.0,
           'scoreUI': (review?['uiUxScore'] as num?)?.toDouble() ?? 0.0,
           'scoreFeature': (review?['featureScore'] as num?)?.toDouble() ?? 0.0,
-          'scorePresentation': (review?['presentationScore'] as num?)?.toDouble() ?? 0.0,
+          'scorePresentation':
+              (review?['presentationScore'] as num?)?.toDouble() ?? 0.0,
           'comment': review?['comment'] ?? '',
           'isSubmitted': review != null,
         });
@@ -71,22 +90,25 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
       if (!mounted) {
         return;
       }
+
       setState(() {
         _peerGroups = loadedGroups;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (error) {
       if (!mounted) {
         return;
       }
+
       setState(() {
         _isLoading = false;
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Không tải được danh sách đánh giá chéo: $e'),
+          content: Text('Không tải được danh sách đánh giá chéo: $error'),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
+          backgroundColor: _errorColor,
         ),
       );
     }
@@ -99,63 +121,13 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
     });
   }
 
-  Widget _buildStarRating(
-    String label,
-    double currentScore,
-    ValueChanged<double> onRatingChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            Text(
-              currentScore == 0.0 ? 'Chưa chấm' : '${currentScore.toStringAsFixed(1)} / 5.0',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: currentScore == 0.0 ? Colors.grey : const Color(0xFF7EC07E),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: List.generate(5, (starIndex) {
-            final starValue = starIndex + 1.0;
-            return GestureDetector(
-              onTap: () => onRatingChanged(starValue),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Icon(
-                  starValue <= currentScore ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: starValue <= currentScore ? Colors.amber : const Color(0xFFCBD5E1),
-                  size: 30,
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
   Future<void> _submitReview() async {
     if (_selectedGroupIndex == null) {
       return;
     }
 
-    final group = _peerGroups[_selectedGroupIndex!];
+    final Map<String, dynamic> group = _peerGroups[_selectedGroupIndex!];
+
     if (group['scoreCode'] == 0.0 ||
         group['scoreUI'] == 0.0 ||
         group['scoreFeature'] == 0.0 ||
@@ -164,9 +136,10 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
         const SnackBar(
           content: Text('Vui lòng đánh giá đủ 4 tiêu chí sao!'),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
+          backgroundColor: _errorColor,
         ),
       );
+
       return;
     }
 
@@ -183,71 +156,269 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
       if (!mounted) {
         return;
       }
+
       setState(() {
-        group['comment'] = response['comment'] ?? _commentController.text.trim();
+        group['comment'] =
+            response['comment'] ?? _commentController.text.trim();
+
         group['isSubmitted'] = true;
         _selectedGroupIndex = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã gửi đánh giá chéo cho ${group['name']} thành công!'),
+          content: Text(
+            'Đã gửi đánh giá chéo cho '
+            '${group['name']} thành công!',
+          ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF7EC07E),
+          backgroundColor: _primaryDarkColor,
         ),
       );
-    } catch (e) {
+    } catch (error) {
       if (!mounted) {
         return;
       }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gửi đánh giá thất bại: $e'),
+          content: Text('Gửi đánh giá thất bại: $error'),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
+          backgroundColor: _errorColor,
         ),
       );
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF0F172A), size: 18),
-          onPressed: () {
-            if (_selectedGroupIndex != null) {
-              setState(() {
-                _selectedGroupIndex = null;
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          },
+  void _handleBack() {
+    if (_selectedGroupIndex != null) {
+      setState(() {
+        _selectedGroupIndex = null;
+      });
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _surfaceColor,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0.5,
+      shadowColor: _borderColor,
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        tooltip: 'Quay lại',
+        onPressed: _handleBack,
+        icon: const Icon(Icons.arrow_back_rounded, color: _textPrimaryColor),
+      ),
+      titleSpacing: 0,
+      title: Text(
+        _selectedGroupIndex != null
+            ? 'Đánh giá chi tiết'
+            : 'Đánh giá chéo - ${widget.classCode}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: _textPrimaryColor,
+          fontSize: 19,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
         ),
-        title: Text(
-          _selectedGroupIndex != null ? 'Đánh giá chi tiết' : 'Đánh giá chéo - ${widget.classCode}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
-            fontSize: 18,
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.6,
+          valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupsHeader() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Danh sách nhóm',
+          style: TextStyle(
+            color: _textPrimaryColor,
+            fontSize: 23,
+            height: 1.2,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
           ),
         ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF7EC07E)),
-              )
-            : _selectedGroupIndex == null
-                ? _buildGroupsList()
-                : _buildGroupReviewDetail(),
+        SizedBox(height: 7),
+        Text(
+          'Chọn một nhóm để chấm điểm và gửi nhận xét.',
+          style: TextStyle(
+            color: _textSecondaryColor,
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupCard(Map<String, dynamic> group, int index) {
+    final bool isSubmitted = group['isSubmitted'] == true;
+
+    final int memberCount = group['memberCount'] as int? ?? 0;
+
+    final String groupName = group['name']?.toString() ?? '';
+
+    final String projectName = group['projectName']?.toString() ?? '';
+
+    return Material(
+      color: _surfaceColor,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          _selectGroup(index);
+        },
+        child: Ink(
+          padding: const EdgeInsets.all(17),
+          decoration: BoxDecoration(
+            color: _surfaceColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSubmitted ? const Color(0xFFD4EDDF) : _borderColor,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _textPrimaryColor.withOpacity(0.03),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isSubmitted
+                      ? const Color(0xFFEAF7F0)
+                      : const Color(0xFFF1F4F2),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  isSubmitted
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.groups_outlined,
+                  color: isSubmitted ? _primaryDarkColor : _textSecondaryColor,
+                  size: 23,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            groupName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _textPrimaryColor,
+                              fontSize: 15,
+                              height: 1.4,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (isSubmitted) ...[
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF7F0),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: const Text(
+                              'Đã đánh giá',
+                              style: TextStyle(
+                                color: _primaryDarkColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (projectName.isNotEmpty) ...[
+                      const SizedBox(height: 7),
+                      Text(
+                        projectName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _textSecondaryColor,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.people_outline_rounded,
+                          color: Color(0xFF8B9690),
+                          size: 15,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            memberCount > 0
+                                ? 'Số thành viên: $memberCount'
+                                : 'Backend không trả chi tiết '
+                                      'thành viên ở màn này',
+                            style: const TextStyle(
+                              color: _textSecondaryColor,
+                              fontSize: 11,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Padding(
+                padding: EdgeInsets.only(top: 13),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF9AA49E),
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -256,11 +427,33 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
     if (_peerGroups.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Hiện tại không có nhóm nào để đánh giá chéo.',
-            style: TextStyle(color: Color(0xFF64748B)),
-            textAlign: TextAlign.center,
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _EmptyReviewIcon(),
+              SizedBox(height: 22),
+              Text(
+                'Không có nhóm để đánh giá',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _textPrimaryColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Hiện tại không có nhóm nào để '
+                'đánh giá chéo.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _textSecondaryColor,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -268,273 +461,468 @@ class _StudentPeerReviewScreenState extends State<StudentPeerReviewScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadPeerGroups,
-      color: const Color(0xFF7EC07E),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-        padding: const EdgeInsets.all(20),
-        itemCount: _peerGroups.length,
-        itemBuilder: (context, index) {
-          final group = _peerGroups[index];
-          final isSubmitted = group['isSubmitted'] == true;
-          final memberCount = group['memberCount'] as int? ?? 0;
+      color: _primaryColor,
+      backgroundColor: _surfaceColor,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+        itemCount: _peerGroups.length + 1,
+        separatorBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return const SizedBox(height: 22);
+          }
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSubmitted
-                      ? const Color(0xFF7EC07E).withOpacity(0.3)
-                      : const Color(0xFF0F172A).withOpacity(0.05),
-                ),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => _selectGroup(index),
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: isSubmitted
-                              ? const Color(0xFF7EC07E).withOpacity(0.12)
-                              : const Color(0xFF0F172A).withOpacity(0.04),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            isSubmitted ? Icons.check_circle : Icons.group_outlined,
-                            color: isSubmitted
-                                ? const Color(0xFF7EC07E)
-                                : const Color(0xFF0F172A).withOpacity(0.5),
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    group['name'] ?? '',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                ),
-                                if (isSubmitted)
-                                  const Text(
-                                    'Đã đánh giá',
-                                    style: TextStyle(
-                                      color: Color(0xFF7EC07E),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              group['projectName'] ?? '',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: const Color(0xFF0F172A).withOpacity(0.6),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              memberCount > 0
-                                  ? 'Số thành viên: $memberCount'
-                                  : 'Backend không trả chi tiết thành viên ở màn này',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: const Color(0xFF0F172A).withOpacity(0.4),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
+          return const SizedBox(height: 12);
+        },
+        itemBuilder: (BuildContext context, int index) {
+          if (index == 0) {
+            return _buildGroupsHeader();
+          }
+
+          final int groupIndex = index - 1;
+
+          return _buildGroupCard(_peerGroups[groupIndex], groupIndex);
         },
       ),
     );
   }
 
-  Widget _buildGroupReviewDetail() {
-    final group = _peerGroups[_selectedGroupIndex!];
-    final isSubmitted = group['isSubmitted'] == true;
-    final memberCount = group['memberCount'] as int? ?? 0;
+  Widget _buildGroupOverview(Map<String, dynamic> group) {
+    final int memberCount = group['memberCount'] as int? ?? 0;
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+    return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
-      child: Column(
+      decoration: BoxDecoration(
+        color: _surfaceColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: _textPrimaryColor.withOpacity(0.035),
+            blurRadius: 22,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.04)),
+              color: const Color(0xFFEAF7F0),
+              borderRadius: BorderRadius.circular(17),
             ),
+            child: const Icon(
+              Icons.groups_2_outlined,
+              color: _primaryDarkColor,
+              size: 25,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  group['name'] ?? '',
+                  group['name']?.toString() ?? '',
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Color(0xFF7EC07E),
+                    color: _primaryDarkColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  group['projectName'] ?? '',
+                  group['projectName']?.toString() ?? '',
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF0F172A),
+                    color: _textPrimaryColor,
+                    fontSize: 17,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Thành viên:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  memberCount > 0
-                      ? '$memberCount thành viên'
-                      : 'Backend không trả chi tiết thành viên cho nhóm này.',
-                  style: TextStyle(
-                    color: const Color(0xFF0F172A).withOpacity(0.6),
-                    fontSize: 13,
-                  ),
+                const SizedBox(height: 11),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.people_outline_rounded,
+                      color: _textSecondaryColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        memberCount > 0
+                            ? '$memberCount thành viên'
+                            : 'Backend không trả chi tiết '
+                                  'thành viên cho nhóm này.',
+                        style: const TextStyle(
+                          color: _textSecondaryColor,
+                          fontSize: 12,
+                          height: 1.4,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle() {
+    return const Row(
+      children: [
+        _RatingSectionIcon(),
+        SizedBox(width: 11),
+        Expanded(
+          child: Text(
             'Chấm điểm và nhận xét',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
+              color: _textPrimaryColor,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
             ),
           ),
-          const SizedBox(height: 16),
-          _buildStarRating(
-            'Chất lượng mã nguồn',
-            group['scoreCode'],
-            isSubmitted ? (_) {} : (val) => setState(() => group['scoreCode'] = val),
-          ),
-          _buildStarRating(
-            'Giao diện và trải nghiệm',
-            group['scoreUI'],
-            isSubmitted ? (_) {} : (val) => setState(() => group['scoreUI'] = val),
-          ),
-          _buildStarRating(
-            'Tính năng ứng dụng',
-            group['scoreFeature'],
-            isSubmitted ? (_) {} : (val) => setState(() => group['scoreFeature'] = val),
-          ),
-          _buildStarRating(
-            'Thuyết trình và slide',
-            group['scorePresentation'],
-            isSubmitted ? (_) {} : (val) => setState(() => group['scorePresentation'] = val),
-          ),
-          const Text(
-            'Nhận xét chi tiết:',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF0F172A).withOpacity(0.1)),
-            ),
-            child: TextField(
-              controller: _commentController,
-              enabled: !isSubmitted,
-              maxLines: 4,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
-              decoration: const InputDecoration(
-                hintText: 'Nhập nhận xét chi tiết cho nhóm...',
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (!isSubmitted)
-            ElevatedButton(
-              onPressed: _submitReview,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7EC07E),
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: const Text(
-                'Gửi đánh giá',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: Colors.white,
-                ),
-              ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF7EC07E).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF7EC07E).withOpacity(0.3)),
-              ),
-              child: const Center(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStarRating(
+    String label,
+    double currentScore,
+    ValueChanged<double> onRatingChanged,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _surfaceColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
                 child: Text(
-                  'Bạn đã hoàn thành đánh giá chéo cho nhóm này.',
-                  style: TextStyle(
-                    color: Color(0xFF7EC07E),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                  label,
+                  style: const TextStyle(
+                    color: _textPrimaryColor,
+                    fontSize: 13.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                decoration: BoxDecoration(
+                  color: currentScore == 0
+                      ? const Color(0xFFF1F4F2)
+                      : const Color(0xFFFFF4D8),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  currentScore == 0
+                      ? 'Chưa chấm'
+                      : '${currentScore.toStringAsFixed(1)} / 5.0',
+                  style: TextStyle(
+                    color: currentScore == 0
+                        ? _textSecondaryColor
+                        : const Color(0xFFA46500),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          Row(
+            children: List<Widget>.generate(5, (int starIndex) {
+              final double starValue = starIndex + 1.0;
+
+              final bool isSelected = starValue <= currentScore;
+
+              return IconButton(
+                tooltip: '$starValue sao',
+                onPressed: () {
+                  onRatingChanged(starValue);
+                },
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(42, 42),
+                  padding: EdgeInsets.zero,
+                ),
+                icon: Icon(
+                  isSelected ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: isSelected ? _starColor : const Color(0xFFC8D0CB),
+                  size: 31,
+                ),
+              );
+            }),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCommentField(bool isSubmitted) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Nhận xét chi tiết',
+          style: TextStyle(
+            color: _textPrimaryColor,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 9),
+        TextField(
+          controller: _commentController,
+          enabled: !isSubmitted,
+          maxLines: 4,
+          minLines: 4,
+          style: const TextStyle(
+            color: _textPrimaryColor,
+            fontSize: 13.5,
+            height: 1.5,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Nhập nhận xét chi tiết cho nhóm...',
+            hintStyle: const TextStyle(color: Color(0xFF9AA49E), fontSize: 13),
+            filled: true,
+            fillColor: isSubmitted ? const Color(0xFFF4F6F5) : _surfaceColor,
+            contentPadding: const EdgeInsets.all(16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(17),
+              borderSide: const BorderSide(color: _borderColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(17),
+              borderSide: const BorderSide(color: _borderColor),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(17),
+              borderSide: const BorderSide(color: _borderColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(17),
+              borderSide: const BorderSide(color: _primaryColor, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: FilledButton.icon(
+        onPressed: _submitReview,
+        style: FilledButton.styleFrom(
+          backgroundColor: _primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        icon: const Icon(Icons.send_rounded, size: 19),
+        label: const Text(
+          'Gửi đánh giá',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmittedState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7F0),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: const Color(0xFFD4EDDF)),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.check_circle_outline_rounded,
+            color: _primaryDarkColor,
+            size: 20,
+          ),
+          SizedBox(width: 9),
+          Flexible(
+            child: Text(
+              'Bạn đã hoàn thành đánh giá chéo '
+              'cho nhóm này.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _primaryDarkColor,
+                fontSize: 13,
+                height: 1.4,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupReviewDetail() {
+    final Map<String, dynamic> group = _peerGroups[_selectedGroupIndex!];
+
+    final bool isSubmitted = group['isSubmitted'] == true;
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 36),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildGroupOverview(group),
+              const SizedBox(height: 28),
+              _buildSectionTitle(),
+              const SizedBox(height: 14),
+              _buildStarRating(
+                'Chất lượng mã nguồn',
+                group['scoreCode'] as double,
+                isSubmitted
+                    ? (_) {}
+                    : (double value) {
+                        setState(() {
+                          group['scoreCode'] = value;
+                        });
+                      },
+              ),
+              _buildStarRating(
+                'Giao diện và trải nghiệm',
+                group['scoreUI'] as double,
+                isSubmitted
+                    ? (_) {}
+                    : (double value) {
+                        setState(() {
+                          group['scoreUI'] = value;
+                        });
+                      },
+              ),
+              _buildStarRating(
+                'Tính năng ứng dụng',
+                group['scoreFeature'] as double,
+                isSubmitted
+                    ? (_) {}
+                    : (double value) {
+                        setState(() {
+                          group['scoreFeature'] = value;
+                        });
+                      },
+              ),
+              _buildStarRating(
+                'Thuyết trình và slide',
+                group['scorePresentation'] as double,
+                isSubmitted
+                    ? (_) {}
+                    : (double value) {
+                        setState(() {
+                          group['scorePresentation'] = value;
+                        });
+                      },
+              ),
+              const SizedBox(height: 6),
+              _buildCommentField(isSubmitted),
+              const SizedBox(height: 24),
+              if (!isSubmitted)
+                _buildSubmitButton()
+              else
+                _buildSubmittedState(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      appBar: _buildAppBar(),
+      body: SafeArea(
+        top: false,
+        child: _isLoading
+            ? _buildLoadingState()
+            : _selectedGroupIndex == null
+            ? _buildGroupsList()
+            : _buildGroupReviewDetail(),
+      ),
+    );
+  }
+}
+
+class _EmptyReviewIcon extends StatelessWidget {
+  const _EmptyReviewIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7F0),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: const Icon(
+        Icons.rate_review_outlined,
+        color: Color(0xFF167A52),
+        size: 40,
+      ),
+    );
+  }
+}
+
+class _RatingSectionIcon extends StatelessWidget {
+  const _RatingSectionIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 35,
+      height: 35,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7F0),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: const Icon(
+        Icons.star_outline_rounded,
+        color: Color(0xFF167A52),
+        size: 19,
       ),
     );
   }

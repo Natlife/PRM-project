@@ -150,55 +150,34 @@ class _LoginScreenState extends State<LoginScreen> {
         fontSize: 14,
         fontWeight: FontWeight.w400,
       ),
-      prefixIcon: Icon(
-        prefixIcon,
-        size: 21,
-        color: _textSecondaryColor,
-      ),
+      prefixIcon: Icon(prefixIcon, size: 21, color: _textSecondaryColor),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: const Color(0xFFF9FBFA),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 17,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: _primaryColor,
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: _primaryColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: _errorColor,
-        ),
+        borderSide: const BorderSide(color: _errorColor),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: _errorColor,
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: _errorColor, width: 1.5),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       errorStyle: const TextStyle(
         color: _errorColor,
@@ -267,16 +246,11 @@ class _LoginScreenState extends State<LoginScreen> {
               key: ValueKey<String>(_errorMessage!),
               width: double.infinity,
               margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 13,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF1F2),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: const Color(0xFFFFD4D6),
-                ),
+                border: Border.all(color: const Color(0xFFFFD4D6)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,10 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
           enabled: !_isLoading,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
-          autofillHints: const [
-            AutofillHints.username,
-            AutofillHints.email,
-          ],
+          autofillHints: const [AutofillHints.username, AutofillHints.email],
           style: const TextStyle(
             color: _textPrimaryColor,
             fontSize: 15,
@@ -369,18 +340,12 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: _primaryDarkColor,
                 minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: const Text(
                 'Quên mật khẩu?',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -401,9 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
             hintText: 'Nhập mật khẩu',
             prefixIcon: Icons.lock_outline_rounded,
             suffixIcon: IconButton(
-              tooltip: _obscurePassword
-                  ? 'Hiển thị mật khẩu'
-                  : 'Ẩn mật khẩu',
+              tooltip: _obscurePassword ? 'Hiển thị mật khẩu' : 'Ẩn mật khẩu',
               onPressed: _isLoading
                   ? null
                   : () {
@@ -467,10 +430,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                 activeColor: _primaryColor,
                 checkColor: Colors.white,
-                side: const BorderSide(
-                  color: Color(0xFFABB5AF),
-                  width: 1.4,
-                ),
+                side: const BorderSide(color: Color(0xFFABB5AF), width: 1.4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -518,9 +478,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 23,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.4,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.white,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
               : const Row(
@@ -535,10 +493,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     SizedBox(width: 9),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 20,
-                    ),
+                    Icon(Icons.arrow_forward_rounded, size: 20),
                   ],
                 ),
         ),
@@ -552,9 +507,7 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         color: _surfaceColor,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF17211B).withOpacity(0.055),
@@ -596,13 +549,8 @@ class _LoginScreenState extends State<LoginScreen> {
           foregroundColor: _textPrimaryColor,
           backgroundColor: _surfaceColor,
           disabledForegroundColor: _textSecondaryColor,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 14,
-          ),
-          side: const BorderSide(
-            color: _borderColor,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          side: const BorderSide(color: _borderColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
@@ -616,11 +564,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: const Color(0xFFEAF7F0),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: _primaryDarkColor,
-              ),
+              child: Icon(icon, size: 20, color: _primaryDarkColor),
             ),
             const SizedBox(height: 9),
             Text(
@@ -642,12 +586,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         const Row(
           children: [
-            Expanded(
-              child: Divider(
-                color: _borderColor,
-                height: 1,
-              ),
-            ),
+            Expanded(child: Divider(color: _borderColor, height: 1)),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 14),
               child: Text(
@@ -659,12 +598,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            Expanded(
-              child: Divider(
-                color: _borderColor,
-                height: 1,
-              ),
-            ),
+            Expanded(child: Divider(color: _borderColor, height: 1)),
           ],
         ),
         const SizedBox(height: 18),
@@ -674,10 +608,7 @@ class _LoginScreenState extends State<LoginScreen> {
               title: 'Giảng viên',
               icon: Icons.school_outlined,
               onPressed: () {
-                _fillMockCredentials(
-                  'teacher',
-                  'teacher123',
-                );
+                _fillMockCredentials('teacher', 'teacher123');
               },
             ),
             const SizedBox(width: 12),
@@ -685,10 +616,7 @@ class _LoginScreenState extends State<LoginScreen> {
               title: 'Sinh viên',
               icon: Icons.person_outline_rounded,
               onPressed: () {
-                _fillMockCredentials(
-                  'student',
-                  'student123',
-                );
+                _fillMockCredentials('student', 'student123');
               },
             ),
           ],
@@ -717,23 +645,14 @@ class _LoginScreenState extends State<LoginScreen> {
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: LayoutBuilder(
-          builder: (
-            BuildContext context,
-            BoxConstraints constraints,
-          ) {
+          builder: (BuildContext context, BoxConstraints constraints) {
             return SingleChildScrollView(
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 28,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 440,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 440),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
