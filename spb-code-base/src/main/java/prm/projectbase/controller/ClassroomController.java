@@ -13,8 +13,10 @@ import prm.projectbase.dto.response.BaseResponse;
 import prm.projectbase.dto.response.ClassroomDetailResponse;
 import prm.projectbase.dto.response.ClassroomEnrollmentResponse;
 import prm.projectbase.dto.response.ClassroomListResponse;
+import prm.projectbase.dto.response.StudentClassroomOverviewResponse;
 import prm.projectbase.dto.response.UserResponse;
 import prm.projectbase.service.ClassroomService;
+import prm.projectbase.service.OverviewService;
 
 import java.util.List;
 
@@ -25,6 +27,7 @@ import java.util.List;
 public class ClassroomController {
 
     ClassroomService classroomService;
+    OverviewService overviewService;
 
     @PostMapping("/teacher/classrooms")
     public BaseResponse<ClassroomDetailResponse> createClassroom(
@@ -86,5 +89,12 @@ public class ClassroomController {
             @PathVariable Long classroomId) {
         ClassroomDetailResponse response = classroomService.getStudentClassroomDetail(classroomId);
         return BaseResponse.success(response, "Classroom detail retrieved successfully");
+    }
+
+    @GetMapping("/student/classrooms/{classroomId}/overview")
+    public BaseResponse<StudentClassroomOverviewResponse> getStudentClassroomOverview(
+            @PathVariable Long classroomId) {
+        StudentClassroomOverviewResponse response = overviewService.getStudentClassroomOverview(classroomId);
+        return BaseResponse.success(response, "Student classroom overview retrieved successfully");
     }
 }

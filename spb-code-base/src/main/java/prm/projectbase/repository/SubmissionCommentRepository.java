@@ -20,6 +20,9 @@ public interface SubmissionCommentRepository extends JpaRepository<SubmissionCom
 
     Long countBySubmissionId(Long submissionId);
 
+    @Query("SELECT c.submission.id, COUNT(c) FROM SubmissionComment c WHERE c.submission.id IN :submissionIds GROUP BY c.submission.id")
+    List<Object[]> countBySubmissionIds(@Param("submissionIds") List<Long> submissionIds);
+
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN TRUE ELSE FALSE END FROM SubmissionComment c WHERE c.id = :commentId AND c.submission.id = :submissionId")
     boolean commentBelongsToSubmission(@Param("commentId") Long commentId, @Param("submissionId") Long submissionId);
 }

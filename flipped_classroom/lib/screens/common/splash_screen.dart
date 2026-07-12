@@ -13,6 +13,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -35,19 +36,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward();
 
     // Start timer for screen navigation
-    Timer(const Duration(milliseconds: 2500), _checkAuthAndNavigate);
+    _navigationTimer = Timer(const Duration(milliseconds: 2500), _checkAuthAndNavigate);
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  void _checkAuthAndNavigate() {
+  Future<void> _checkAuthAndNavigate() async {
     if (!mounted) return;
-    
+
     final authService = AuthService();
+    await authService.restoreSession();
+    if (!mounted) return;
+
     if (authService.isLoggedIn) {
       final role = authService.currentUser?.role;
       if (role == UserRole.teacher) {

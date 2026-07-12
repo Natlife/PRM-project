@@ -46,6 +46,12 @@ public enum ErrorCode {
     CANNOT_REVIEW_OWN_GROUP(400, "Reviewer cannot review their own group", HttpStatus.BAD_REQUEST),
     PEER_REVIEW_ALREADY_SUBMITTED(400, "Peer review is already submitted and cannot be updated", HttpStatus.BAD_REQUEST),
     REVIEWER_NOT_IN_CLASSROOM(400, "Reviewer is not in this classroom", HttpStatus.BAD_REQUEST),
+    EVENT_NOT_FOUND(404, "Event not found", HttpStatus.NOT_FOUND),
+    EVENT_ASSIGNMENT_NOT_FOUND(404, "Event assignment not found", HttpStatus.NOT_FOUND),
+    EVENT_ASSET_NOT_FOUND(404, "Event asset not found", HttpStatus.NOT_FOUND),
+    INVALID_EVENT_DATES(400, "Event end time must be after start time", HttpStatus.BAD_REQUEST),
+    INVALID_EVENT_ASSIGNMENT(400, "Event assignment data is invalid", HttpStatus.BAD_REQUEST),
+    EVENT_ROOM_NOT_AVAILABLE(400, "Event room is not available", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatus statusCode) {

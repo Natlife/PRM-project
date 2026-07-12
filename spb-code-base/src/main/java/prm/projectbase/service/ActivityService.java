@@ -8,19 +8,25 @@ import prm.projectbase.dto.request.ActivityCreateRequest;
 import prm.projectbase.dto.request.ActivityUpdateRequest;
 import prm.projectbase.dto.response.ActivityDetailResponse;
 import prm.projectbase.dto.response.ActivityListResponse;
-import prm.projectbase.dto.response.ClassroomScheduleResponse;
+import prm.projectbase.dto.response.SubmissionSummaryResponse;
+import prm.projectbase.entity.ActivitySubmission;
 import prm.projectbase.entity.Classroom;
 import prm.projectbase.entity.LearningActivity;
 import prm.projectbase.entity.User;
 import prm.projectbase.entity.enums.ActivityWorkflowStatus;
 import prm.projectbase.exception.AppException;
 import prm.projectbase.exception.ErrorCode;
+import prm.projectbase.repository.ActivitySubmissionRepository;
 import prm.projectbase.repository.ClassroomRepository;
 import prm.projectbase.repository.LearningActivityRepository;
+import prm.projectbase.repository.SubmissionAttachmentRepository;
+import prm.projectbase.repository.SubmissionCommentRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,6 +39,9 @@ public class ActivityService {
     private final ClassroomRepository classroomRepository;
     private final UserService userService;
     private final NotificationService notificationService;
+    private final ActivitySubmissionRepository submissionRepository;
+    private final SubmissionAttachmentRepository submissionAttachmentRepository;
+    private final SubmissionCommentRepository submissionCommentRepository;
 
     public ActivityDetailResponse createActivity(Long classroomId, ActivityCreateRequest request) {
         log.info("Teacher creating activity in classroom {}", classroomId);
@@ -168,10 +177,11 @@ public class ActivityService {
         }
         
         List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroomId);
+        Map<Long, SubmissionSummaryResponse> submissionSummaryMap = buildSubmissionSummaryMap(currentUser.getId(), activities);
         return activities.stream()
                 .map(activity -> {
                     try {
-                        return toListResponse(activity);
+                        return toListResponse(activity, submissionSummaryMap.get(activity.getId()));
                     } catch (Exception ex) {
                         log.error("Failed to map student activity {} in classroom {}", activity.getId(), classroomId, ex);
                         return null;
@@ -228,6 +238,13 @@ public class ActivityService {
     }
     
     private ActivityListResponse toListResponse(LearningActivity activity) {
+        return toListResponse(activity, null);
+    }
+
+    private ActivityListResponse toListResponse(
+            LearningActivity activity,
+            SubmissionSummaryResponse submissionSummary
+    ) {
         return ActivityListResponse.builder()
                 .id(activity.getId())
                 .title(activity.getTitle())
@@ -236,6 +253,54 @@ public class ActivityService {
                 .dueAt(activity.getDueAt())
                 .maxScore(activity.getMaxScore())
                 .status(activity.getStatus() != null ? activity.getStatus().name() : null)
+                .classroomId(activity.getClassroom().getId())
+                .classroomCode(activity.getClassroom().getCode())
+                .classroomName(activity.getClassroom().getName())
+                .submissionSummary(submissionSummary)
                 .build();
+    }
+
+    private Map<Long, SubmissionSummaryResponse> buildSubmissionSummaryMap(
+            Long studentId,
+            List<LearningActivity> activities
+    ) {
+        if (activities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Long> activityIds = activities.stream()
+                .map(LearningActivity::getId)
+                .toList();
+        List<ActivitySubmission> submissions = submissionRepository.findByStudentIdAndActivityIdIn(
+                studentId,
+                activityIds
+        );
+        if (submissions.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Long> submissionIds = submissions.stream()
+                .map(ActivitySubmission::getId)
+                .toList();
+        Map<Long, Long> attachmentCounts = submissionAttachmentRepository.countBySubmissionIds(submissionIds)
+                .stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Long> commentCounts = submissionCommentRepository.countBySubmissionIds(submissionIds)
+                .stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
+        return submissions.stream().collect(Collectors.toMap(
+                submission -> submission.getActivity().getId(),
+                submission -> SubmissionSummaryResponse.builder()
+                        .id(submission.getId())
+                        .status(submission.getStatus() != null ? submission.getStatus().name() : null)
+                        .submittedAt(submission.getSubmittedAt())
+                        .score(submission.getScore())
+                        .teacherFeedback(submission.getTeacherFeedback())
+                        .attachmentCount(attachmentCounts.getOrDefault(submission.getId(), 0L))
+                        .commentCount(commentCounts.getOrDefault(submission.getId(), 0L))
+                        .build(),
+                (left, right) -> left
+        ));
     }
 }

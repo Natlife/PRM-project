@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final bool showBackButton;
+
   const ProfileScreen({super.key, this.showBackButton = true});
 
   @override
@@ -11,11 +13,35 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  late TextEditingController _emailController;
-  late TextEditingController _phoneController;
-  late String _roleText;
-  late String _idText;
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  late final String _roleText;
+  late final String _idText;
+
+  bool _isSaving = false;
+  bool _isLoggingOut = false;
+
+  ButtonStyle _dialogSecondaryButtonStyle() {
+    return TextButton.styleFrom(
+      foregroundColor: const Color(0xFF64748B),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    );
+  }
+
+  ButtonStyle _dialogDangerButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: Colors.redAccent,
+      foregroundColor: const Color(0xFF0F172A),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -36,59 +62,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    AuthService().updateProfile(
-      fullName: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-    );
+    setState(() {
+      _isSaving = true;
+    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle_outline, color: Color(0xFF0F172A)),
-            SizedBox(width: 8),
-            Text('Đã cập nhật thông tin cá nhân thành công!'),
-          ],
+    try {
+      await AuthService().updateProfile(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Color(0xFF0F172A)),
+              SizedBox(width: 8),
+              Text('Đã cập nhật thông tin cá nhân thành công!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể cập nhật hồ sơ: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   void _logout() {
-    // Show confirmation dialog
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFFFFFFFF),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Đăng xuất', style: TextStyle(color: Color(0xFF0F172A))),
+          title: const Text(
+            'Đăng xuất',
+            style: TextStyle(color: Color(0xFF0F172A)),
+          ),
           content: const Text(
             'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?',
             style: TextStyle(color: Color(0xFF334155)),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy', style: TextStyle(color: Color(0xFF94A3B8))),
+              onPressed: _isLoggingOut ? null : () => Navigator.of(dialogContext).pop(),
+              style: _dialogSecondaryButtonStyle(),
+              child: const Text(
+                'Hủy',
+                style: TextStyle(color: Color(0xFF94A3B8)),
+              ),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
-                AuthService().logout();
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('Đăng xuất', style: TextStyle(color: Color(0xFF0F172A))),
+              onPressed: _isLoggingOut
+                  ? null
+                  : () async {
+                      Navigator.of(dialogContext).pop();
+                      setState(() {
+                        _isLoggingOut = true;
+                      });
+
+                      try {
+                        await AuthService().logout();
+                        if (!mounted) return;
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/login', (route) => false);
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            _isLoggingOut = false;
+                          });
+                        }
+                      }
+                    },
+              style: _dialogDangerButtonStyle(),
+              child: _isLoggingOut
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0F172A)),
+                      ),
+                    )
+                  : const Text(
+                      'Đăng xuất',
+                      style: TextStyle(color: Color(0xFF0F172A)),
+                    ),
             ),
           ],
         );
@@ -99,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _simulateAvatarChange() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Tính năng đăng tải avatar mới đang được giả lập!'),
+        content: Text('Tính năng cập nhật avatar sẽ được nối backend ở bước tiếp theo.'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -108,8 +190,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
-    final initials = user != null && user.fullName.isNotEmpty
-        ? user.fullName.split(' ').last.substring(0, 1).toUpperCase()
+    final initials = user != null && user.fullName.trim().isNotEmpty
+        ? user.fullName.trim().split(RegExp(r'\s+')).last.substring(0, 1).toUpperCase()
         : 'U';
 
     return Scaffold(
@@ -131,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.redAccent),
-            onPressed: _logout,
+            onPressed: _isLoggingOut ? null : _logout,
           ),
         ],
       ),
@@ -139,7 +221,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // Top Accent Area for profile image
             Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.center,
@@ -161,7 +242,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
-                        // Avatar Container
                         Container(
                           width: 110,
                           height: 110,
@@ -192,7 +272,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                        // Camera Edit Badge
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: const BoxDecoration(
@@ -212,10 +291,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 55),
-            
-            // Name and Role text display
             Text(
-              _nameController.text,
+              _nameController.text.trim().isEmpty ? 'Người dùng' : _nameController.text.trim(),
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -241,8 +318,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 25),
-            
-            // Form fields card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Form(
@@ -250,7 +325,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Information Fields Card
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -261,15 +335,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // ID Field (Read-only)
                           _buildReadOnlyField(
                             label: 'Mã số định danh',
                             value: _idText,
                             icon: Icons.badge_outlined,
                           ),
-                          const Divider(color: Colors.white10, height: 24),
-                          
-                          // Full Name input
+                          const Divider(height: 24),
                           _buildTextField(
                             controller: _nameController,
                             label: 'Họ và tên',
@@ -281,9 +352,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               return null;
                             },
                           ),
-                          const Divider(color: Colors.white10, height: 24),
-                          
-                          // Email input
+                          const Divider(height: 24),
                           _buildTextField(
                             controller: _emailController,
                             label: 'Thư điện tử (Email)',
@@ -293,15 +362,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Email không được để trống';
                               }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                              if (!RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                                 return 'Email không đúng định dạng';
                               }
                               return null;
                             },
                           ),
-                          const Divider(color: Colors.white10, height: 24),
-                          
-                          // Phone input
+                          const Divider(height: 24),
                           _buildTextField(
                             controller: _phoneController,
                             label: 'Số điện thoại',
@@ -317,12 +384,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
-                    
                     const SizedBox(height: 30),
-                    
-                    // Save Button
                     ElevatedButton(
-                      onPressed: _saveProfile,
+                      onPressed: _isSaving ? null : _saveProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -350,26 +414,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Container(
                           height: 54,
                           alignment: Alignment.center,
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.save_outlined, color: Color(0xFF0F172A)),
-                              SizedBox(width: 8),
-                              Text(
-                                'Lưu thay đổi',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                  letterSpacing: 1.0,
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.save_outlined, color: Color(0xFF0F172A)),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Lưu thay đổi',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ),
-                    
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -401,12 +475,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(icon, color: const Color(0xFF0F172A).withOpacity(0.3), size: 20),
             const SizedBox(width: 10),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF0F172A).withOpacity(0.5),
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF0F172A).withOpacity(0.5),
+                ),
               ),
             ),
           ],
@@ -447,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           validator: validator,
           onChanged: (_) {
-            setState(() {}); // Repaint to update name text on top dynamically
+            setState(() {});
           },
         ),
       ],

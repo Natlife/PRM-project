@@ -3,6 +3,7 @@ package prm.projectbase.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -19,5 +20,11 @@ public class ProjectGroupDetailResponse {
     String description;
     UserResponse leader;
     String status;
+    String classroomCode;
+    String classroomName;
+    Integer memberCount;
+    Double progressPercent;
+    LocalDateTime latestMilestoneDueAt;
     List<UserResponse> members;
+    List<ProjectMilestoneResponse> milestones;
 }

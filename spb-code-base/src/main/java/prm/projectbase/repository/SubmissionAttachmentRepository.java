@@ -15,6 +15,9 @@ public interface SubmissionAttachmentRepository extends JpaRepository<Submission
 
     Long countBySubmissionId(Long submissionId);
 
+    @Query("SELECT a.submission.id, COUNT(a) FROM SubmissionAttachment a WHERE a.submission.id IN :submissionIds GROUP BY a.submission.id")
+    List<Object[]> countBySubmissionIds(@Param("submissionIds") List<Long> submissionIds);
+
     @Query("SELECT CASE WHEN COUNT(a) > 0 THEN TRUE ELSE FALSE END FROM SubmissionAttachment a WHERE a.id = :attachmentId AND a.submission.id = :submissionId")
     boolean attachmentBelongsToSubmission(@Param("attachmentId") Long attachmentId, @Param("submissionId") Long submissionId);
 

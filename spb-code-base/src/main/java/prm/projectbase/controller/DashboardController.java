@@ -11,7 +11,9 @@ import prm.projectbase.dto.response.ActivityListResponse;
 import prm.projectbase.dto.response.BaseResponse;
 import prm.projectbase.dto.response.StudentDashboardResponse;
 import prm.projectbase.dto.response.TeacherDashboardResponse;
+import prm.projectbase.dto.response.TeacherDashboardOverviewResponse;
 import prm.projectbase.service.DashboardService;
+import prm.projectbase.service.OverviewService;
 import java.util.List;
 
 @Slf4j
@@ -21,6 +23,7 @@ import java.util.List;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final OverviewService overviewService;
 
     @GetMapping("/student/dashboard/summary")
     public ResponseEntity<BaseResponse<StudentDashboardResponse>> getStudentDashboard() {
@@ -43,5 +46,12 @@ public class DashboardController {
         log.info("GET /teacher/dashboard/summary - Fetching teacher dashboard summary");
         TeacherDashboardResponse response = dashboardService.getTeacherDashboard();
         return ResponseEntity.ok(BaseResponse.success(response, "Get teacher dashboard summary successfully"));
+    }
+
+    @GetMapping("/teacher/dashboard/overview")
+    public ResponseEntity<BaseResponse<TeacherDashboardOverviewResponse>> getTeacherDashboardOverview() {
+        log.info("GET /teacher/dashboard/overview - Fetching teacher dashboard overview");
+        TeacherDashboardOverviewResponse response = overviewService.getTeacherDashboardOverview();
+        return ResponseEntity.ok(BaseResponse.success(response, "Get teacher dashboard overview successfully"));
     }
 }

@@ -12,11 +12,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _rememberMe = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _rememberMe = AuthService().rememberMe;
+  }
 
   @override
   void dispose() {
@@ -25,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() async {
+  Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -34,12 +40,14 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final authService = AuthService();
-    authService.setRememberMe(_rememberMe);
-    
+    await authService.setRememberMe(_rememberMe);
+
     final success = await authService.login(
       _usernameController.text,
       _passwordController.text,
     );
+
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
@@ -78,8 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 900
       body: SafeArea(

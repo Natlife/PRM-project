@@ -14,8 +14,9 @@ import prm.projectbase.repository.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,6 +32,8 @@ public class DashboardService {
     private final ProjectGroupRepository groupRepository;
     private final ProjectMemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
+    private final SubmissionAttachmentRepository submissionAttachmentRepository;
+    private final SubmissionCommentRepository submissionCommentRepository;
     private final UserService userService;
 
     public StudentDashboardResponse getStudentDashboard() {
@@ -48,39 +51,31 @@ public class DashboardService {
 
         List<Classroom> classrooms = enrollments.stream()
                 .map(ClassroomEnrollment::getClassroom)
-                .collect(Collectors.toList());
+                .toList();
+        List<Long> classroomIds = classrooms.stream().map(Classroom::getId).toList();
 
         List<ActivityListResponse> upcomingActivities = new ArrayList<>();
         int pendingActivitiesCount = 0;
         LocalDateTime now = LocalDateTime.now();
+        List<LearningActivity> activities = classroomIds.isEmpty()
+                ? Collections.emptyList()
+                : activityRepository.findPublishedInClassroomIds(classroomIds);
+        Map<Long, SubmissionSummaryResponse> submissionSummaryMap = buildSubmissionSummaryMap(student.getId(), activities);
 
-        for (Classroom classroom : classrooms) {
-            List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroom.getId());
-            for (LearningActivity activity : activities) {
-                try {
-                    Optional<ActivitySubmission> submission = submissionRepository
-                            .findByActivityIdAndStudentId(activity.getId(), student.getId());
+        for (LearningActivity activity : activities) {
+            try {
+                SubmissionSummaryResponse submissionSummary = submissionSummaryMap.get(activity.getId());
+                String submissionStatus = submissionSummary != null ? submissionSummary.getStatus() : null;
+                boolean submitted = SubmissionWorkflowStatus.SUBMITTED.name().equals(submissionStatus) ||
+                        SubmissionWorkflowStatus.LATE_SUBMITTED.name().equals(submissionStatus) ||
+                        SubmissionWorkflowStatus.GRADED.name().equals(submissionStatus);
 
-                    boolean submitted = submission.isPresent() &&
-                            (submission.get().getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
-                                    submission.get().getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED ||
-                                    submission.get().getStatus() == SubmissionWorkflowStatus.GRADED);
-
-                    if (!submitted && activity.getDueAt() != null && activity.getDueAt().isAfter(now)) {
-                        pendingActivitiesCount++;
-                        upcomingActivities.add(ActivityListResponse.builder()
-                                .id(activity.getId())
-                                .title(activity.getTitle())
-                                .description(activity.getDescription())
-                                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
-                                .dueAt(activity.getDueAt())
-                                .maxScore(activity.getMaxScore())
-                                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
-                                .build());
-                    }
-                } catch (Exception ex) {
-                    log.error("Skipping malformed student dashboard activity {}", activity.getId(), ex);
+                if (!submitted && activity.getDueAt() != null && activity.getDueAt().isAfter(now)) {
+                    pendingActivitiesCount++;
+                    upcomingActivities.add(toActivityListResponse(activity, submissionSummary));
                 }
+            } catch (Exception ex) {
+                log.error("Skipping malformed student dashboard activity {}", activity.getId(), ex);
             }
         }
 
@@ -127,37 +122,29 @@ public class DashboardService {
 
         List<Classroom> classrooms = enrollments.stream()
                 .map(ClassroomEnrollment::getClassroom)
-                .collect(Collectors.toList());
+                .toList();
+        List<Long> classroomIds = classrooms.stream().map(Classroom::getId).toList();
 
         List<ActivityListResponse> upcomingActivities = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
+        List<LearningActivity> activities = classroomIds.isEmpty()
+                ? Collections.emptyList()
+                : activityRepository.findPublishedInClassroomIds(classroomIds);
+        Map<Long, SubmissionSummaryResponse> submissionSummaryMap = buildSubmissionSummaryMap(student.getId(), activities);
 
-        for (Classroom classroom : classrooms) {
-            List<LearningActivity> activities = activityRepository.findPublishedInClassroom(classroom.getId());
-            for (LearningActivity activity : activities) {
-                try {
-                    Optional<ActivitySubmission> submission = submissionRepository
-                            .findByActivityIdAndStudentId(activity.getId(), student.getId());
+        for (LearningActivity activity : activities) {
+            try {
+                SubmissionSummaryResponse submissionSummary = submissionSummaryMap.get(activity.getId());
+                String submissionStatus = submissionSummary != null ? submissionSummary.getStatus() : null;
+                boolean submitted = SubmissionWorkflowStatus.SUBMITTED.name().equals(submissionStatus) ||
+                        SubmissionWorkflowStatus.LATE_SUBMITTED.name().equals(submissionStatus) ||
+                        SubmissionWorkflowStatus.GRADED.name().equals(submissionStatus);
 
-                    boolean submitted = submission.isPresent() &&
-                            (submission.get().getStatus() == SubmissionWorkflowStatus.SUBMITTED ||
-                                    submission.get().getStatus() == SubmissionWorkflowStatus.LATE_SUBMITTED ||
-                                    submission.get().getStatus() == SubmissionWorkflowStatus.GRADED);
-
-                    if (!submitted && activity.getDueAt() != null && activity.getDueAt().isAfter(now)) {
-                        upcomingActivities.add(ActivityListResponse.builder()
-                                .id(activity.getId())
-                                .title(activity.getTitle())
-                                .description(activity.getDescription())
-                                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
-                                .dueAt(activity.getDueAt())
-                                .maxScore(activity.getMaxScore())
-                                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
-                                .build());
-                    }
-                } catch (Exception ex) {
-                    log.error("Skipping malformed student activity {}", activity.getId(), ex);
+                if (!submitted && activity.getDueAt() != null && activity.getDueAt().isAfter(now)) {
+                    upcomingActivities.add(toActivityListResponse(activity, submissionSummary));
                 }
+            } catch (Exception ex) {
+                log.error("Skipping malformed student activity {}", activity.getId(), ex);
             }
         }
 
@@ -280,5 +267,61 @@ public class DashboardService {
                 .active(classroom.isActive())
                 .createdAt(classroom.getCreatedAt())
                 .build();
+    }
+
+    private ActivityListResponse toActivityListResponse(
+            LearningActivity activity,
+            SubmissionSummaryResponse submissionSummary
+    ) {
+        return ActivityListResponse.builder()
+                .id(activity.getId())
+                .title(activity.getTitle())
+                .description(activity.getDescription())
+                .activityType(activity.getActivityType() != null ? activity.getActivityType().toApiValue() : null)
+                .dueAt(activity.getDueAt())
+                .maxScore(activity.getMaxScore())
+                .status(activity.getStatus() != null ? activity.getStatus().name() : null)
+                .classroomId(activity.getClassroom().getId())
+                .classroomCode(activity.getClassroom().getCode())
+                .classroomName(activity.getClassroom().getName())
+                .submissionSummary(submissionSummary)
+                .build();
+    }
+
+    private Map<Long, SubmissionSummaryResponse> buildSubmissionSummaryMap(
+            Long studentId,
+            List<LearningActivity> activities
+    ) {
+        if (activities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Long> activityIds = activities.stream().map(LearningActivity::getId).toList();
+        List<ActivitySubmission> submissions = submissionRepository.findByStudentIdAndActivityIdIn(studentId, activityIds);
+        if (submissions.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Long> submissionIds = submissions.stream().map(ActivitySubmission::getId).toList();
+        Map<Long, Long> attachmentCounts = submissionAttachmentRepository.countBySubmissionIds(submissionIds)
+                .stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Long> commentCounts = submissionCommentRepository.countBySubmissionIds(submissionIds)
+                .stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
+        return submissions.stream().collect(Collectors.toMap(
+                submission -> submission.getActivity().getId(),
+                submission -> SubmissionSummaryResponse.builder()
+                        .id(submission.getId())
+                        .status(submission.getStatus() != null ? submission.getStatus().name() : null)
+                        .submittedAt(submission.getSubmittedAt())
+                        .score(submission.getScore())
+                        .teacherFeedback(submission.getTeacherFeedback())
+                        .attachmentCount(attachmentCounts.getOrDefault(submission.getId(), 0L))
+                        .commentCount(commentCounts.getOrDefault(submission.getId(), 0L))
+                        .build(),
+                (left, right) -> left
+        ));
     }
 }

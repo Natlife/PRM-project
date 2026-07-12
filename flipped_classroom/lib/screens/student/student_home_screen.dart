@@ -5,6 +5,7 @@ import '../common/notification_screen.dart';
 import 'student_classes_screen.dart';
 import 'tabs/student_dashboard_tab.dart';
 import 'tabs/student_projects_tab.dart';
+import 'tabs/student_events_tab.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -197,9 +198,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               label: 'Dự án',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Thông báo',
+              icon: Icon(Icons.event_note_outlined),
+              activeIcon: Icon(Icons.event_note),
+              label: 'Sự kiện',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
@@ -234,7 +235,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           onTabTapped: _onItemTapped,
         );
       case 3:
-        return const NotificationScreen(showBackButton: false);
+        return StudentEventsTab(
+          onTabTapped: _onItemTapped,
+        );
       case 4:
         return const ProfileScreen(showBackButton: false);
       default:
