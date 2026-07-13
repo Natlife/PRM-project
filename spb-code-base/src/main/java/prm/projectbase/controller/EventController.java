@@ -119,9 +119,10 @@ public class EventController {
     @PostMapping("/student/events/{eventId}/evidences")
     public ResponseEntity<BaseResponse<EventAssetResponse>> uploadEvidence(
             @PathVariable Long eventId,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "assignmentId", required = false) Long assignmentId
     ) {
-        EventAssetResponse response = eventService.uploadStudentEvidence(eventId, file);
+        EventAssetResponse response = eventService.uploadStudentEvidence(eventId, file, assignmentId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Upload event evidence successfully", HttpStatus.CREATED));
     }
@@ -140,5 +141,16 @@ public class EventController {
         EventQuestionResponse response = eventService.addStudentLiveQuestion(eventId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(response, "Add student live question successfully", HttpStatus.CREATED));
+    }
+
+    @PostMapping("/student/events/{eventId}/questions/{questionId}/answer")
+    public ResponseEntity<BaseResponse<EventQuestionResponse>> answerQuestion(
+            @PathVariable Long eventId,
+            @PathVariable Long questionId,
+            @RequestBody java.util.Map<String, String> body
+    ) {
+        String answer = body.get("answer");
+        EventQuestionResponse response = eventService.answerStudentLiveQuestion(eventId, questionId, answer);
+        return ResponseEntity.ok(BaseResponse.success(response, "Answer question successfully"));
     }
 }

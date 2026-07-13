@@ -318,29 +318,44 @@ class _StudentProjectsTabState extends State<StudentProjectsTab> {
                                         const SizedBox(height: 10),
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             if ((project['date'] ?? '').toString().isNotEmpty)
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.calendar_today, size: 13, color: const Color(0xFF0F172A).withOpacity(0.4)),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Hạn nộp: ${project['date']}',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: const Color(0xFF0F172A).withOpacity(0.5),
-                                                      fontWeight: FontWeight.w500,
+                                              Expanded(
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.calendar_today, size: 13, color: const Color(0xFF0F172A).withOpacity(0.4)),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Hạn nộp: ${project['date']}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: const Color(0xFF0F172A).withOpacity(0.5),
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
+                                            if ((project['date'] ?? '').toString().isNotEmpty && project['leader'] != null)
+                                              const SizedBox(width: 12),
                                             if (project['leader'] != null)
-                                              Text(
-                                                'Trưởng nhóm: ${project['leader']['fullName'] ?? project['leader']['userName'] ?? ''}',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: const Color(0xFF0F172A).withOpacity(0.5),
-                                                  fontWeight: FontWeight.w500,
+                                              Expanded(
+                                                child: Text(
+                                                  'Trưởng nhóm: ${project['leader']['fullName'] ?? project['leader']['userName'] ?? ''}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: const Color(0xFF0F172A).withOpacity(0.5),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  textAlign: TextAlign.end,
                                                 ),
                                               ),
                                           ],

@@ -11,13 +11,11 @@ import 'student_event_review_screen.dart';
 class StudentEventDetailScreen extends StatefulWidget {
   final int eventId;
 
-  const StudentEventDetailScreen({
-    super.key,
-    required this.eventId,
-  });
+  const StudentEventDetailScreen({super.key, required this.eventId});
 
   @override
-  State<StudentEventDetailScreen> createState() => _StudentEventDetailScreenState();
+  State<StudentEventDetailScreen> createState() =>
+      _StudentEventDetailScreenState();
 }
 
 class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
@@ -44,7 +42,7 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Loi tai chi tiet su kien: $e'),
+          content: Text('Lỗi tải sự kiện: $e'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -67,11 +65,11 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
   String _statusLabel(String status) {
     switch (status) {
       case 'LIVE':
-        return 'Dang dien ra';
+        return 'Đang diễn ra';
       case 'COMPLETED':
-        return 'Da hoan thanh';
+        return 'Đã hoàn thành';
       case 'CANCELLED':
-        return 'Da huy';
+        return 'Đã hủy';
       case 'SCHEDULED':
       default:
         return 'Chua dien ra';
@@ -95,25 +93,25 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
   String _roleLabel(String role) {
     switch (role) {
       case 'PRESENTER':
-        return 'Nguoi thuyet trinh';
+        return 'Người thuyết trình';
       case 'REVIEWER':
-        return 'Nguoi phan bien';
+        return 'Người phản biện';
       default:
-        return 'Khan gia';
+        return 'Khán giả';
     }
   }
 
   String _assignmentStatusLabel(String status) {
     switch (status) {
       case 'REVIEWED':
-        return 'Da review';
+        return 'Đã review';
       case 'PENDING':
       default:
-        return 'Chua review';
+        return 'Chưa review';
     }
   }
 
-  Future<void> _uploadEvidence() async {
+  Future<void> _uploadEvidence({int? assignmentId}) async {
     try {
       final result = await FilePicker.pickFiles(withData: true);
       if (result == null || result.files.isEmpty) return;
@@ -123,13 +121,18 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
         bytes = await io.File(file.path!).readAsBytes();
       }
       if (bytes == null) return;
-      await EventService().uploadStudentEvidence(widget.eventId, bytes, file.name);
+      await EventService().uploadStudentEvidence(
+        widget.eventId,
+        bytes,
+        file.name,
+        assignmentId: assignmentId,
+      );
       await _loadDetail();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Loi upload minh chung: $e'),
+          content: Text('Lỗi tải lên: $e'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -144,7 +147,7 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Loi xoa minh chung: $e'),
+          content: Text('Lỗi xóa: $e'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -205,7 +208,7 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
           onPressed: () => Navigator.pop(context, true),
         ),
         title: const Text(
-          'Chi tiet su kien',
+          'Chi tiết sự kiện',
           style: TextStyle(
             color: Color(0xFF0F172A),
             fontWeight: FontWeight.bold,
@@ -256,18 +259,18 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                         const SizedBox(height: 10),
                         Text(_detail['classroomCode'] ?? ''),
                         const SizedBox(height: 6),
-                        Text('Vai tro cua ban: ${_roleLabel(role)}'),
+                        Text('Vai trò của bạn: ${_roleLabel(role)}'),
                         const SizedBox(height: 6),
-                        Text('Bat dau: ${_formatDateTime(_detail['startAt'])}'),
+                        Text('Bắt đầu: ${_formatDateTime(_detail['startAt'])}'),
                         const SizedBox(height: 6),
-                        Text('Ket thuc: ${_formatDateTime(_detail['endAt'])}'),
+                        Text('Kết thúc: ${_formatDateTime(_detail['endAt'])}'),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (myAssignments.isNotEmpty) ...[
+                  if (assignments.isNotEmpty) ...[
                     const Text(
-                      'Cac phien cua ban',
+                      'Các phiên thuyết trình',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -275,19 +278,30 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ...myAssignments.map((assignment) {
+                    ...assignments.map((assignment) {
                       final assignmentId =
                           (assignment['id'] as num?)?.toInt() ?? 0;
                       final assignmentRole =
                           assignment['myRole']?.toString() ?? 'AUDIENCE';
                       final recording =
                           assignment['recording'] as Map<String, dynamic>?;
+                      final assignmentEvidences =
+                          List<Map<String, dynamic>>.from(
+                            assignment['evidences'] ?? const [],
+                          );
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withOpacity(0.02),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,39 +310,315 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Phien ${assignment['orderIndex'] ?? ''}',
+                                  'Phiên ${assignment['orderIndex'] ?? ''}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 15,
                                     color: Color(0xFF0F172A),
                                   ),
                                 ),
-                                Text(
-                                  _assignmentStatusLabel(
-                                    assignment['status']?.toString() ?? 'PENDING',
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                  decoration: BoxDecoration(
                                     color:
-                                        assignment['status']?.toString() == 'REVIEWED'
-                                            ? Colors.green
-                                            : Colors.orange,
+                                        (assignment['status']?.toString() ==
+                                                    'REVIEWED'
+                                                ? Colors.green
+                                                : Colors.orange)
+                                            .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _assignmentStatusLabel(
+                                      assignment['status']?.toString() ??
+                                          'PENDING',
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          assignment['status']?.toString() ==
+                                              'REVIEWED'
+                                          ? Colors.green
+                                          : Colors.orange,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              assignment['presenterGroupName'] ??
-                                  assignment['presenterStudentName'] ??
-                                  '',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            const SizedBox(height: 10),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  const TextSpan(
+                                    text: 'Thuyết trình: ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text:
+                                        assignment['presenterGroupName'] ??
+                                        assignment['presenterStudentName'] ??
+                                        '',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 6),
-                            Text('Vai tro: ${_roleLabel(assignmentRole)}'),
                             const SizedBox(height: 4),
-                            Text(
-                              'Phan bien: ${assignment['reviewerStudentName'] ?? ''}',
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  const TextSpan(
+                                    text: 'Phản biện: ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text:
+                                        assignment['reviewerStudentName'] ?? '',
+                                    style: const TextStyle(
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            if (assignmentRole != 'AUDIENCE') ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF7EC07E,
+                                  ).withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Vai trò của bạn: ${_roleLabel(assignmentRole)}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF7EC07E),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const Divider(height: 24),
+                            const Text(
+                              'Minh chứng của phiên',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            if (assignmentEvidences.isEmpty && recording == null)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: Text(
+                                  'Chưa có minh chứng nào',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.black38,
+                                  ),
+                                ),
+                              )
+                            else ...[
+                              if (recording != null)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFF0F172A).withOpacity(0.03),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.play_circle_outline,
+                                        size: 16,
+                                        color: Colors.green,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              recording['originalFileName'] ?? '',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            const Text(
+                                              'Bản ghi/Minh chứng do giáo viên tải lên',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(4),
+                                        iconSize: 18,
+                                        onPressed: () async {
+                                          final url = recording['fileUrl']?.toString() ?? '';
+                                          if (url.isEmpty) return;
+                                          await launchUrl(
+                                            Uri.parse(url),
+                                            mode: LaunchMode.externalApplication,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.open_in_new,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ...assignmentEvidences.map((evidence) {
+                                final isPrivate = evidence['visibility'] == 'PRIVATE';
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFF0F172A).withOpacity(0.03),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.insert_drive_file_outlined,
+                                        size: 16,
+                                        color: Color(0xFF7EC07E),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              evidence['originalFileName'] ?? '',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              isPrivate
+                                                  ? 'Riêng tư trước khi sự kiện bắt đầu'
+                                                  : 'Hiển thị công khai',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: isPrivate ? Colors.orange : Colors.green,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        constraints: const BoxConstraints(),
+                                        padding: const EdgeInsets.all(4),
+                                        iconSize: 18,
+                                        onPressed: () async {
+                                          final url = evidence['fileUrl']?.toString() ?? '';
+                                          if (url.isEmpty) return;
+                                          await launchUrl(
+                                            Uri.parse(url),
+                                            mode: LaunchMode.externalApplication,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.open_in_new,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      if (_detail['canUploadEvidence'] == true &&
+                                          assignmentRole == 'PRESENTER')
+                                        IconButton(
+                                          constraints: const BoxConstraints(),
+                                          padding: const EdgeInsets.all(4),
+                                          iconSize: 18,
+                                          onPressed: () => _deleteEvidence(
+                                            (evidence['id'] as num?)?.toInt() ?? 0,
+                                          ),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                            if (_detail['canUploadEvidence'] == true &&
+                                assignmentRole == 'PRESENTER') ...[
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF7EC07E),
+                                  side: const BorderSide(
+                                    color: Color(0xFF7EC07E),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () =>
+                                    _uploadEvidence(assignmentId: assignmentId),
+                                icon: const Icon(Icons.upload_file, size: 14),
+                                label: const Text(
+                                  'Tải lên minh chứng',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 12),
                             Wrap(
                               spacing: 10,
@@ -336,14 +626,26 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                               children: [
                                 if (_detail['canJoinRoom'] == true)
                                   ElevatedButton(
-                                    onPressed: () => _openDefenseRoom(assignmentId),
-                                    child: const Text('Vao phong phan bien'),
+                                    onPressed: () =>
+                                        _openDefenseRoom(assignmentId),
+                                    child: const Text('Vào phòng phản biện'),
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: const Color(0xFF7EC07E),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
                                   ),
                                 if (_detail['canWatchRecording'] == true &&
                                     recording != null)
                                   ElevatedButton(
                                     onPressed: () => _openReview(assignmentId),
-                                    child: const Text('Xem lai su kien'),
+                                    child: const Text('Xem lại sự kiện'),
                                   ),
                               ],
                             ),
@@ -351,86 +653,6 @@ class _StudentEventDetailScreenState extends State<StudentEventDetailScreen> {
                         ),
                       );
                     }),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Minh chung',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (evidences.isEmpty)
-                      const Text('Chua co minh chung nao')
-                    else
-                      ...evidences.map(
-                        (evidence) => Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      evidence['originalFileName'] ?? '',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      evidence['visibility'] == 'PRIVATE'
-                                          ? 'Rieng tu truoc khi su kien bat dau'
-                                          : 'Dang hien thi cong khai',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: const Color(0xFF0F172A)
-                                            .withValues(alpha: 0.55),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () async {
-                                  final url = evidence['fileUrl']?.toString() ?? '';
-                                  if (url.isEmpty) return;
-                                  await launchUrl(
-                                    Uri.parse(url),
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                },
-                                icon: const Icon(Icons.open_in_new),
-                              ),
-                              if (_detail['canUploadEvidence'] == true)
-                                IconButton(
-                                  onPressed: () => _deleteEvidence(
-                                    (evidence['id'] as num?)?.toInt() ?? 0,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.redAccent,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (_detail['canUploadEvidence'] == true) ...[
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: _uploadEvidence,
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text('Tai len minh chung'),
-                      ),
-                    ],
                   ],
                 ],
               ),

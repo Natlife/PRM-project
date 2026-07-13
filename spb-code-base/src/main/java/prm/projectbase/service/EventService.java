@@ -353,27 +353,42 @@ public class EventService {
         return buildEventDetail(event, student, false);
     }
 
-    public EventAssetResponse uploadStudentEvidence(Long eventId, MultipartFile file) {
+    public EventAssetResponse uploadStudentEvidence(Long eventId, MultipartFile file, Long assignmentId) {
         User student = userService.getCurrentUser();
         ensureStudent(student);
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
         ensureStudentInClassroom(event.getClassroom(), student.getId());
-        EventDetailResponse detail = buildEventDetail(event, student, false);
-        if (!Boolean.TRUE.equals(detail.getCanUploadEvidence()) || detail.getMyAssignment() == null) {
-            throw new AppException(ErrorCode.FORBIDDEN);
+
+        EventAssignment assignment = null;
+        if (assignmentId != null) {
+            assignment = assignmentRepository.findById(assignmentId)
+                    .orElseThrow(() -> new AppException(ErrorCode.EVENT_ASSIGNMENT_NOT_FOUND));
+            if (!assignment.getEvent().getId().equals(eventId)) {
+                throw new AppException(ErrorCode.EVENT_ASSIGNMENT_NOT_FOUND);
+            }
+            String role = resolveAssignmentRole(student.getId(), assignment);
+            if (!"PRESENTER".equals(role)) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+        } else {
+            EventDetailResponse detail = buildEventDetail(event, student, false);
+            if (!Boolean.TRUE.equals(detail.getCanUploadEvidence()) || detail.getMyAssignment() == null) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+            assignment = detail.getMyAssignment().getId() != null
+                    ? assignmentRepository.findById(detail.getMyAssignment().getId()).orElse(null)
+                    : null;
         }
 
         FileService.StorageResult stored = fileService.storeFile(file, "events/" + eventId + "/evidences");
         EventAsset asset = assetRepository.save(EventAsset.builder()
                 .event(event)
-                .assignment(detail.getMyAssignment().getId() != null
-                        ? assignmentRepository.findById(detail.getMyAssignment().getId()).orElse(null)
-                        : null)
+                .assignment(assignment)
                 .uploadedBy(student)
                 .ownerStudent(student)
                 .assetType(EventAssetType.EVIDENCE)
-                .visibility(EventAssetVisibility.PRIVATE)
+                .visibility(EventAssetVisibility.PUBLIC)
                 .storageKey(stored.getStorageKey())
                 .originalFileName(stored.getOriginalFileName())
                 .contentType(stored.getContentType())
@@ -430,6 +445,38 @@ public class EventService {
         return mapQuestion(saved);
     }
 
+    public EventQuestionResponse answerStudentLiveQuestion(Long eventId, Long questionId, String answerContent) {
+        User student = userService.getCurrentUser();
+        ensureStudent(student);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
+        ensureStudentInClassroom(event.getClassroom(), student.getId());
+
+        EventQuestion question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.EVENT_QUESTION_NOT_FOUND));
+        if (!question.getEvent().getId().equals(eventId)) {
+            throw new AppException(ErrorCode.EVENT_QUESTION_NOT_FOUND);
+        }
+
+        EventAssignment assignment = question.getAssignment();
+        if (assignment == null) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+        String role = resolveAssignmentRole(student.getId(), assignment);
+        if (!"PRESENTER".equals(role)) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+
+        if (question.getAnswer() != null && !question.getAnswer().isBlank()) {
+            throw new AppException(ErrorCode.QUESTION_ALREADY_ANSWERED);
+        }
+
+        question.setAnswer(answerContent != null ? answerContent.trim() : null);
+        question.setAnsweredAt(LocalDateTime.now());
+        EventQuestion saved = questionRepository.save(question);
+        return mapQuestion(saved);
+    }
+
     private EventDetailResponse buildEventDetail(Event event, User currentUser, boolean includeManagementData) {
         List<EventAssignment> assignments = assignmentRepository.findByEventIdOrderByOrderIndexAsc(event.getId());
         List<EventQuestion> questions = questionRepository.findByEventIdOrderByAskedAtAsc(event.getId());
@@ -457,7 +504,7 @@ public class EventService {
                 && assignmentResponses.stream().anyMatch(item -> item.getRecording() != null);
         boolean canUploadEvidence = event.getStatus() == EventWorkflowStatus.SCHEDULED && "PRESENTER".equals(myRole);
         boolean canAskQuestions = event.getStatus() == EventWorkflowStatus.LIVE
-                && (isTeacher || "REVIEWER".equals(myRole));
+                && (isTeacher || "REVIEWER".equals(myRole) || "PRESENTER".equals(myRole));
 
         return EventDetailResponse.builder()
                 .id(event.getId())
@@ -491,6 +538,7 @@ public class EventService {
         }
         return assets.stream()
                 .filter(asset -> asset.getVisibility() == EventAssetVisibility.PUBLIC
+                        || asset.getAssetType() == EventAssetType.EVIDENCE
                         || asset.getUploadedBy().getId().equals(currentUser.getId()))
                 .toList();
     }
@@ -550,6 +598,8 @@ public class EventService {
                 .authorName(question.getAuthor().getFullName())
                 .authorRole(question.getAuthor().getRole() != null ? question.getAuthor().getRole().getName() : null)
                 .askedAt(question.getAskedAt())
+                .answer(question.getAnswer())
+                .answeredAt(question.getAnsweredAt())
                 .build();
     }
 
