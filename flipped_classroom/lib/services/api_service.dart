@@ -11,7 +11,7 @@ class ApiService {
     }
     try {
       if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5001/api/v1';
+        return 'http://192.168.137.1:5001/api/v1';
       }
     } catch (_) {}
     return 'http://localhost:5001/api/v1';

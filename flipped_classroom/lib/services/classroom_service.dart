@@ -37,7 +37,6 @@ class ClassroomService {
     };
   }
 
-  /// Fetch classrooms for teachers
   Future<List<Map<String, dynamic>>> getTeacherClassrooms() async {
     final response = await _apiService.get('/teacher/classrooms');
     final responseBody = jsonDecode(response.body);
@@ -50,7 +49,6 @@ class ClassroomService {
         .toList();
   }
 
-  /// Fetch classrooms for students
   Future<List<Map<String, dynamic>>> getStudentClassrooms() async {
     final response = await _apiService.get('/student/classrooms');
     final responseBody = jsonDecode(response.body);
@@ -63,7 +61,6 @@ class ClassroomService {
         .toList();
   }
 
-  /// Join a classroom using a join code (Students only)
   Future<Map<String, dynamic>> joinClassroom(String joinCode) async {
     final response = await _apiService.post(
       '/student/classrooms/join',
@@ -87,7 +84,6 @@ class ClassroomService {
     };
   }
 
-  /// Create a classroom (Teachers only)
   Future<Map<String, dynamic>> createClassroom({
     required String code,
     required String name,
@@ -109,22 +105,22 @@ class ClassroomService {
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
-  /// Rotate join code (Teachers only)
   Future<Map<String, dynamic>> rotateJoinCode(int classroomId) async {
-    final response =
-        await _apiService.post('/teacher/classrooms/$classroomId/rotate-code');
+    final response = await _apiService.post(
+      '/teacher/classrooms/$classroomId/rotate-code',
+    );
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
-  /// Get classroom details by ID (Teacher)
-  Future<Map<String, dynamic>> getTeacherClassroomDetail(int classroomId) async {
+  Future<Map<String, dynamic>> getTeacherClassroomDetail(
+    int classroomId,
+  ) async {
     final response = await _apiService.get('/teacher/classrooms/$classroomId');
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
-  /// Get active students in a teacher's classroom
   Future<List<Map<String, dynamic>>> getTeacherClassroomStudents(
     int classroomId,
   ) async {
@@ -136,20 +132,24 @@ class ClassroomService {
     return List<Map<String, dynamic>>.from(data);
   }
 
-  /// Get classroom details by ID (Student)
-  Future<Map<String, dynamic>> getStudentClassroomDetail(int classroomId) async {
+  Future<Map<String, dynamic>> getStudentClassroomDetail(
+    int classroomId,
+  ) async {
     final response = await _apiService.get('/student/classrooms/$classroomId');
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
-  Future<Map<String, dynamic>> getStudentClassroomOverview(int classroomId) async {
-    final response = await _apiService.get('/student/classrooms/$classroomId/overview');
+  Future<Map<String, dynamic>> getStudentClassroomOverview(
+    int classroomId,
+  ) async {
+    final response = await _apiService.get(
+      '/student/classrooms/$classroomId/overview',
+    );
     final responseBody = jsonDecode(response.body);
     return Map<String, dynamic>.from(responseBody['data'] ?? {});
   }
 
-  /// Update classroom details (Teachers only)
   Future<Map<String, dynamic>> updateClassroom({
     required int classroomId,
     required String name,

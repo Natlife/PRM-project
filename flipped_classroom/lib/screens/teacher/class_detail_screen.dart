@@ -129,6 +129,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
 
   Map<String, dynamic> _normalizeProject(Map<String, dynamic> raw) {
     final members = List<Map<String, dynamic>>.from(raw['members'] ?? const []);
+    final memberCount = (raw['memberCount'] as num?)?.toInt() ?? members.length;
     final milestones = List<Map<String, dynamic>>.from(
       raw['milestones'] ?? const [],
     );
@@ -146,7 +147,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       'projectName': raw['projectName'] ?? raw['groupName'] ?? 'Du an',
       'group': raw['groupName'] ?? 'Nhom',
       'groupName': raw['groupName'] ?? 'Nhom',
-      'members': '${members.length} sinh vien',
+      'memberCount': memberCount,
+      'members': '$memberCount sinh vien',
       'membersList': members
           .map(
             (member) =>
@@ -160,6 +162,30 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       'progress': '${progress.round()}%',
       'milestones': milestones,
     };
+  }
+
+  Future<Map<String, dynamic>> _ensureProjectHasDetails(
+    Map<String, dynamic> project,
+  ) async {
+    final membersData = List<Map<String, dynamic>>.from(
+      project['membersData'] ?? const [],
+    );
+    if (membersData.isNotEmpty) {
+      return project;
+    }
+
+    final groupId = (project['id'] as num?)?.toInt() ?? 0;
+    if (groupId == 0) {
+      return project;
+    }
+
+    try {
+      final detail = await ProjectService().getTeacherProjectGroupDetail(groupId);
+      return _normalizeProject(detail);
+    } catch (e) {
+      debugPrint('Error hydrating project detail $groupId: $e');
+      return project;
+    }
   }
 
   Future<void> _fetchClassroomDetails() async {
@@ -277,8 +303,10 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                 result['projectName'] ?? result['groupName'] ?? 'Du an',
             'group': result['groupName'] ?? '',
             'groupName': result['groupName'] ?? '',
+            'memberCount': (result['memberCount'] as num?)?.toInt() ??
+                (result['members'] as List<dynamic>? ?? []).length,
             'members':
-                '${(result['members'] as List<dynamic>? ?? []).length} sinh vien',
+                '${(result['memberCount'] as num?)?.toInt() ?? (result['members'] as List<dynamic>? ?? []).length} sinh vien',
             'membersList': (result['members'] as List<dynamic>? ?? [])
                 .map(
                   (member) =>
@@ -1608,11 +1636,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
         final String date = proj['date'] ?? '10/8/2026';
         return GestureDetector(
           onTap: () async {
+            final hydratedProject = await _ensureProjectHasDetails(proj);
+            if (!mounted) return;
             final updatedProj = await Navigator.push<Map<String, dynamic>>(
               context,
               MaterialPageRoute(
                 builder: (context) => ProjectDetailScreen(
-                  project: proj,
+                  project: hydratedProject,
                   availableClasses: [_classCode],
                 ),
               ),
