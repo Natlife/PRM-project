@@ -49,9 +49,11 @@ public enum ErrorCode {
     EVENT_NOT_FOUND(404, "Event not found", HttpStatus.NOT_FOUND),
     EVENT_ASSIGNMENT_NOT_FOUND(404, "Event assignment not found", HttpStatus.NOT_FOUND),
     EVENT_ASSET_NOT_FOUND(404, "Event asset not found", HttpStatus.NOT_FOUND),
+    EVENT_QUESTION_NOT_FOUND(404, "Event question not found", HttpStatus.NOT_FOUND),
     INVALID_EVENT_DATES(400, "Event end time must be after start time", HttpStatus.BAD_REQUEST),
     INVALID_EVENT_ASSIGNMENT(400, "Event assignment data is invalid", HttpStatus.BAD_REQUEST),
     EVENT_ROOM_NOT_AVAILABLE(400, "Event room is not available", HttpStatus.BAD_REQUEST),
+    QUESTION_ALREADY_ANSWERED(400, "Question already answered", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatus statusCode) {

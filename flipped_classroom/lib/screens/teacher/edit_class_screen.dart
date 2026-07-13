@@ -24,12 +24,12 @@ class _EditClassScreenState extends State<EditClassScreen> {
   final _formKey = GlobalKey<FormState>();
   final _semesters = const ['SU26', 'FA26', 'SP26', 'HK1 2026'];
   final _dayLabels = const [
-    'Thu 2',
-    'Thu 3',
-    'Thu 4',
-    'Thu 5',
-    'Thu 6',
-    'Thu 7',
+    'Thứ 2',
+    'Thứ 3',
+    'Thứ 4',
+    'Thứ 5',
+    'Thứ 6',
+    'Thứ 7',
     'Chu nhat',
   ];
   final _slots = const [
@@ -114,7 +114,10 @@ class _EditClassScreenState extends State<EditClassScreen> {
     };
   }
 
-  Map<String, dynamic> _buildScheduleRequest(String dayLabel, String slotDisplay) {
+  Map<String, dynamic> _buildScheduleRequest(
+    String dayLabel,
+    String slotDisplay,
+  ) {
     final dayOfWeek = _dayLabels.indexOf(dayLabel);
     final slot = _slots.firstWhere(
       (item) => item['display'] == slotDisplay,
@@ -166,7 +169,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
     if (_schedulesList.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui long them it nhat mot lich hoc.'),
+          content: Text('Vui lòng thêm ít nhất một lịch học.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -223,7 +226,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Ten lop hoc *',
+                'Tên lớp học *',
                 style: TextStyle(
                   color: Color(0xFF334155),
                   fontSize: 14,
@@ -235,7 +238,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                 controller: _nameController,
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Nhap ten lop hoc',
+                  hintText: 'Nhập tên lớp học',
                   hintStyle: TextStyle(
                     color: const Color(0xFF0F172A).withValues(alpha: 0.3),
                   ),
@@ -248,14 +251,14 @@ class _EditClassScreenState extends State<EditClassScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Ten lop hoc la bat buoc';
+                    return 'Tên lớp học không được để trống';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 18),
               const Text(
-                'Mo ta',
+                'Mô tả',
                 style: TextStyle(
                   color: Color(0xFF334155),
                   fontSize: 14,
@@ -268,7 +271,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                 maxLines: 3,
                 style: const TextStyle(color: Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  hintText: 'Mo ta lop hoc',
+                  hintText: 'Mô tả lớp học',
                   hintStyle: TextStyle(
                     color: const Color(0xFF0F172A).withValues(alpha: 0.3),
                   ),
@@ -282,7 +285,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
               ),
               const SizedBox(height: 18),
               const Text(
-                'Hoc ky *',
+                'Học kỳ *',
                 style: TextStyle(
                   color: Color(0xFF334155),
                   fontSize: 14,
@@ -333,7 +336,10 @@ class _EditClassScreenState extends State<EditClassScreen> {
                     onPressed: _addSchedule,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7EC07E),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                     ),
                     child: const Text(
@@ -406,7 +412,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
               const SizedBox(height: 12),
               if (_schedulesList.isNotEmpty) ...[
                 const Text(
-                  'Lich da chon',
+                  'Lịch đã chọn',
                   style: TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 12,
@@ -418,7 +424,10 @@ class _EditClassScreenState extends State<EditClassScreen> {
                   final schedule = _schedulesList[index];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(10),
@@ -453,7 +462,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
               ],
               const SizedBox(height: 18),
               const Text(
-                'Ma lop hoc',
+                'Mã lớp học',
                 style: TextStyle(
                   color: Color(0xFF334155),
                   fontSize: 14,
@@ -463,7 +472,10 @@ class _EditClassScreenState extends State<EditClassScreen> {
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(16),
@@ -494,7 +506,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: const Text(
-                        'Huy',
+                        'Hủy',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

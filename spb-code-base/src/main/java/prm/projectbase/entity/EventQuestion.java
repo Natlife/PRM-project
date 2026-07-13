@@ -41,4 +41,10 @@ public class EventQuestion extends BaseEntity {
 
     @Column(name = "asked_at", nullable = false)
     LocalDateTime askedAt;
+
+    @Column(name = "answer", length = 4000)
+    String answer;
+
+    @Column(name = "answered_at")
+    LocalDateTime answeredAt;
 }

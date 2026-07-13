@@ -20,4 +20,6 @@ public class EventQuestionResponse {
     String authorName;
     String authorRole;
     LocalDateTime askedAt;
+    String answer;
+    LocalDateTime answeredAt;
 }

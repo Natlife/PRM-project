@@ -160,6 +160,30 @@ class _StudentEventReviewScreenState extends State<StudentEventReviewScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(question['content'] ?? ''),
+                          if (question['answer'] != null &&
+                              (question['answer'] as String).isNotEmpty) ...[
+                            const Divider(height: 16),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Trả lời: ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    question['answer'] ?? '',
+                                    style: const TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

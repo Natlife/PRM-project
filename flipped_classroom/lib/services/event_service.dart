@@ -107,11 +107,14 @@ class EventService {
   Future<Map<String, dynamic>> uploadStudentEvidence(
     int eventId,
     List<int> fileBytes,
-    String fileName,
-  ) async {
+    String fileName, {
+    int? assignmentId,
+  }) async {
     final response = await _apiService.upload(
       '/student/events/$eventId/evidences',
-      const {},
+      {
+        if (assignmentId != null) 'assignmentId': assignmentId.toString(),
+      },
       'file',
       fileBytes,
       fileName,
@@ -135,6 +138,19 @@ class EventService {
         'content': content,
         if (assignmentId != null) 'assignmentId': assignmentId,
       },
+    );
+    final body = jsonDecode(response.body);
+    return Map<String, dynamic>.from(body['data'] ?? const {});
+  }
+
+  Future<Map<String, dynamic>> answerStudentLiveQuestion(
+    int eventId,
+    int questionId,
+    String answer,
+  ) async {
+    final response = await _apiService.post(
+      '/student/events/$eventId/questions/$questionId/answer',
+      body: {'answer': answer},
     );
     final body = jsonDecode(response.body);
     return Map<String, dynamic>.from(body['data'] ?? const {});

@@ -11,7 +11,7 @@ class ApiService {
     }
     try {
       if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5001/api/v1';
+        return 'http://192.168.137.1:5001/api/v1';
       }
     } catch (_) {}
     return 'http://localhost:5001/api/v1';
@@ -142,6 +142,24 @@ class ApiService {
     String path,
   ) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (!kIsWeb) {
+        try {
+          final serverUri = Uri.parse(baseUrl);
+          final targetBase = '${serverUri.scheme}://${serverUri.host}:${serverUri.port}';
+          final newBody = response.body
+              .replaceAll('http://localhost:5001', targetBase)
+              .replaceAll('http://127.0.0.1:5001', targetBase);
+          return http.Response(
+            newBody,
+            response.statusCode,
+            headers: response.headers,
+            isRedirect: response.isRedirect,
+            persistentConnection: response.persistentConnection,
+            reasonPhrase: response.reasonPhrase,
+            request: response.request,
+          );
+        } catch (_) {}
+      }
       return response;
     }
 
