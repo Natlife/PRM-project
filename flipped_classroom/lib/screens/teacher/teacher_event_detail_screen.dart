@@ -9,13 +9,11 @@ import '../../services/event_service.dart';
 class TeacherEventDetailScreen extends StatefulWidget {
   final int eventId;
 
-  const TeacherEventDetailScreen({
-    super.key,
-    required this.eventId,
-  });
+  const TeacherEventDetailScreen({super.key, required this.eventId});
 
   @override
-  State<TeacherEventDetailScreen> createState() => _TeacherEventDetailScreenState();
+  State<TeacherEventDetailScreen> createState() =>
+      _TeacherEventDetailScreenState();
 }
 
 class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
@@ -94,9 +92,7 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
     return TextButton.styleFrom(
       foregroundColor: const Color(0xFF64748B),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 
@@ -105,9 +101,7 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
       backgroundColor: const Color(0xFF7EC07E),
       foregroundColor: const Color(0xFF0F172A),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 0,
     );
   }
@@ -117,9 +111,7 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
       backgroundColor: const Color(0xFF0F172A),
       foregroundColor: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 0,
     );
   }
@@ -130,9 +122,7 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
       side: const BorderSide(color: Color(0xFF7EC07E), width: 1.2),
       backgroundColor: const Color(0xFF7EC07E).withValues(alpha: 0.08),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 
@@ -141,15 +131,15 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
       foregroundColor: const Color(0xFF0F172A),
       backgroundColor: const Color(0xFF7EC07E).withValues(alpha: 0.12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 
   Future<void> _updateStatus(String status) async {
     try {
-      await EventService().updateTeacherEvent(widget.eventId, {'status': status});
+      await EventService().updateTeacherEvent(widget.eventId, {
+        'status': status,
+      });
       await _loadDetail();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -231,7 +221,10 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
 
     String assignmentType = 'INDIVIDUAL';
     int orderIndex =
-        List<Map<String, dynamic>>.from(_detail['assignments'] ?? const []).length + 1;
+        List<Map<String, dynamic>>.from(
+          _detail['assignments'] ?? const [],
+        ).length +
+        1;
     int? presenterStudentId = (students.first['id'] as num?)?.toInt();
     int? reviewerStudentId = students.length > 1
         ? (students[1]['id'] as num?)?.toInt()
@@ -254,16 +247,15 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
                   children: [
                     DropdownButtonFormField<String>(
                       initialValue: assignmentType,
-                      decoration: const InputDecoration(labelText: 'Kiểu phiên'),
+                      decoration: const InputDecoration(
+                        labelText: 'Kiểu phiên',
+                      ),
                       items: const [
                         DropdownMenuItem(
                           value: 'INDIVIDUAL',
                           child: Text('Cá nhân'),
                         ),
-                        DropdownMenuItem(
-                          value: 'GROUP',
-                          child: Text('Nhóm'),
-                        ),
+                        DropdownMenuItem(value: 'GROUP', child: Text('Nhóm')),
                       ],
                       onChanged: (value) {
                         if (value == null) return;
@@ -290,7 +282,11 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
                             .map(
                               (student) => DropdownMenuItem<int>(
                                 value: (student['id'] as num?)?.toInt(),
-                                child: Text(student['fullName'] ?? student['userName'] ?? ''),
+                                child: Text(
+                                  student['fullName'] ??
+                                      student['userName'] ??
+                                      '',
+                                ),
                               ),
                             )
                             .toList(),
@@ -301,7 +297,9 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
                     else
                       DropdownButtonFormField<int>(
                         initialValue: presenterGroupId,
-                        decoration: const InputDecoration(labelText: 'Nhóm thuyết trình'),
+                        decoration: const InputDecoration(
+                          labelText: 'Nhóm thuyết trình',
+                        ),
                         items: groups
                             .map(
                               (group) => DropdownMenuItem<int>(
@@ -317,12 +315,18 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       initialValue: reviewerStudentId,
-                      decoration: const InputDecoration(labelText: 'Người phản biện'),
+                      decoration: const InputDecoration(
+                        labelText: 'Người phản biện',
+                      ),
                       items: students
                           .map(
                             (student) => DropdownMenuItem<int>(
                               value: (student['id'] as num?)?.toInt(),
-                              child: Text(student['fullName'] ?? student['userName'] ?? ''),
+                              child: Text(
+                                student['fullName'] ??
+                                    student['userName'] ??
+                                    '',
+                              ),
                             ),
                           )
                           .toList(),
@@ -354,17 +358,14 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
     if (confirmed != true) return;
 
     try {
-      await EventService().createEventAssignment(
-        widget.eventId,
-        {
-          'assignmentType': assignmentType,
-          if (assignmentType == 'INDIVIDUAL')
-            'presenterStudentId': presenterStudentId,
-          if (assignmentType == 'GROUP') 'presenterGroupId': presenterGroupId,
-          'reviewerStudentId': reviewerStudentId,
-          'orderIndex': orderIndex,
-        },
-      );
+      await EventService().createEventAssignment(widget.eventId, {
+        'assignmentType': assignmentType,
+        if (assignmentType == 'INDIVIDUAL')
+          'presenterStudentId': presenterStudentId,
+        if (assignmentType == 'GROUP') 'presenterGroupId': presenterGroupId,
+        'reviewerStudentId': reviewerStudentId,
+        'orderIndex': orderIndex,
+      });
       await _loadDetail();
     } catch (e) {
       if (!mounted) return;
@@ -416,137 +417,143 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _detail['classroomCode']?.toString() ?? '',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF7EC07E),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _detail['classroomCode']?.toString() ??
+                                          '',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF7EC07E),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      title,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _statusColor(status).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                _statusLabel(status),
-                                style: TextStyle(
-                                  color: _statusColor(status),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _detail['description']?.toString().isNotEmpty == true
-                              ? _detail['description'].toString()
-                              : 'Chưa có mô tả sự kiện.',
-                          style: TextStyle(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.7),
-                            height: 1.5,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _statusColor(
+                                    status,
+                                  ).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  _statusLabel(status),
+                                  style: TextStyle(
+                                    color: _statusColor(status),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Bắt đầu: ${_formatDateTime(_detail['startAt'])}',
-                          style: const TextStyle(color: Color(0xFF334155)),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Kết thúc: ${_formatDateTime(_detail['endAt'])}',
-                          style: const TextStyle(color: Color(0xFF334155)),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Thời lượng mỗi phiên: ${_detail['sessionDurationMinutes'] ?? 0} phút',
-                          style: const TextStyle(color: Color(0xFF334155)),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            if (status == 'SCHEDULED')
-                              ElevatedButton(
-                                onPressed: () => _updateStatus('LIVE'),
-                                style: _primaryButtonStyle(),
-                                child: const Text('Bắt đầu sự kiện'),
-                              ),
-                            if (status == 'LIVE')
-                              ElevatedButton(
-                                onPressed: () => _updateStatus('COMPLETED'),
-                                style: _darkButtonStyle(),
-                                child: const Text('Kết thúc sự kiện'),
-                              ),
-                            OutlinedButton(
-                              onPressed: _showAddAssignmentDialog,
-                              style: _outlineActionButtonStyle(),
-                              child: const Text('Thêm phiên phản biện'),
+                          const SizedBox(height: 12),
+                          Text(
+                            _detail['description']?.toString().isNotEmpty ==
+                                    true
+                                ? _detail['description'].toString()
+                                : 'Chưa có mô tả sự kiện.',
+                            style: TextStyle(
+                              color: const Color(
+                                0xFF0F172A,
+                              ).withValues(alpha: 0.7),
+                              height: 1.5,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Bắt đầu: ${_formatDateTime(_detail['startAt'])}',
+                            style: const TextStyle(color: Color(0xFF334155)),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Kết thúc: ${_formatDateTime(_detail['endAt'])}',
+                            style: const TextStyle(color: Color(0xFF334155)),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Thời lượng mỗi phiên: ${_detail['sessionDurationMinutes'] ?? 0} phút',
+                            style: const TextStyle(color: Color(0xFF334155)),
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              if (status == 'SCHEDULED')
+                                ElevatedButton(
+                                  onPressed: () => _updateStatus('LIVE'),
+                                  style: _primaryButtonStyle(),
+                                  child: const Text('Bắt đầu sự kiện'),
+                                ),
+                              if (status == 'LIVE')
+                                ElevatedButton(
+                                  onPressed: () => _updateStatus('COMPLETED'),
+                                  style: _darkButtonStyle(),
+                                  child: const Text('Kết thúc sự kiện'),
+                                ),
+                              OutlinedButton(
+                                onPressed: _showAddAssignmentDialog,
+                                style: _outlineActionButtonStyle(),
+                                child: const Text('Thêm phiên phản biện'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildSectionHeader(
-                    title: 'Ngân hàng câu hỏi',
-                    actionLabel: 'Thêm',
-                    onAction: _showAddQuestionBankDialog,
-                  ),
-                  const SizedBox(height: 12),
-                  if (questionBank.isEmpty)
-                    _buildEmptyCard('Chưa có câu hỏi mẫu nào')
-                  else
-                    ...questionBank.map(_buildQuestionCard),
-                  const SizedBox(height: 20),
-                  _buildSectionHeader(
-                    title: 'Phiên phản biện',
-                    actionLabel: 'Tạo phiên',
-                    onAction: _showAddAssignmentDialog,
-                  ),
-                  const SizedBox(height: 12),
-                  if (assignments.isEmpty)
-                    _buildEmptyCard('Chưa có phiên phản biện nào')
-                  else
-                    ...assignments.map(_buildAssignmentCard),
+                    const SizedBox(height: 20),
+                    _buildSectionHeader(
+                      title: 'Ngân hàng câu hỏi',
+                      actionLabel: 'Thêm',
+                      onAction: _showAddQuestionBankDialog,
+                    ),
+                    const SizedBox(height: 12),
+                    if (questionBank.isEmpty)
+                      _buildEmptyCard('Chưa có câu hỏi mẫu nào')
+                    else
+                      ...questionBank.map(_buildQuestionCard),
+                    const SizedBox(height: 20),
+                    _buildSectionHeader(
+                      title: 'Phiên phản biện',
+                      actionLabel: 'Tạo phiên',
+                      onAction: _showAddAssignmentDialog,
+                    ),
+                    const SizedBox(height: 12),
+                    if (assignments.isEmpty)
+                      _buildEmptyCard('Chưa có phiên phản biện nào')
+                    else
+                      ...assignments.map(_buildAssignmentCard),
                   ],
                 ),
               ),
@@ -589,9 +596,7 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
       ),
       child: Text(
         message,
-        style: TextStyle(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.5),
-        ),
+        style: TextStyle(color: const Color(0xFF0F172A).withValues(alpha: 0.5)),
       ),
     );
   }
@@ -628,7 +633,8 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
   }
 
   Widget _buildAssignmentCard(Map<String, dynamic> assignment) {
-    final presenter = assignment['presenterGroupName'] ??
+    final presenter =
+        assignment['presenterGroupName'] ??
         assignment['presenterStudentName'] ??
         'Chưa xác định';
     final reviewer = assignment['reviewerStudentName'] ?? 'Chưa xác định';
@@ -677,7 +683,10 @@ class _TeacherEventDetailScreenState extends State<TeacherEventDetailScreen> {
               onTap: () async {
                 final url = recording['fileUrl']?.toString() ?? '';
                 if (url.isEmpty) return;
-                await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
               },
               child: Text(
                 'Bản ghi: ${recording['originalFileName'] ?? ''}',
@@ -738,9 +747,7 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
     return TextButton.styleFrom(
       foregroundColor: const Color(0xFF64748B),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 
@@ -749,9 +756,7 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
       backgroundColor: const Color(0xFF7EC07E),
       foregroundColor: const Color(0xFF0F172A),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 0,
     );
   }
@@ -762,9 +767,7 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
       side: const BorderSide(color: Color(0xFF7EC07E), width: 1.2),
       backgroundColor: const Color(0xFF7EC07E).withValues(alpha: 0.08),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 
@@ -804,8 +807,12 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
   }
 
   Future<void> _addLiveQuestion() async {
-    final bank = List<Map<String, dynamic>>.from(_detail['questionBank'] ?? const []);
-    String selectedContent = bank.isNotEmpty ? (bank.first['content']?.toString() ?? '') : '';
+    final bank = List<Map<String, dynamic>>.from(
+      _detail['questionBank'] ?? const [],
+    );
+    String selectedContent = bank.isNotEmpty
+        ? (bank.first['content']?.toString() ?? '')
+        : '';
     final controller = TextEditingController(text: selectedContent);
 
     final result = await showDialog<String>(
@@ -819,8 +826,12 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
               children: [
                 if (bank.isNotEmpty)
                   DropdownButtonFormField<String>(
-                    initialValue: selectedContent.isEmpty ? null : selectedContent,
-                    decoration: const InputDecoration(labelText: 'Chọn từ ngân hàng'),
+                    initialValue: selectedContent.isEmpty
+                        ? null
+                        : selectedContent,
+                    decoration: const InputDecoration(
+                      labelText: 'Chọn từ ngân hàng',
+                    ),
                     items: bank
                         .map(
                           (item) => DropdownMenuItem<String>(
@@ -844,9 +855,7 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
                 TextField(
                   controller: controller,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Nhập câu hỏi',
-                  ),
+                  decoration: const InputDecoration(hintText: 'Nhập câu hỏi'),
                 ),
               ],
             ),
@@ -918,7 +927,10 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
 
   Future<void> _completeAssignment() async {
     try {
-      await EventService().completeAssignment(widget.eventId, widget.assignmentId);
+      await EventService().completeAssignment(
+        widget.eventId,
+        widget.assignmentId,
+      );
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -935,7 +947,8 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final assignment = _assignment ?? const <String, dynamic>{};
-    final presenter = assignment['presenterGroupName'] ??
+    final presenter =
+        assignment['presenterGroupName'] ??
         assignment['presenterStudentName'] ??
         'Chưa xác định';
     final reviewer = assignment['reviewerStudentName'] ?? 'Chưa xác định';
@@ -1091,9 +1104,7 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
                         children: [
                           Text(
                             question['authorName'] ?? '',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(question['content'] ?? ''),
@@ -1125,24 +1136,26 @@ class _TeacherEventRoomScreenState extends State<TeacherEventRoomScreen> {
                       ),
                     ),
                   ),
-                if ((assignment['status']?.toString() ?? 'PENDING') != 'REVIEWED')
+                if ((assignment['status']?.toString() ?? 'PENDING') !=
+                    'REVIEWED')
                   const SizedBox(height: 24),
-                if ((assignment['status']?.toString() ?? 'PENDING') != 'REVIEWED')
+                if ((assignment['status']?.toString() ?? 'PENDING') !=
+                    'REVIEWED')
                   ElevatedButton(
-                  onPressed: _completeAssignment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
+                    onPressed: _completeAssignment,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F172A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    child: const Text('Kết thúc phiên phản biện'),
                   ),
-                  child: const Text('Kết thúc phiên phản biện'),
-                ),
               ],
             ),
     );

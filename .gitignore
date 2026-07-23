@@ -70,3 +70,12 @@ spb-code-base/spring-file-manager.log*
 *.env.*
 application-local.properties
 
+
+# Leftover default Flutter scaffold (not part of the product)
+temp_app/
+
+# Raw draw.io XML exports / dumps (keep the .drawio.png diagrams, not these)
+desc.xml
+flow.xml
+desc_xml.txt
+flow_xml.txt

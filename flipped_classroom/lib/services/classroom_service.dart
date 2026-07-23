@@ -68,17 +68,19 @@ class ClassroomService {
     );
     final responseBody = jsonDecode(response.body);
     final item = Map<String, dynamic>.from(responseBody['data'] ?? {});
-    final code = item['classroomCode'] ?? '';
-    final name = item['classroomName'] ?? '';
+    final classroom = Map<String, dynamic>.from(item['classroom'] ?? {});
+    final code = classroom['code'] ?? '';
+    final name = classroom['name'] ?? '';
+    final teacherName = classroom['teacher']?['fullName'] ?? 'Chua cap nhat';
 
     return {
-      'id': item['id'],
+      'id': classroom['id'],
       'classCode': code,
       'classCodeWithName': '$code - $name',
       'className': name,
-      'instructor': 'GV: ${item['teacherName'] ?? 'Chua cap nhat'}',
-      'semester': item['semesterCode'] ?? '',
-      'studentCount': item['studentCount'] ?? 0,
+      'instructor': 'GV: $teacherName',
+      'semester': classroom['semesterCode'] ?? '',
+      'studentCount': classroom['studentCount'] ?? 0,
       'progress': 0.0,
       'nextSession': 'Thoi gian: Chua xep lich',
     };

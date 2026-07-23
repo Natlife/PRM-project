@@ -751,7 +751,7 @@ public class EventService {
     }
 
     private String resolveAssignmentRole(Long userId, EventAssignment assignment) {
-        return resolveAssignmentRole(userId, assignment, Collections.emptyMap());
+        return resolveAssignmentRole(userId, assignment, new HashMap<>());
     }
 
     private String resolveAssignmentRole(Long userId, EventAssignment assignment, Map<Long, Set<Long>> groupMemberIds) {
