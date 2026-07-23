@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class CreateEventScreen extends StatefulWidget {
   final List<Map<String, dynamic>> classrooms;
 
-  const CreateEventScreen({
-    super.key,
-    required this.classrooms,
-  });
+  const CreateEventScreen({super.key, required this.classrooms});
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -42,7 +39,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     final now = DateTime.now();
     final initial = isStart
         ? (_selectedStartAt ?? now.add(const Duration(days: 1)))
-        : (_selectedEndAt ?? (_selectedStartAt ?? now).add(const Duration(hours: 2)));
+        : (_selectedEndAt ??
+              (_selectedStartAt ?? now).add(const Duration(hours: 2)));
 
     final date = await showDatePicker(
       context: context,
@@ -65,12 +63,30 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       time.hour,
       time.minute,
     );
+    if (isStart) {
+      if (_selectedEndAt != null && !picked.isBefore(_selectedEndAt!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thời gian bắt đầu phải trước thời gian kết thúc'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+    } else {
+      if (_selectedStartAt != null && !picked.isAfter(_selectedStartAt!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thời gian kết thúc phải sau thời gian bắt đầu'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+    }
     setState(() {
       if (isStart) {
         _selectedStartAt = picked;
-        if (_selectedEndAt == null || !_selectedEndAt!.isAfter(picked)) {
-          _selectedEndAt = picked.add(const Duration(hours: 2));
-        }
       } else {
         _selectedEndAt = picked;
       }
@@ -85,7 +101,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedClassroomId == null || _selectedStartAt == null || _selectedEndAt == null) {
+    if (_selectedClassroomId == null ||
+        _selectedStartAt == null ||
+        _selectedEndAt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Vui lòng chọn lớp học và thời gian đầy đủ'),
@@ -110,7 +128,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       'description': _descriptionController.text.trim(),
       'startAt': _selectedStartAt!.toIso8601String(),
       'endAt': _selectedEndAt!.toIso8601String(),
-      'sessionDurationMinutes': int.tryParse(_sessionDurationController.text.trim()) ?? 20,
+      'sessionDurationMinutes':
+          int.tryParse(_sessionDurationController.text.trim()) ?? 20,
     });
   }
 
@@ -153,7 +172,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (value) => setState(() => _selectedClassroomId = value),
+              onChanged: (value) =>
+                  setState(() => _selectedClassroomId = value),
             ),
             const SizedBox(height: 16),
             TextFormField(
